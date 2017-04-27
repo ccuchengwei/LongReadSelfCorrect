@@ -1,0 +1,13 @@
+g++ -DHAVE_CONFIG_H -I. -I..  -I../Bigraph -I../Util -I../Thirdparty -I../Algorithm -I../SQG -I../SuffixTools -I../FMIndexWalk -fopenmp  -std=c++11 -Wall -Wextra -Wno-unknown-pragmas -static -O3 -MT libstringgraph_a-SGVisitors.o -MD -MP -MF .deps/libstringgraph_a-SGVisitors.Tpo -c -o libstringgraph_a-SGVisitors.o `test -f 'SGVisitors.cpp' || echo './'`SGVisitors.cpp
+mv -f .deps/libstringgraph_a-SGVisitors.Tpo .deps/libstringgraph_a-SGVisitors.Po
+g++ -DHAVE_CONFIG_H -I. -I..  -I../Bigraph -I../Util -I../Thirdparty -I../Algorithm -I../SQG -I../SuffixTools -I../FMIndexWalk -fopenmp  -std=c++11 -Wall -Wextra -Wno-unknown-pragmas -static -O3 -MT libstringgraph_a-CompleteOverlapSet.o -MD -MP -MF .deps/libstringgraph_a-CompleteOverlapSet.Tpo -c -o libstringgraph_a-CompleteOverlapSet.o `test -f 'CompleteOverlapSet.cpp' || echo './'`CompleteOverlapSet.cpp
+mv -f .deps/libstringgraph_a-CompleteOverlapSet.Tpo .deps/libstringgraph_a-CompleteOverlapSet.Po
+g++ -DHAVE_CONFIG_H -I. -I..  -I../Bigraph -I../Util -I../Thirdparty -I../Algorithm -I../SQG -I../SuffixTools -I../FMIndexWalk -fopenmp  -std=c++11 -Wall -Wextra -Wno-unknown-pragmas -static -O3 -MT libstringgraph_a-RemovalAlgorithm.o -MD -MP -MF .deps/libstringgraph_a-RemovalAlgorithm.Tpo -c -o libstringgraph_a-RemovalAlgorithm.o `test -f 'RemovalAlgorithm.cpp' || echo './'`RemovalAlgorithm.cpp
+mv -f .deps/libstringgraph_a-RemovalAlgorithm.Tpo .deps/libstringgraph_a-RemovalAlgorithm.Po
+g++ -DHAVE_CONFIG_H -I. -I..  -I../Bigraph -I../Util -I../Thirdparty -I../Algorithm -I../SQG -I../SuffixTools -I../FMIndexWalk -fopenmp  -std=c++11 -Wall -Wextra -Wno-unknown-pragmas -static -O3 -MT libstringgraph_a-SGSearch.o -MD -MP -MF .deps/libstringgraph_a-SGSearch.Tpo -c -o libstringgraph_a-SGSearch.o `test -f 'SGSearch.cpp' || echo './'`SGSearch.cpp
+mv -f .deps/libstringgraph_a-SGSearch.Tpo .deps/libstringgraph_a-SGSearch.Po
+g++ -DHAVE_CONFIG_H -I. -I..  -I../Bigraph -I../Util -I../Thirdparty -I../Algorithm -I../SQG -I../SuffixTools -I../FMIndexWalk -fopenmp  -std=c++11 -Wall -Wextra -Wno-unknown-pragmas -static -O3 -MT libstringgraph_a-SGWalk.o -MD -MP -MF .deps/libstringgraph_a-SGWalk.Tpo -c -o libstringgraph_a-SGWalk.o `test -f 'SGWalk.cpp' || echo './'`SGWalk.cpp
+mv -f .deps/libstringgraph_a-SGWalk.Tpo .deps/libstringgraph_a-SGWalk.Po
+rm -f libstringgraph.a
+ar cru libstringgraph.a libstringgraph_a-SGUtil.o libstringgraph_a-SGAlgorithms.o libstringgraph_a-SGVisitors.o libstringgraph_a-CompleteOverlapSet.o libstringgraph_a-RemovalAlgorithm.o libstringgraph_a-SGSearch.o libstringgraph_a-SGWalk.o 
+ranlib libstringgraph.a
