@@ -303,7 +303,7 @@ SONode3PtrList LongReadSelfCorrectByOverlap::extendLeaves()
     attempToExtend(newLeaves);
     
     
-    if(newLeaves.empty() ) 
+    if(newLeaves.empty() ) //level 1 reduce size 
     { 
         size_t LowerBound = m_currentKmerSize - 2 >= m_minOverlap ? m_currentKmerSize - 2 : m_minOverlap;
         size_t ReduceSize = SelectFreqsOfrange(LowerBound,m_currentKmerSize,m_leaves);
@@ -312,7 +312,7 @@ SONode3PtrList LongReadSelfCorrectByOverlap::extendLeaves()
         attempToExtend(newLeaves);
         
       
-        if( newLeaves.empty() )
+        if( newLeaves.empty() )//level 2 reduce threshold
         {
             
             m_min_SA_threshold--;
@@ -327,7 +327,7 @@ SONode3PtrList LongReadSelfCorrectByOverlap::extendLeaves()
     { 
         m_currentLength++;  
 		m_currentKmerSize++;
-        if( isLowCoverage(newLeaves)   )// if fmfreas are low , relax it
+        if( isLowCoverage(newLeaves)   )// if frequency are low , relax it
         {
             
             // size_t ReduceSize = m_currentKmerSize > m_minOverlap-1 ? m_currentKmerSize-1: m_currentKmerSize;
@@ -335,7 +335,7 @@ SONode3PtrList LongReadSelfCorrectByOverlap::extendLeaves()
 
             size_t LowerBound = m_currentKmerSize > m_minOverlap + 1 ? m_currentKmerSize - 2 : m_minOverlap;
             size_t ReduceSize = SelectFreqsOfrange(LowerBound,m_currentKmerSize,newLeaves);
-            // std::cout<<ReduceSize<< "  im here \n";
+            
             for(SONode3PtrList::iterator iter = newLeaves.begin(); iter != newLeaves.end(); ++iter)
             {   
                 
@@ -439,7 +439,7 @@ bool LongReadSelfCorrectByOverlap::isLowCoverage(SONode3PtrList &newLeaves)
            highfreqscount++;
 
     }
-    // std::cout<<  highfreqscount <<" asd\n";
+    
     if(highfreqscount == 0)
         return true;
     else if (highfreqscount <= 2 && newLeaves.size()>=5 )
@@ -518,7 +518,7 @@ void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList &newLeaves)
         
         if (extensions.size()>0) updateLeaves(newLeaves,extensions,*iter);
 
-        else  // no extensions
+        else  // no extensions , give one more chance for lowest error rate path
         {
             
             if((*iter)->LocalErrorRateRecord.back() == minimumErrorRate  && m_leaves.size()>1 )
