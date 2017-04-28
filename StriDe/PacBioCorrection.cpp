@@ -91,13 +91,14 @@ namespace opt
 	static bool isFirst = false;
 	size_t maxSeedInterval = 500;
     static size_t PBcoverage = 60;// PB seed searh depth
-
+    static bool DebugExtend = false;
+    static bool DebugSeed = false;
 	static PacBioCorrectionAlgorithm algorithm = PBC_SELF;
 }
 
 static const char* shortopts = "p:t:o:a:k:x:L:m:s:M:y:d:c:C:v";
 
-enum { OPT_HELP = 1, OPT_VERSION, OPT_DISCARD, OPT_SPLIT, OPT_FIRST };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_DISCARD, OPT_SPLIT, OPT_FIRST,OPT_DEBUGEXTEND,OPT_DEBUGSEED };
 
 static const struct option longopts[] = {
 	{ "verbose",       no_argument,       NULL, 'v' },
@@ -116,6 +117,8 @@ static const struct option longopts[] = {
     { "PBcoverage",    required_argument, NULL, 'C' },
 	{ "split",       	no_argument,       NULL, OPT_SPLIT },
 	{ "first",       	no_argument,       NULL, OPT_FIRST },
+    { "debugextend",       	no_argument,       NULL, OPT_DEBUGEXTEND },
+    { "debugseed",       	no_argument,       NULL, OPT_DEBUGSEED },
 	{ "discard",       no_argument,       NULL, OPT_DISCARD },
 	{ "help",          no_argument,       NULL, OPT_HELP },
 	{ "version",       no_argument,       NULL, OPT_VERSION },
@@ -189,6 +192,8 @@ int PacBioCorrectionMain(int argc, char** argv)
     ecParams.PBcoverage = opt::PBcoverage;
 	ecParams.isSplit = opt::split;
 	ecParams.isFirst = opt::isFirst;
+    ecParams.DebugExtend = opt::DebugExtend;
+    ecParams.DebugSeed = opt::DebugSeed;
 	ecParams.maxSeedInterval = opt::maxSeedInterval;
 	
 	if(ecParams.algorithm == PBC_SELF)
@@ -292,6 +297,8 @@ void parsePacBioCorrectionOptions(int argc, char** argv)
         case 'C': arg >> opt::PBcoverage; break;
 		case OPT_SPLIT: opt::split = true; break;
 		case OPT_FIRST: opt::isFirst = true; break;
+        case OPT_DEBUGEXTEND: opt::DebugExtend = true; break;
+        case OPT_DEBUGSEED: opt::DebugSeed = true; break;
 		case OPT_HELP:
 			std::cout << CORRECT_USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);

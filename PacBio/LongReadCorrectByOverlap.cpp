@@ -30,7 +30,7 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(const std::string& so
 				
 				size_t seedSize, 
 				size_t repeatFreq,
-                size_t localsimilarlykmer,
+                size_t localSimilarlykmerSize,
                 double pacbioerrorrate):
 				m_sourceSeed(sourceSeed), 
 				m_strBetweenSrcTarget(strBetweenSrcTarget),
@@ -48,7 +48,7 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(const std::string& so
 				m_maxLeaves(maxLeaves), 
 				m_seedSize(seedSize), 
 				m_repeatFreq(repeatFreq),
-                m_localsimilarlykmer(localsimilarlykmer),
+                m_localSimilarlykmerSize(localSimilarlykmerSize),
                 m_pacbioerrorrate(pacbioerrorrate)
 {	
 	std::string beginningkmer = m_sourceSeed.substr(m_sourceSeed.length()-m_initkmersize);
@@ -85,7 +85,7 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(const std::string& so
     
     
 
-	std::cout << "BE: " << beginningkmer << " " << m_targetSeed << " "<< m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size() << "|" << disBetweenSrcTarget <<"\n"; //debugch
+	// std::cout << "BE: " << beginningkmer << " " << m_targetSeed << " "<< m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size() << "|" << disBetweenSrcTarget <<"\n"; //debugch
 	// PacBio reads are longer than real length due to insertions
 	m_maxLength = (1.2*(m_disBetweenSrcTarget+10))+2*m_initkmersize;
 	m_minLength = (0.8*(m_disBetweenSrcTarget-20))+2*m_initkmersize;
@@ -179,7 +179,7 @@ int LongReadSelfCorrectByOverlap::extendOverlap(FMWalkResult2 &FMWResult)
 
 		
 		// printleaves();
-        std::cout << "----" << std::endl;
+        // std::cout << "----" << std::endl;
         
 		// speedup by retaining the top bestN candidates after sufficient overlap length
 		// This is the 3rd filter less reliable than previous ones
@@ -491,7 +491,7 @@ void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList &newLeaves)
     for(SONode3PtrList::iterator iter = m_leaves.begin(); iter != m_leaves.end(); ++iter)
     {
 
-        if((double)(*iter)->localerrorrateRecord.back() - (double)minimumErrorRate > 0.05 && m_currentLength > m_localsimilarlykmer/2 )
+        if((double)(*iter)->localerrorrateRecord.back() - (double)minimumErrorRate > 0.05 && m_currentLength > m_localSimilarlykmerSize/2 )
         {
             
            iter = m_leaves.erase(iter);
@@ -666,14 +666,14 @@ bool LongReadSelfCorrectByOverlap::PrunedBySeedSupport(SONode3PtrList &newLeaves
 
 		// speedup by skipping dissimilar reads
 		// This is the 2nd filter less reliable than the 1st one 
-		if(currErrorRate > m_errorRate  && (*iter)->localerrorrateRecord.size() > m_localsimilarlykmer ) //testcw
+		if(currErrorRate > m_errorRate  && (*iter)->localerrorrateRecord.size() > m_localSimilarlykmerSize ) //testcw
 		{
 			iter = newLeaves.erase(iter);
            
             
 			continue;
 		}
-        else if (currErrorRate > m_errorRate && (*iter)->localerrorrateRecord.size() <= m_localsimilarlykmer)
+        else if (currErrorRate > m_errorRate && (*iter)->localerrorrateRecord.size() <= m_localSimilarlykmerSize)
         {
             iter = newLeaves.erase(iter);
            
@@ -786,11 +786,11 @@ double LongReadSelfCorrectByOverlap::computeErrorRate(SAIOverlapNode3* currNode)
     double  currErrorRate =  unmatchedLen/totalLen;
     currNode->globalerrorrateRecord.push_back(currErrorRate);
    
-    if(currNode->globalerrorrateRecord.size() >= m_localsimilarlykmer)
+    if(currNode->globalerrorrateRecord.size() >= m_localSimilarlykmerSize)
     {
         size_t totalsize = currNode->globalerrorrateRecord.size();
       
-        currErrorRate = ( currErrorRate*totalLen-currNode->globalerrorrateRecord.at( totalsize - m_localsimilarlykmer)*(totalLen - m_localsimilarlykmer) )/m_localsimilarlykmer;
+        currErrorRate = ( currErrorRate*totalLen-currNode->globalerrorrateRecord.at( totalsize - m_localSimilarlykmerSize)*(totalLen - m_localSimilarlykmerSize) )/m_localSimilarlykmerSize;
          
     }
 	currNode->localerrorrateRecord.push_back(currErrorRate);
@@ -820,7 +820,7 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
     
     
     
-    std::cout<<pNode->getFullString()<<" || "<< pNode->localerrorrateRecord.back()<<"\n" << currKmer << "\t" << Fwdinterval.size()+ Rvcinterval.size()<<"\n";
+    // std::cout<<pNode->getFullString()<<" || "<< pNode->localerrorrateRecord.back()<<"\n" << currKmer << "\t" << Fwdinterval.size()+ Rvcinterval.size()<<"\n";
      
     char lastword = pNode->getFullString().back();     
     int  tandemCharWeight = pNode->tandemCharWeight;
@@ -857,7 +857,7 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
         
         totalcount += bcount;
         // std::string bkmer = pNode->getFullString().substr( pNode->getFullString().length()- 14 )+b;
-        std::cout << "bcount:" << bcount << "||" << b << "\n";//testcw
+        // std::cout << "bcount:" << bcount << "||" << b << "\n";//testcw
         
         bvector.push_back(std::make_pair(bcount, bip));
         if(bcount >  maxfreqsofleave)

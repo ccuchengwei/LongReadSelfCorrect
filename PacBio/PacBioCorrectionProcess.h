@@ -98,6 +98,9 @@ struct PacBioCorrectionParameters
 	size_t maxSeedInterval;
 	size_t PBcoverage;
 	KmerDistribution kd;
+    
+    bool DebugExtend;
+    bool DebugSeed;    
 };
 
 
@@ -165,14 +168,12 @@ public:
 	}		
 
 private:
-    void separatebykmer(std::string readid,std::string readSeq,size_t kmerSize);
+
     
 	// PacBio correction by Yao-Ting Huang, v20151208
-	std::vector<SeedFeature> seedingByFixedKmer(const std::string readSeq, size_t contaminatedCutoff=256);
 
-	std::vector<SeedFeature> seedingByDynamicKmer(const std::string readSeq);
 
-    std::vector<SeedFeature> dynamicSeedingFromPB(const std::string& readSeq, size_t contaminatedCutoff=256);
+    std::vector<SeedFeature> hybridSeedingFromPB(const std::string& readSeq, size_t contaminatedCutoff=256);
     
 	void initCorrect(std::string& readSeq, std::vector<SeedFeature>& seeds, std::vector<SeedFeature>& pacbioCorrectedStrs, PacBioCorrectionResult& result);
 	
