@@ -31,7 +31,7 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(const std::string& so
 				size_t seedSize, 
 				size_t repeatFreq,
                 size_t localSimilarlykmerSize,
-                double pacbioerrorrate):
+                double PacBioErrorRate):
 				m_sourceSeed(sourceSeed), 
 				m_strBetweenSrcTarget(strBetweenSrcTarget),
 				m_targetSeed(targetSeed),				
@@ -49,12 +49,16 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(const std::string& so
 				m_seedSize(seedSize), 
 				m_repeatFreq(repeatFreq),
                 m_localSimilarlykmerSize(localSimilarlykmerSize),
-                m_pacbioerrorrate(pacbioerrorrate)
+                m_PacBioErrorRate(PacBioErrorRate)
 {	
 	std::string beginningkmer = m_sourceSeed.substr(m_sourceSeed.length()-m_initkmersize);
-    m_maxIndelSize  = m_disBetweenSrcTarget > 100 ? m_disBetweenSrcTarget * 0.2 : 20;
-	// create one root node
     
+    //if distance < 100 ,use const indel size 
+    m_maxIndelSize  = m_disBetweenSrcTarget > 100 ? m_disBetweenSrcTarget * 0.2 : 20; 
+    
+    
+    
+	// create one root node
 	m_pRootNode = new SAIOverlapNode3(&m_sourceSeed, NULL);
 	
 	// store initial str of root
@@ -65,23 +69,22 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(const std::string& so
 	m_pRootNode->lastSeedIdx = m_pRootNode->initSeedIdx = m_initkmersize - m_seedSize;
 	m_pRootNode->totalSeeds = m_initkmersize - m_seedSize + 1;
 	m_pRootNode->numRedeemSeed = 0;
-    m_pRootNode->localerrorrateRecord.push_back(0);
-    m_pRootNode->globalerrorrateRecord.push_back(0);
+    m_pRootNode->LocalErrorRateRecord.push_back(0);
+    m_pRootNode->GlobalErrorRateRecord.push_back(0);
 	
 	// push new node into roots and leaves vector
 	m_RootNodes.push_back(m_pRootNode);
 	m_leaves.push_back(m_pRootNode);
-    // std::cout<< beginningkmer.substr(beginningkmer.length()-1,1) <<  " " << beginningkmer.substr(beginningkmer.length()-2,1)    <<"   OO\n";
-    m_pRootNode->tandemCharWeight = 2;
-	for(int i=2;i<4;i++)
-    if(beginningkmer.substr(beginningkmer.length()-1,1) == beginningkmer.substr(beginningkmer.length()-i,1)) m_pRootNode->tandemCharWeight--;
-    //frequencies of kmer size
+    
+    m_pRootNode->WeightofContinuousChar = 2;//e.g.  AGCTGACGTAGGG      note exceed 2 base case 
+	for(int i=2;i<4;i++)//initial
+        if(beginningkmer.substr(beginningkmer.length()-1,1) == beginningkmer.substr(beginningkmer.length()-i,1)) m_pRootNode->WeightofContinuousChar--;
+
+        //frequencies of kmer size
     for(double i = m_minOverlap ; i <= m_maxOverlap+1 ; i++)
-    {
-        freqsOfKmerSize.push_back(pow(1-m_pacbioerrorrate,i)*m_PBcoverage);
-        // std::cout<<     pow(1-m_pacbioerrorrate,i)*m_PBcoverage <<"\n";
-        
-    }
+
+        freqsOfKmerSize.push_back(pow(1-m_PacBioErrorRate,i)*m_PBcoverage);
+
     
     
 
@@ -90,13 +93,10 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(const std::string& so
 	m_maxLength = (1.2*(m_disBetweenSrcTarget+10))+2*m_initkmersize;
 	m_minLength = (0.8*(m_disBetweenSrcTarget-20))+2*m_initkmersize;
     
-    // hashIndex = new HashtableSearch(m_pBWT,m_pRBWT);
-    // hashIndex->addHashBySingleSeed(beginningkmer,15,15,m_maxLength,1);
-    // std::string rvcTargetStr = reverseComplement(m_targetSeed);
-    // hashIndex->addHashBySingleSeed(rvcTargetStr,15,15,m_maxLength,1,m_disBetweenSrcTarget,1);
+
     
     
-    	// initialize the ending SA intervals with kmer length = m_initkmersize
+    // initialize the ending SA intervals with kmer length = m_initkmersize
     for(int i =0 ;i <= m_targetSeed.length()-m_initkmersize; i++)
     {
         std::string endingkmer = m_targetSeed.substr(i, m_initkmersize);
@@ -113,12 +113,9 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(const std::string& so
 	m_fwdIntervals.reserve(m_query.length()-m_seedSize+1);
 	m_rvcIntervals.reserve(m_query.length()-m_seedSize+1);
 
-    for(int i = 0; i <= (int)m_query.length()-(int)m_seedSize ; i++)
+    for(int i = 0; i <= (int)m_query.length()-(int)m_seedSize ; i++)//build overlap tree
 	{
-
-            
-        
-            
+         
 		std::string seedStr = m_query.substr(i, m_seedSize);
 		BWTInterval bi;
 		bi = BWTAlgorithms::findInterval( m_pRBWT, reverse(seedStr) );        
@@ -483,22 +480,22 @@ void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList &newLeaves)
    
     for(SONode3PtrList::iterator iter = m_leaves.begin(); iter != m_leaves.end(); ++iter)
     {
-        if((*iter)->localerrorrateRecord.back() < minimumErrorRate)
-            minimumErrorRate = (*iter)->localerrorrateRecord.back();
+        if((*iter)->LocalErrorRateRecord.back() < minimumErrorRate)
+            minimumErrorRate = (*iter)->LocalErrorRateRecord.back();
 
         
     }
     for(SONode3PtrList::iterator iter = m_leaves.begin(); iter != m_leaves.end(); ++iter)
     {
 
-        if((double)(*iter)->localerrorrateRecord.back() - (double)minimumErrorRate > 0.05 && m_currentLength > m_localSimilarlykmerSize/2 )
+        if((double)(*iter)->LocalErrorRateRecord.back() - (double)minimumErrorRate > 0.05 && m_currentLength > m_localSimilarlykmerSize/2 )
         {
             
            iter = m_leaves.erase(iter);
            continue;
         } 
         
-        if((double)(*iter)->localerrorrateRecord.back() - (double)minimumErrorRate > 0.1 && m_currentLength > 15 )
+        if((double)(*iter)->LocalErrorRateRecord.back() - (double)minimumErrorRate > 0.1 && m_currentLength > 15 )
         {
             
            iter = m_leaves.erase(iter);
@@ -524,7 +521,7 @@ void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList &newLeaves)
         else  // no extensions
         {
             
-            if((*iter)->localerrorrateRecord.back() == minimumErrorRate  && m_leaves.size()>1 )
+            if((*iter)->LocalErrorRateRecord.back() == minimumErrorRate  && m_leaves.size()>1 )
             {   
 
                 m_min_SA_threshold--;//reduce threshold
@@ -546,8 +543,8 @@ void LongReadSelfCorrectByOverlap::updateLeaves(SONode3PtrList &newLeaves,std::v
     char lastword =  pNode->getFullString().back();
     if(extensions.size() == 1)
         {
-            if( lastword == extensions.front().first.back())pNode->tandemCharWeight--;
-            else pNode->tandemCharWeight = 2;
+            if( lastword == extensions.front().first.back())pNode->WeightofContinuousChar--;
+            else pNode->WeightofContinuousChar = 2;
             // Single extension, do not branch
             pNode->extend(extensions.front().first);
             pNode->fwdInterval = extensions.front().second.interval[0];
@@ -574,8 +571,8 @@ void LongReadSelfCorrectByOverlap::updateLeaves(SONode3PtrList &newLeaves,std::v
 
             SAIOverlapNode3* pChildNode = pNode->createChild(extensions[i].first);
             
-            if( lastword == extensions[i].first.back()) pChildNode->tandemCharWeight --;
-            else pChildNode->tandemCharWeight = 2;
+            if( lastword == extensions[i].first.back()) pChildNode->WeightofContinuousChar --;
+            else pChildNode->WeightofContinuousChar = 2;
             
             
             pChildNode->fwdInterval=extensions[i].second.interval[0];
@@ -632,7 +629,7 @@ bool LongReadSelfCorrectByOverlap::PrunedBySeedSupport(SONode3PtrList &newLeaves
 			if(isNewSeedFound)
             {
                 if( currSeedIdx+(*iter)->lastSeedIdxOffset - preSeedIdx > m_seedSize )
-                   (*iter)->numRedeemSeed += (m_seedSize-1)*m_pacbioerrorrate;
+                   (*iter)->numRedeemSeed += (m_seedSize-1)*m_PacBioErrorRate;
                 (*iter)->lastSeedIdxOffset = (int)(*iter)->lastSeedIdx - (int)currSeedIdx;
             }   
             
@@ -645,14 +642,14 @@ bool LongReadSelfCorrectByOverlap::PrunedBySeedSupport(SONode3PtrList &newLeaves
             else if((currSeedIdx+(*iter)->lastSeedIdxOffset - (*iter)->lastSeedIdx) % m_seedSize == 1 )
                 (*iter)->numOfErrors ++;
 			else if(!isNewSeedFound && currSeedIdx+(*iter)->lastSeedIdxOffset - (*iter)->lastSeedIdx > m_seedSize-1)
-				(*iter)->numRedeemSeed += 1-m_pacbioerrorrate;
+				(*iter)->numRedeemSeed += 1-m_PacBioErrorRate;
             
             // else if(!isNewSeedFound && currSeedIdx+(*iter)->lastSeedIdxOffset - (*iter)->lastSeedIdx > m_seedSize+1)
 				// (*iter)->numRedeemSeed += 0.5;
 		}
         
 		else
-			(*iter)->numRedeemSeed += 1-m_pacbioerrorrate;
+			(*iter)->numRedeemSeed += 1-m_PacBioErrorRate;
 		
 		
         // if(m_currentLength == 200)
@@ -666,14 +663,14 @@ bool LongReadSelfCorrectByOverlap::PrunedBySeedSupport(SONode3PtrList &newLeaves
 
 		// speedup by skipping dissimilar reads
 		// This is the 2nd filter less reliable than the 1st one 
-		if(currErrorRate > m_errorRate  && (*iter)->localerrorrateRecord.size() > m_localSimilarlykmerSize ) //testcw
+		if(currErrorRate > m_errorRate  && (*iter)->LocalErrorRateRecord.size() > m_localSimilarlykmerSize ) //testcw
 		{
 			iter = newLeaves.erase(iter);
            
             
 			continue;
 		}
-        else if (currErrorRate > m_errorRate && (*iter)->localerrorrateRecord.size() <= m_localSimilarlykmerSize)
+        else if (currErrorRate > m_errorRate && (*iter)->LocalErrorRateRecord.size() <= m_localSimilarlykmerSize)
         {
             iter = newLeaves.erase(iter);
            
@@ -784,16 +781,16 @@ double LongReadSelfCorrectByOverlap::computeErrorRate(SAIOverlapNode3* currNode)
 
     
     double  currErrorRate =  unmatchedLen/totalLen;
-    currNode->globalerrorrateRecord.push_back(currErrorRate);
+    currNode->GlobalErrorRateRecord.push_back(currErrorRate);
    
-    if(currNode->globalerrorrateRecord.size() >= m_localSimilarlykmerSize)
+    if(currNode->GlobalErrorRateRecord.size() >= m_localSimilarlykmerSize)
     {
-        size_t totalsize = currNode->globalerrorrateRecord.size();
+        size_t totalsize = currNode->GlobalErrorRateRecord.size();
       
-        currErrorRate = ( currErrorRate*totalLen-currNode->globalerrorrateRecord.at( totalsize - m_localSimilarlykmerSize)*(totalLen - m_localSimilarlykmerSize) )/m_localSimilarlykmerSize;
+        currErrorRate = ( currErrorRate*totalLen-currNode->GlobalErrorRateRecord.at( totalsize - m_localSimilarlykmerSize)*(totalLen - m_localSimilarlykmerSize) )/m_localSimilarlykmerSize;
          
     }
-	currNode->localerrorrateRecord.push_back(currErrorRate);
+	currNode->LocalErrorRateRecord.push_back(currErrorRate);
 	return currErrorRate;
 }
 
@@ -820,10 +817,10 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
     
     
     
-    // std::cout<<pNode->getFullString()<<" || "<< pNode->localerrorrateRecord.back()<<"\n" << currKmer << "\t" << Fwdinterval.size()+ Rvcinterval.size()<<"\n";
+    // std::cout<<pNode->getFullString()<<" || "<< pNode->LocalErrorRateRecord.back()<<"\n" << currKmer << "\t" << Fwdinterval.size()+ Rvcinterval.size()<<"\n";
      
     char lastword = pNode->getFullString().back();     
-    int  tandemCharWeight = pNode->tandemCharWeight;
+    int  WeightofContinuousChar = pNode->WeightofContinuousChar;
     for(int i = 1; i < BWT_ALPHABET::size; ++i) //i=A,C,G,T
     {
         char b = BWT_ALPHABET::getChar(i);
@@ -848,11 +845,11 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
         if(rvcProbe.isValid())
             bcount += rvcProbe.size();
         
-       // std::cout<<    (b == lastword) <<"||" << bcount <<"||" << tandemCharWeight <<"   hi\n"; 
-       // if (b == lastword  && tandemCharWeight < 1)   
+       // std::cout<<    (b == lastword) <<"||" << bcount <<"||" << WeightofContinuousChar <<"   hi\n"; 
+       // if (b == lastword  && WeightofContinuousChar < 1)   
        // {    std::cout<<      "ytytyt\n";
-           // bcount = int(bcount+tandemCharWeight)  > 0 ? bcount+tandemCharWeight : 0 ;
-           // totalcount += tandemCharWeight;
+           // bcount = int(bcount+WeightofContinuousChar)  > 0 ? bcount+WeightofContinuousChar : 0 ;
+           // totalcount += WeightofContinuousChar;
         // }
         
         totalcount += bcount;
@@ -880,7 +877,7 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
            float bratio = (float)bvector.at(i-1).first/(float)totalcount;
            char b = BWT_ALPHABET::getChar(i);
           
-        if (tandemCharWeight < 1)   
+        if (WeightofContinuousChar < 1)   
         {   
             bvector.at(i-1).first = bvector.at(i-1).first+2 > maxfreqsofleave || (float)bvector.at(i-1).first / (float)maxfreqsofleave >= 0.6 ? bvector.at(i-1).first : 0;
            
@@ -941,7 +938,7 @@ bool LongReadSelfCorrectByOverlap::isTerminated(SAIntervalNodeResultVector& resu
             SAIntervalNodeResult STresult;
             STresult.thread=STNodeStr;
 			STresult.SAICoverage=(*iter)->getKmerCount();
-            STresult.errorRate = (*iter)->globalerrorrateRecord.back();
+            STresult.errorRate = (*iter)->GlobalErrorRateRecord.back();
             //compute the merged pos right next to the kmer on 2nd read.
             //STresult.index = m_minOverlap ;
             if((*iter)->resultindex.first == -1 )

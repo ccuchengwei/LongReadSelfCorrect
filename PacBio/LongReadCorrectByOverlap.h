@@ -43,7 +43,7 @@ class LongReadSelfCorrectByOverlap
 				size_t seedSize = 9, 
 				size_t repeatFreq = 256,
                 size_t localSimilarlykmerSize = 100,
-                double pacbioerrorrate = 0.15);
+                double PacBioErrorRate = 0.15);
 		
         ~LongReadSelfCorrectByOverlap();
 
@@ -121,7 +121,7 @@ class LongReadSelfCorrectByOverlap
         size_t m_min_SA_threshold;
 
 		double m_errorRate;
-        double m_pacbioerrorrate;
+        double m_PacBioErrorRate;
         size_t m_maxLeaves;
 		size_t m_seedSize;
 		size_t m_repeatFreq;

@@ -178,10 +178,10 @@ SAIOverlapNode3* SAIOverlapNode3::createChild(const std::string& label)
 	pAdded->lastSeedIdxOffset = this->lastSeedIdxOffset;
 	pAdded->initSeedIdx = this->initSeedIdx;
 	pAdded->numRedeemSeed = this->numRedeemSeed;
-	pAdded->localerrorrateRecord = this->localerrorrateRecord;
-    pAdded->globalerrorrateRecord = this->globalerrorrateRecord;
+	pAdded->LocalErrorRateRecord = this->LocalErrorRateRecord;
+    pAdded->GlobalErrorRateRecord = this->GlobalErrorRateRecord;
     pAdded->resultindex = this->resultindex;
-    pAdded->tandemCharWeight = this->tandemCharWeight;
+    pAdded->WeightofContinuousChar = this->WeightofContinuousChar;
     // pAdded->currkmersize = this->currkmersize;
 	m_children3.push_back(pAdded);
     

@@ -834,7 +834,7 @@ int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature
    std::string srcStr = source.seedStr.substr(source.seedStr.length()-extendKmerSize);
    std::string strbetweensrctarget = rawSeq.substr(target.seedStartPos-dis_between_src_target,dis_between_src_target);
    
-   std::string rawSubseq = source.seedStr.substr(source.seedStr.length()-extendKmerSize) +  strbetweensrctarget + target.seedStr;
+   
 
 
    // cout << dis_between_src_target << "||"  << "   dis  \n";
@@ -847,24 +847,20 @@ int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature
     FMWalkResult2 fmwalkresult;
     
 	int FMWalkReturnType = 	OverlapTree.extendOverlap(fmwalkresult);
-    if(FMWalkReturnType > 0)
+    if(FMWalkReturnType > 0)//extend success by fm extend
     {
         
         mergedseq = fmwalkresult.mergedSeq;
-        	// retain only extended portion
+
         if(!mergedseq.empty())
             mergedseq = mergedseq.substr(extendKmerSize);
     }
-    // int FMWalkReturnType = -1;
-    // if( FMWalkReturnType < 0)
-      // FMWalkReturnType = UseHashtoCorrection(srcStr,rawSubseq,source,target,mergedseq,extendKmerSize,dis_between_src_target,targetFreq,sourceFreq);
+
     
-   
-    // std::cout<<   FMWalkReturnType   <<"\n";
     if(FMWalkReturnType < 0)
     //v2
     {
-    
+    std::string rawSubseq = source.seedStr.substr(source.seedStr.length()-extendKmerSize) +  strbetweensrctarget + target.seedStr;
 	size_t targetKmerLength = target.endBestKmerSize;
     MultipleAlignment maquery = LongReadOverlap::buildMultipleAlignment(rawSubseq,
 													extendKmerSize, //m_params.PBKmerLength, 
