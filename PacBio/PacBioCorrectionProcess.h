@@ -39,6 +39,7 @@ struct SeedFeature
 		size_t seedStartPos;
 		size_t seedEndPos;
 		size_t seedLength;
+        size_t maxFixedMerFreqs;
 		std::string seedStr;
 		bool isRepeat;
 		bool isPBSeed;
@@ -117,7 +118,10 @@ public:
 	highErrorNum(0),
 	exceedDepthNum(0),
 	exceedLeaveNum(0),
-	seedDis(0) {}
+	seedDis(0),
+    Timer_Seed(0),
+    Timer_FM(0),
+    Timer_DP(0) {}
 
 	DNAString correctSequence;
 	
@@ -136,6 +140,9 @@ public:
 	int64_t exceedDepthNum;
 	int64_t exceedLeaveNum;
 	int64_t seedDis;
+    double Timer_Seed;
+    double Timer_FM;
+    double Timer_DP;
 };
 
 //
@@ -169,7 +176,7 @@ public:
 
 private:
 
-    
+    void separatebykmer(std::string readid,std::string readSeq,size_t kmerSize);
 	// PacBio correction by Yao-Ting Huang, v20151208
 
 
@@ -197,13 +204,15 @@ private:
 	// Perform FMindex extension between source and target seeds
 	// Return FMWalkReturnType
 	int extendBetweenSeeds(SeedFeature& source, SeedFeature& target, std::string& rawSeq, std::string& mergedseq,
-							size_t smallKmerSize, size_t dis_between_src_target);
+							size_t smallKmerSize, size_t dis_between_src_target,PacBioCorrectionResult& result);
                             
     int UseHashtoCorrection(std::string& srcStr,std::string& rawSubseq,SeedFeature& source, SeedFeature& target, std::string& mergedseq,
 							size_t extendKmerSize, size_t dis_between_src_target,   size_t& targetFreq,size_t& sourceFreq);
 	std::pair<size_t,size_t> alnscore;
 	PacBioCorrectionParameters m_params;
     std::string m_readid;
+    double m_total_FMtime;
+    double m_total_DPtime;
 
 };
 
@@ -235,6 +244,9 @@ private:
 	int64_t m_exceedDepthNum;
 	int64_t m_exceedLeaveNum;
 	int64_t m_seedDis;
+    double m_Timer_Seed;
+    double m_Timer_FM;
+    double m_Timer_DP;
 
 };
 
