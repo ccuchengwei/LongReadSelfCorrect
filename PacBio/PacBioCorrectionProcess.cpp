@@ -41,9 +41,8 @@ PacBioCorrectionResult PacBioCorrectionProcess::PBSelfCorrection(const SequenceW
     m_readid =  workItem.read.id;
 	PacBioCorrectionResult result;
 	
-    
-    clock_t seedt;
-    seedt = clock();
+    Timer* seedTimer = new Timer("Seed Time",true);
+  
 
 	std::vector<SeedFeature> seedVec, pacbioCorrectedStrs;
 	std::string readSeq = workItem.read.seq.toString();
@@ -54,11 +53,12 @@ PacBioCorrectionResult PacBioCorrectionProcess::PBSelfCorrection(const SequenceW
      
     seedVec = hybridSeedingFromPB(readSeq);
     
-
-    seedt = clock()-seedt;
-    // cout<< ((float)seedt)/CLOCKS_PER_SEC << "   time\n";
     
-	result.Timer_Seed = ((float)seedt)/CLOCKS_PER_SEC; 
+   
+     
+    
+	result.Timer_Seed = seedTimer->getElapsedWallTime(); 
+    delete seedTimer;
 	result.totalSeedNum = seedVec.size();
     
 
@@ -262,6 +262,7 @@ void PacBioCorrectionProcess::initCorrect(std::string& readSeq, std::vector<Seed
 		
 		result.totalWalkNum++;
 	}// end of each target seed
+    
     result.Timer_FM = m_total_FMtime;
     result.Timer_DP = m_total_DPtime;
     // cout<< m_total_FMtime<<endl;
@@ -665,9 +666,9 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 			
 
 			// this is a repeat seed
-			if(maxKmerFreq > 17)	//17 should be determined using kmerDistribution
+			if(maxKmerFreq > kmerThreshold.at(kmerSize) * 3)	//17 should be determined using kmerDistribution
 			{
-                
+                /*
 				// For seeds within repeats, error seeds will still exceed the cutoff, e.g., 12 11 15 60 65 70 20 19..
 				// refine the exact boundary by finding the segments with highest kmer frequency 60 65 70
 				std::pair<size_t, size_t> kmerFreqPair = refineRepeatSeed(readSeq, seedStartPos, seedEndPos);
@@ -740,7 +741,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 							
 							continue;
 						}
-				}
+				}*/
 				i=seedEndPos;
 				SeedFeature newSeed(seedStartPos, readSeq.substr(seedStartPos, seedEndPos-seedStartPos+1), true, kmerSize, m_params.PBcoverage/2);
 				newSeed.estimateBestKmerSize(m_params.indices.pBWT);
@@ -787,7 +788,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
     // if(m_params.DebugSeed)
     // {
          // ofstream outfile ( m_readid+"_seedfile2.out") ;
-         // outfile<<m_readid<< "\n";
+         // outfile<<">"+m_readid<< "\n";
          // for(size_t j=0;j<seedVec.size();j++)
 
          // {
@@ -873,8 +874,8 @@ int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature
     LongReadSelfCorrectByOverlap OverlapTree(source.seedStr,strbetweensrctarget,target.seedStr,dis_between_src_target,extendKmerSize,extendKmerSize-2,extendKmerSize+2,m_params.indices,m_params.PBcoverage,m_params.maxLeaves);
     
     FMWalkResult2 fmwalkresult;
-    clock_t FMt;
-    FMt = clock();
+    Timer* FMTimer = new Timer("FM Time",true);
+
 	int FMWalkReturnType = 	OverlapTree.extendOverlap(fmwalkresult);
     if(FMWalkReturnType > 0)//extend success by fm extend
     {
@@ -884,14 +885,14 @@ int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature
         if(!mergedseq.empty())
             mergedseq = mergedseq.substr(extendKmerSize);
     }
-    FMt = clock() - FMt;
+      m_total_FMtime += FMTimer->getElapsedWallTime() ;
+    delete FMTimer;
     
-    m_total_FMtime = ((float)FMt)/CLOCKS_PER_SEC; 
+   
     if(FMWalkReturnType < 0)
     //v2
     {
-    clock_t DPt;
-    DPt = clock();
+    Timer* DPTimer = new Timer("DP Time",true);
     std::string rawSubseq = source.seedStr.substr(source.seedStr.length()-extendKmerSize) +  strbetweensrctarget + target.seedStr;
 	size_t targetKmerLength = target.endBestKmerSize;
     MultipleAlignment maquery = LongReadOverlap::buildMultipleAlignment(rawSubseq,
@@ -908,8 +909,9 @@ int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature
     mergedseq = consensus;
     if(!mergedseq.empty())
             mergedseq = mergedseq.substr(extendKmerSize);
-    DPt = clock()-DPt;
-    m_total_DPtime = ((float)DPt)/CLOCKS_PER_SEC; 
+    
+    m_total_DPtime += DPTimer->getElapsedWallTime() ;
+    delete DPTimer;
     FMWalkReturnType = 1;
     
     }
