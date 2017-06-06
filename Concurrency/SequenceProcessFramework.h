@@ -162,7 +162,7 @@ size_t processWorkParallelPthread(Generator& generator,
         Input workItem;
         bool valid = generator.generate(workItem);
         if(valid)
-        {
+        {/*
             inputBuffers[next_thread]->push_back(workItem);
             numWorkItemsRead += 1;
 
@@ -171,7 +171,17 @@ size_t processWorkParallelPthread(Generator& generator,
             {
                 ++num_buffers_full;
                 ++next_thread;
-            }
+            }*/
+            
+           inputBuffers[next_thread]->push_back(workItem);
+            numWorkItemsRead += 1;
+
+            // Change buffers if this one is full
+			if(inputBuffers[next_thread]->size() == BUFFER_SIZE)
+                ++num_buffers_full;
+			
+			// move to next circular buffer vector
+			next_thread = (next_thread+1)% numThreads; 
         }
 
         done = !valid || generator.getNumConsumed() == n;

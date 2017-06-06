@@ -118,6 +118,7 @@ public:
 	highErrorNum(0),
 	exceedDepthNum(0),
 	exceedLeaveNum(0),
+    DPNum(0),
 	seedDis(0),
     Timer_Seed(0),
     Timer_FM(0),
@@ -139,6 +140,7 @@ public:
 	int64_t highErrorNum;
 	int64_t exceedDepthNum;
 	int64_t exceedLeaveNum;
+    int64_t DPNum;
 	int64_t seedDis;
     double Timer_Seed;
     double Timer_FM;
@@ -188,7 +190,7 @@ private:
 	int checkseedcorrect(std::vector<SeedFeature> seeds,std::string currseed,size_t currseedStartpos);
 	// kmers around repeat seeds are often error seeds, split the repeat regions into high-confident seeds
 	// return kmer freq of beginning and ending kmers
-	std::pair<size_t, size_t> refineRepeatSeed(const std::string readSeq, size_t& seedStartPos, size_t& seedEndPos);
+	std::pair<size_t, size_t> refineRepeatSeed(const std::string readSeq, size_t& seedStartPos, size_t& seedEndPos,size_t normal_freqs);
 
 	// return complexity of seq, default: 0.9
 	bool  isLowComplexity (std::string seq, float & GCratio, float threshold=0.7);
@@ -210,6 +212,7 @@ private:
 							size_t extendKmerSize, size_t dis_between_src_target,   size_t& targetFreq,size_t& sourceFreq);
 	std::pair<size_t,size_t> alnscore;
 	PacBioCorrectionParameters m_params;
+    size_t m_repeat_distance = 40;
     std::string m_readid;
     double m_total_FMtime;
     double m_total_DPtime;
@@ -243,6 +246,7 @@ private:
 	int64_t m_highErrorNum;
 	int64_t m_exceedDepthNum;
 	int64_t m_exceedLeaveNum;
+    int64_t m_DPNum;
 	int64_t m_seedDis;
     double m_Timer_Seed;
     double m_Timer_FM;

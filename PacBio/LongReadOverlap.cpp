@@ -630,7 +630,7 @@ void LongReadOverlap::retrieveStr(const std::string& query, size_t seedSize, siz
 		// std::cout << seedOffSet << "\t" << initKmer << "\t" << reverseComplement(initKmer) << "\t" << fwdInterval.size() << "\t" << rvcInterval.size() << "\t" << kmerFreq << "hihi\n";
 		
 		// skip repeat and low-complexity seeds
-		if(kmerFreq >= coverage*2 || kmerFreq >= 128) return;
+		// if(kmerFreq >= coverage*2 || kmerFreq >= 128) return;
 		
 		// extend each SA index and collect kmers of smallKmerSize along the extension
 		for(int64_t fwdRootIndex = fwdInterval.lower; 

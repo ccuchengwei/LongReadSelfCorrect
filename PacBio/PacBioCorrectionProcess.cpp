@@ -100,11 +100,11 @@ void PacBioCorrectionProcess::separatebykmer(std::string readid,std::string read
 {
     std::string outfilename = readid + "_" + std::to_string(kmerSize) + "mer.sf";
     ofstream outfile (outfilename) ;
-    
+    outfile << ">"<<readid << "\n" ;
     for(size_t i = 0 ; i+kmerSize <= readSeq.length() ; i++)
 	{
 		std::string kmer = readSeq.substr(i, kmerSize);
-
+    
 		size_t fwdKmerFreqs = BWTAlgorithms::countSequenceOccurrencesSingleStrand(kmer, m_params.indices);
 		size_t rvcKmerFreqs = BWTAlgorithms::countSequenceOccurrencesSingleStrand(reverseComplement(kmer), m_params.indices);
 		size_t kmerFreqs = fwdKmerFreqs+rvcKmerFreqs;
@@ -158,7 +158,7 @@ void PacBioCorrectionProcess::initCorrect(std::string& readSeq, std::vector<Seed
 			int dis_between_src_target = target.seedStartPos - seedVec.at(targetSeed-1).seedStartPos - seedVec.at(targetSeed-1).seedStr.length();
 		
 			// skip seeds with large distance in between for speedup
-			if(dis_between_src_target >= (int)m_params.maxSeedInterval) 
+			if(dis_between_src_target >= (int)m_params.maxSeedInterval&& m_params.PBcoverage >=50) 
 				break;
 
 			// PB159615_16774.fa require smaller kmer
@@ -169,13 +169,14 @@ void PacBioCorrectionProcess::initCorrect(std::string& readSeq, std::vector<Seed
 			// Only one path is found but is wrong 
 			// both seeds are correct but are tandem repeats which appear more than once in different copies
 			// Skip extension if both seeds are repeat and dist is large and kmer freq is large
-			if((source.isRepeat && target.isRepeat) && dis_between_src_target>=70 && (source.endKmerFreq>40 || target.startKmerFreq>40))
-				break;
+			// if((source.isRepeat && target.isRepeat) && dis_between_src_target>=70 && (source.endKmerFreq>40 || target.startKmerFreq>40))
+				// break;
 
 			// extension using local kmer hashtable collected from overlapping reads
 			std::string mergedseq;
 			FMWalkReturnType = extendBetweenSeeds(source, target, readSeq, mergedseq, extendKmerSize, dis_between_src_target,result);
-            // std::cout<< targetSeed << " \t" <<FMWalkReturnType<< " result of extension\n"<< mergedseq << "\n"; //debugch
+            if(m_params.DebugExtend)
+            std::cout<< targetSeed << " \t" <<FMWalkReturnType<< " result of extension\n"<< mergedseq << "\n"; //debugch
             // outfile << targetSeed << " \t" <<FMWalkReturnType << "\n";
 			if(FMWalkReturnType > 0)
 			{
@@ -193,11 +194,15 @@ void PacBioCorrectionProcess::initCorrect(std::string& readSeq, std::vector<Seed
 				// result statistics
 				// result.correctedLen += extendedStr.length();
 				result.correctedLen += mergedseq.length();
-				result.correctedNum++;
+                if(FMWalkReturnType ==1)
+                    result.correctedNum++;
+                else
+                    result.DPNum++;
 				result.seedDis += dis_between_src_target;
 				
 				// jump to nextTargetSeed+1 if more than one target was tried and succeeded
 				targetSeed = targetSeed + nextTargetSeed;
+                result.totalWalkNum++;
 				break;
 			}
             /*
@@ -257,10 +262,11 @@ void PacBioCorrectionProcess::initCorrect(std::string& readSeq, std::vector<Seed
 				result.exceedDepthNum++;
 			else if(FMWalkReturnType == -3)
 				result.exceedLeaveNum++;
-			
+            if(FMWalkReturnType != 0)
+            result.totalWalkNum++;
 		}
 		
-		result.totalWalkNum++;
+		
 	}// end of each target seed
     
     result.Timer_FM = m_total_FMtime;
@@ -304,8 +310,8 @@ void PacBioCorrectionProcess::realCorrect(std::string& readSeq, std::vector<Seed
 			int dis_between_src_target = target.seedStartPos - seedVec.at(targetSeed-1).seedStartPos - seedVec.at(targetSeed-1).seedStr.length();
 					
 			// skip seeds with large distance in between for speedup
-			if(dis_between_src_target >= (int)m_params.maxSeedInterval) 
-				break;
+			// if(dis_between_src_target >= (int)m_params.maxSeedInterval) 
+				// break;
 
 			// PB159615_16774.fa require smaller kmer
 			// else if(m_params.isFirst && dis_between_src_target >= 50 && !source.isRepeat && !target.isRepeat && extendKmerSize>11)
@@ -397,7 +403,7 @@ void PacBioCorrectionProcess::realCorrect(std::string& readSeq, std::vector<Seed
 			
 		}
 		
-		result.totalWalkNum++;
+		//result.totalWalkNum++;
 	}// end of each target seed
 }
 
@@ -547,14 +553,17 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 	{
         float kmerThresholdValue;
         if(!isLowCoverage)
-            kmerThresholdValue=(-0.5*kmerSize+16.17)*((float)m_params.PBcoverage/60);
+            kmerThresholdValue=(-0.5*kmerSize+16.17)*((float)m_params.PBcoverage/60);//threshold of normal coverage
         else    
-            kmerThresholdValue = (-0.43*kmerSize+14.1)*((float)m_params.PBcoverage/60);
+            kmerThresholdValue = (-0.43*kmerSize+14.1)*((float)m_params.PBcoverage/60);//threshold of low coverage
        
 		kmerThreshold.at(kmerSize) = kmerThresholdValue  < 3 ? 3: kmerThresholdValue;
 	}
 
-    
+    if(isLowCoverage)
+        std::cout<< "is low\n";
+    else
+        std::cout<< "isn't low\n";
     
     for(size_t i = 0 ; i + kmerSize <= readSeq.length() ; i++)
     {
@@ -579,7 +588,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 			{
 				bool isPrevSeedCloseToRepeat = !seedVec.empty() && !seedVec.back().isRepeat 
 										// remove previous seed if it's too close to the current repeat within kmerSize
-										&& i - seedVec.back().seedEndPos < kmerSize 
+										&& i - seedVec.back().seedEndPos < m_repeat_distance 
 										// ensure that the kmer frequency difference is also large
 										&& seedVec.back().seedLength-kmerSize<=3; 
 				
@@ -653,6 +662,15 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
                     break;
                 }
                 
+                /*
+                if(kmerFreqs >= kmerThreshold.at(kmerSize) && FixedMerInterval.at(i).interval[0].size()>=1 && FixedMerInterval.at(i).interval[1].size()>=1)
+                    seedLen++;
+
+                else
+                
+                    break;
+                
+                */
                  
                 
 			} //second for end
@@ -660,61 +678,60 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 			size_t seedEndPos = seedStartPos + seedLen + kmerSize-1;
 			// skip contaminated seeds
 			
-			if(maxKmerFreq > contaminatedCutoff)
-				continue;
+
 
 			
 
 			// this is a repeat seed
-			if(maxKmerFreq > kmerThreshold.at(kmerSize) * 3)	//17 should be determined using kmerDistribution
+			if(maxKmerFreq > kmerThreshold.at(kmerSize)*5)	//repeat seed
 			{
-                /*
-				// For seeds within repeats, error seeds will still exceed the cutoff, e.g., 12 11 15 60 65 70 20 19..
-				// refine the exact boundary by finding the segments with highest kmer frequency 60 65 70
-				std::pair<size_t, size_t> kmerFreqPair = refineRepeatSeed(readSeq, seedStartPos, seedEndPos);
+                
+                // For seeds within repeats, error seeds will still exceed the cutoff, e.g., 12 11 15 60 65 70 20 19..
+                // refine the exact boundary by finding the segments with highest kmer frequency 60 65 70
+                std::pair<size_t, size_t> kmerFreqPair = refineRepeatSeed(readSeq, seedStartPos, seedEndPos,kmerThreshold.at(kmerSize));
 
-				// PB135123_7431.fa, error seeds close to repeats are also with high frequency
-				bool isPrevSeedCloseToRepeat = !seedVec.empty() && !seedVec.back().isRepeat 
-										// remove previous seed if it's too close to the current repeat within kmerSize
-										&& seedStartPos - seedVec.back().seedEndPos < kmerSize 
-										// ensure that the kmer frequency difference is also large
-										&& (std::abs((int)seedVec.back().endKmerFreq-(int)kmerFreqPair.first)>40); 
-				
-				if(isPrevSeedCloseToRepeat)	
-					seedVec.pop_back();
+                // PB135123_7431.fa, error seeds close to repeats are also with high frequency
+                bool isPrevSeedCloseToRepeat = !seedVec.empty() && !seedVec.back().isRepeat 
+                                        // remove previous seed if it's too close 
+                                        && seedStartPos - seedVec.back().seedEndPos < m_repeat_distance 
+                                        // ensure that the kmer frequency difference is large
+                                        && (std::abs((int)seedVec.back().endKmerFreq-(int)maxKmerFreq)>kmerThreshold.at(kmerSize)*3); 
+                
+                if(isPrevSeedCloseToRepeat)	
+                    seedVec.pop_back();
 
-				// PB135123_7431.fa TGTAATCAGGCTGAAAA
-				bool isPrevSeedBetweenRepeat = seedVec.size()>=2 && !seedVec.back().isRepeat // previous seed is not repeat
-										// but previous previous seed and current seed are both repeats
-										&& seedVec.at(seedVec.size()-2).isRepeat
-										// and the distance between two repeat seeds are not large
-										&& seedStartPos - seedVec.at(seedVec.size()-2).seedEndPos < 80; 
-										
-				//PB135123_7431.fa: CGGCTTTCTTTAATGAT
-				bool isPrevSeedWithinLargeRepeat = seedVec.size()>=3 && !seedVec.back().isRepeat // previous seed is not repeat
-										// but both previous two seeds are repeats
-										&& seedVec.at(seedVec.size()-2).isRepeat && seedVec.at(seedVec.size()-3).isRepeat
-										// and the distance between two repeat seeds are not large
-										&& seedStartPos - seedVec.at(seedVec.size()-2).seedEndPos < 200; 
+                // PB135123_7431.fa TGTAATCAGGCTGAAAA
+                bool isPrevSeedBetweenRepeat = seedVec.size()>=2 && !seedVec.back().isRepeat // previous seed is not repeat
+                                        // but previous previous seed and current seed are both repeats
+                                        && seedVec.at(seedVec.size()-2).isRepeat
+                                        // and the distance between two repeat seeds are not large
+                                        && seedStartPos - seedVec.at(seedVec.size()-2).seedEndPos < m_repeat_distance*2; 
+                                        
+                //PB135123_7431.fa: CGGCTTTCTTTAATGAT
+                bool isPrevSeedWithinLargeRepeat = seedVec.size()>=3 && !seedVec.back().isRepeat // previous seed is not repeat
+                                        // but both previous two seeds are repeats
+                                        && seedVec.at(seedVec.size()-2).isRepeat && seedVec.at(seedVec.size()-3).isRepeat
+                                        // and the distance between two repeat seeds are not large
+                                        && seedStartPos - seedVec.at(seedVec.size()-2).seedEndPos < m_repeat_distance*4; 
 
 
-				if(isPrevSeedBetweenRepeat || isPrevSeedWithinLargeRepeat)	
-					seedVec.pop_back();
+                if(isPrevSeedBetweenRepeat || isPrevSeedWithinLargeRepeat)	
+                    seedVec.pop_back();
 
-				// PB135123_7431.fa: AAATTTGAAGAGACTCA, CCAGGGTATCTAAATCCTGTTT
-				bool isPrevTwoSeedWithinLargeRepeat = seedVec.size()>=4 && !seedVec.back().isRepeat && !seedVec.at(seedVec.size()-2).isRepeat // previous two seed are not repeat
-										// but previous seed is repeats
-										&& seedVec.at(seedVec.size()-3).isRepeat 
-										// and the distance between two repeat seeds are not large
-										&& seedStartPos - seedVec.at(seedVec.size()-3).seedEndPos < 200 
-										&& (seedVec.back().seedLength-kmerSize<=3 || seedVec.at(seedVec.size()-2).seedLength-kmerSize<=3);
+                // PB135123_7431.fa: AAATTTGAAGAGACTCA, CCAGGGTATCTAAATCCTGTTT
+                bool isPrevTwoSeedWithinLargeRepeat = seedVec.size()>=4 && !seedVec.back().isRepeat && !seedVec.at(seedVec.size()-2).isRepeat // previous two seed are not repeat
+                                        // but previous seed is repeats
+                                        && seedVec.at(seedVec.size()-3).isRepeat 
+                                        // and the distance between two repeat seeds are not large
+                                        && seedStartPos - seedVec.at(seedVec.size()-3).seedEndPos < m_repeat_distance*4 
+                                        && (seedVec.back().seedLength-kmerSize<=3 || seedVec.at(seedVec.size()-2).seedLength-kmerSize<=3);
 
-				if(isPrevTwoSeedWithinLargeRepeat){
-					// std::cout << "hahaha" << seedVec.back().isSmall() << "\t" << seedVec.back().seedStr << "\n";
-				
-					seedVec.pop_back();
-					seedVec.pop_back();
-				}
+                if(isPrevTwoSeedWithinLargeRepeat){
+                    // std::cout << "hahaha" << seedVec.back().isSmall() << "\t" << seedVec.back().seedStr << "\n";
+                
+                    seedVec.pop_back();
+                    seedVec.pop_back();
+                }
 										
 				// if(isPrevSeedCloseToRepeat || isPrevSeedBetweenRepeat || isPrevSeedWithinLargeRepeat)	
 					// seedVec.pop_back();
@@ -741,7 +758,14 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 							
 							continue;
 						}
-				}*/
+				}
+                
+                if(maxKmerFreq > kmerThreshold.at(kmerSize) * 11)
+                
+				continue;
+                
+                
+                
 				i=seedEndPos;
 				SeedFeature newSeed(seedStartPos, readSeq.substr(seedStartPos, seedEndPos-seedStartPos+1), true, kmerSize, m_params.PBcoverage/2);
 				newSeed.estimateBestKmerSize(m_params.indices.pBWT);
@@ -785,14 +809,14 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 		}// end of sufficient kmerThreshold
 
 	}// end of for
-    // if(m_params.DebugSeed)
-    // {
-         // ofstream outfile ( m_readid+"_seedfile2.out") ;
+    if(m_params.DebugSeed)
+    {
+         ofstream outfile ( m_readid+"_seedfile2.out") ;
          // outfile<<">"+m_readid<< "\n";
-         // for(size_t j=0;j<seedVec.size();j++)
+         for(size_t j=0;j<seedVec.size();j++)
 
          // {
-            // outfile<< seedVec.at(j).seedStr << "\t" << seedVec.at(j).maxFixedMerFreqs<< "\t" << seedVec.at(j).seedStartPos<< "\n";
+            outfile<< seedVec.at(j).seedStr << "\t" << seedVec.at(j).maxFixedMerFreqs<< "\t" << seedVec.at(j).seedStartPos<< "\n";
             
 
             // std::cout<< j+1 << "  "<< seedVec.at(j).seedStr << "\t" << GCAndTandemRatio(seedVec.at(j).seedStr)<< "\n";
@@ -813,8 +837,8 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
                   
                   
          // }
-         // outfile.close();
-    // }
+         outfile.close();
+    }
 	return seedVec;
 }
 
@@ -868,51 +892,59 @@ int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature
    std::string srcStr = source.seedStr.substr(source.seedStr.length()-extendKmerSize);
    std::string strbetweensrctarget = rawSeq.substr(target.seedStartPos-dis_between_src_target,dis_between_src_target);
 
-   
+   int min_SA_threshold =3;
     //v1
+    if (m_params.PBcoverage > 60) min_SA_threshold = int(m_params.PBcoverage/60)*3;
+
     
-    LongReadSelfCorrectByOverlap OverlapTree(source.seedStr,strbetweensrctarget,target.seedStr,dis_between_src_target,extendKmerSize,extendKmerSize-2,extendKmerSize+2,m_params.indices,m_params.PBcoverage,m_params.maxLeaves);
     
     FMWalkResult2 fmwalkresult;
     Timer* FMTimer = new Timer("FM Time",true);
+    int FMWalkReturnType =0;
 
-	int FMWalkReturnType = 	OverlapTree.extendOverlap(fmwalkresult);
-    if(FMWalkReturnType > 0)//extend success by fm extend
-    {
-        
-        mergedseq = fmwalkresult.mergedSeq;
+        LongReadSelfCorrectByOverlap OverlapTree(source.seedStr,strbetweensrctarget,target.seedStr,dis_between_src_target,extendKmerSize,extendKmerSize-2,extendKmerSize+2,m_params.indices,m_params.PBcoverage,m_params.maxLeaves,min_SA_threshold,m_params.DebugExtend);
+        FMWalkReturnType = 	OverlapTree.extendOverlap(fmwalkresult);
+        if(FMWalkReturnType > 0)//extend success by fm extend
+        {
+            
+            mergedseq = fmwalkresult.mergedSeq;
 
-        if(!mergedseq.empty())
-            mergedseq = mergedseq.substr(extendKmerSize);
-    }
-      m_total_FMtime += FMTimer->getElapsedWallTime() ;
+            if(!mergedseq.empty())
+                mergedseq = mergedseq.substr(extendKmerSize);
+        }
+          m_total_FMtime += FMTimer->getElapsedWallTime() ;
+    
+     
     delete FMTimer;
     
    
-    if(FMWalkReturnType < 0)
+    if(FMWalkReturnType <= 0)
     //v2
     {
-    Timer* DPTimer = new Timer("DP Time",true);
-    std::string rawSubseq = source.seedStr.substr(source.seedStr.length()-extendKmerSize) +  strbetweensrctarget + target.seedStr;
-	size_t targetKmerLength = target.endBestKmerSize;
-    MultipleAlignment maquery = LongReadOverlap::buildMultipleAlignment(rawSubseq,
-													extendKmerSize, //m_params.PBKmerLength, 
-													extendKmerSize, //m_params.PBKmerLength,
-													rawSubseq.length()/10, 
-													0.73,	// alignment identity < 0.7 are often false positive repeats
-													m_params.PBcoverage,
-													m_params.indices);
-    
-    std::string consensus = maquery.calculateBaseConsensus(200, -1);
-    // std::cout << rawSubseq << "   raw\n";
-    // std::cout << ">" << consensus.length() <<"\n" << consensus << "   <-- consensus"<<endl;
-    mergedseq = consensus;
-    if(!mergedseq.empty())
-            mergedseq = mergedseq.substr(extendKmerSize);
-    
-    m_total_DPtime += DPTimer->getElapsedWallTime() ;
-    delete DPTimer;
-    FMWalkReturnType = 1;
+        Timer* DPTimer = new Timer("DP Time",true);
+        std::string rawSubseq = source.seedStr.substr(source.seedStr.length()-extendKmerSize) +  strbetweensrctarget + target.seedStr;
+        size_t targetKmerLength = target.endBestKmerSize;
+        MultipleAlignment maquery = LongReadOverlap::buildMultipleAlignment(rawSubseq,
+                                                        extendKmerSize, //m_params.PBKmerLength, 
+                                                        extendKmerSize, //m_params.PBKmerLength,
+                                                        rawSubseq.length()/10, 
+                                                        0.7,	// alignment identity < 0.7 are often false positive repeats
+                                                        m_params.PBcoverage,
+                                                        m_params.indices);
+        
+        std::string consensus = maquery.calculateBaseConsensus(200, -1);
+        // std::cout << rawSubseq << "   raw\n";
+        // std::cout << ">" << consensus.length() <<"\n" << consensus << "   <-- consensus"<<endl;
+        if(maquery.getNumRows() <= 3)
+                return FMWalkReturnType;
+        mergedseq = consensus;
+        if(!mergedseq.empty())
+                mergedseq = mergedseq.substr(extendKmerSize);
+        
+        m_total_DPtime += DPTimer->getElapsedWallTime() ;
+        delete DPTimer;
+        
+        FMWalkReturnType = 2;
     
     }
     
@@ -938,14 +970,14 @@ int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature
 	return FMWalkReturnType;
 }
 // refine seed interval using larger kmer
-std::pair<size_t, size_t> PacBioCorrectionProcess::refineRepeatSeed(const std::string readSeq, size_t& seedStartPos, size_t& seedEndPos)
+std::pair<size_t, size_t> PacBioCorrectionProcess::refineRepeatSeed(const std::string readSeq, size_t& seedStartPos, size_t& seedEndPos,size_t normal_freqs)
 {
 	// initially set to max unisnged int value
 	size_t newSeedStartPos = (size_t)-1;
 	size_t newSeedEndPos = (size_t)-1;
 	size_t startKmerFreq=0, endKmerFreq=0;
 	
-	const int minRepeatFreq = 40, minFreqDiff = 30;
+	const int minRepeatFreq = normal_freqs*3, minFreqDiff = 30;
 	
 	size_t kmerSize = m_params.kmerLength;
 	
@@ -1158,6 +1190,7 @@ m_correctedNum(0),
 m_highErrorNum(0),
 m_exceedDepthNum(0),
 m_exceedLeaveNum(0),
+m_DPNum(0),
 m_seedDis(0),
 m_Timer_Seed(0),
 m_Timer_FM(0),
@@ -1175,8 +1208,9 @@ PacBioCorrectionPostProcess::~PacBioCorrectionPostProcess()
 		std::cout << "correctedLen: " << m_correctedLen << ", ratio: " << (float)(m_correctedLen)/m_totalReadsLen << "." << std::endl;
 		std::cout << "totalSeedNum: " << m_totalSeedNum << "." << std::endl;
 		std::cout << "totalWalkNum: " << m_totalWalkNum << ", ";
-		std::cout << "correctedNum: " << m_correctedNum << ", ratio: " << (float)(m_correctedNum*100)/m_totalWalkNum << "%." << std::endl;
-		std::cout << "highErrorNum: " << m_highErrorNum << ", ratio: " << (float)(m_highErrorNum*100)/m_totalWalkNum << "%." << std::endl;
+		std::cout << "FMNum: " << m_correctedNum << ", ratio: " << (float)(m_correctedNum*100)/m_totalWalkNum << "%." << std::endl;
+		std::cout << "DPNum: " << m_DPNum << ", ratio: " << (float)(m_DPNum*100)/m_totalWalkNum << "%." << std::endl;
+        std::cout << "highErrorNum: " << m_highErrorNum << ", ratio: " << (float)(m_highErrorNum*100)/m_totalWalkNum << "%." << std::endl;
 		std::cout << "exceedDepthNum: " << m_exceedDepthNum << ", ratio: " << (float)(m_exceedDepthNum*100)/m_totalWalkNum << "%." << std::endl;
 		std::cout << "exceedLeaveNum: " << m_exceedLeaveNum << ", ratio: " << (float)(m_exceedLeaveNum*100)/m_totalWalkNum << "%." << std::endl;
 		std::cout << "disBetweenSeeds: " << m_seedDis/m_totalWalkNum << std::endl << std::endl;
@@ -1200,6 +1234,7 @@ void PacBioCorrectionPostProcess::process(const SequenceWorkItem& item, const Pa
 		m_highErrorNum += result.highErrorNum;
 		m_exceedDepthNum += result.exceedDepthNum;
 		m_exceedLeaveNum += result.exceedLeaveNum;
+        m_DPNum += result.DPNum;
 		m_seedDis += result.seedDis;
         m_Timer_Seed += result.Timer_Seed;
         m_Timer_FM += result.Timer_FM;

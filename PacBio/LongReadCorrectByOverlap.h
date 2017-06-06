@@ -17,6 +17,7 @@
 #include "IntervalTree.h"
 #include "HashtableSearch.h"
 
+
 struct FMWalkResult2
 {
 	std::string mergedSeq;
@@ -39,6 +40,7 @@ class LongReadSelfCorrectByOverlap
                 const size_t PBcoverage,
                 size_t maxLeaves ,
 				size_t m_min_SA_threshold = 3,
+                const bool isDebug = false,
 				double errorRate = 0.25,	
 				size_t seedSize = 9, 
 				size_t repeatFreq = 256,
@@ -106,7 +108,8 @@ class LongReadSelfCorrectByOverlap
         //
 		const std::string m_sourceSeed;
 		const std::string m_strBetweenSrcTarget;
-		const std::string m_targetSeed;		
+		const std::string m_targetSeed;	
+        const bool m_isDebug;
 		int m_disBetweenSrcTarget;
         size_t m_minOverlap;
 		size_t m_maxOverlap;
@@ -126,7 +129,7 @@ class LongReadSelfCorrectByOverlap
 		size_t m_seedSize;
 		size_t m_repeatFreq;
         size_t m_localSimilarlykmerSize;
-
+        size_t m_standardKmerFreqs;
 
 
         

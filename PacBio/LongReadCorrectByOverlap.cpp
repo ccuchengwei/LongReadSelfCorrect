@@ -25,7 +25,8 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(const std::string& so
 				
                 const size_t PBcoverage,
                 size_t maxLeaves,
-				size_t min_SA_threshold, 				
+                size_t min_SA_threshold, 
+                const bool isDebug,				
 				double errorRate,
 				
 				size_t seedSize, 
@@ -49,7 +50,8 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(const std::string& so
 				m_seedSize(seedSize), 
 				m_repeatFreq(repeatFreq),
                 m_localSimilarlykmerSize(localSimilarlykmerSize),
-                m_PacBioErrorRate(PacBioErrorRate)
+                m_PacBioErrorRate(PacBioErrorRate),
+                m_isDebug(isDebug)
 {	
 	std::string beginningkmer = m_sourceSeed.substr(m_sourceSeed.length()-m_initkmersize);
     
@@ -87,8 +89,8 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(const std::string& so
 
     
     
-
-	// std::cout << "BE: " << beginningkmer << " " << m_targetSeed << " "<< m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size() << "|" << disBetweenSrcTarget <<"\n"; //debugch
+    if(m_isDebug)
+	std::cout << "BE: " << beginningkmer << " " << m_targetSeed << " "<< m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size() << "|" << disBetweenSrcTarget <<"\n"; //debugch
 	// PacBio reads are longer than real length due to insertions
 	m_maxLength = (1.2*(m_disBetweenSrcTarget+10))+2*m_initkmersize;
 	m_minLength = (0.8*(m_disBetweenSrcTarget-20))+2*m_initkmersize;
@@ -126,7 +128,7 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(const std::string& so
 			m_rvcIntervals.push_back( TreeInterval<size_t>(bi.lower, bi.upper, i) );
 	}
 
-   
+    m_standardKmerFreqs =(-0.5*m_initkmersize+16.17)*((float)m_PBcoverage/60);
     
 	fwdIntervalTree = IntervalTree<size_t>(m_fwdIntervals);
 	rvcIntervalTree = IntervalTree<size_t>(m_rvcIntervals);
@@ -176,7 +178,8 @@ int LongReadSelfCorrectByOverlap::extendOverlap(FMWalkResult2 &FMWResult)
 
 		
 		// printleaves();
-        // std::cout << "----" << std::endl;
+        if(m_isDebug)
+        std::cout << "----" << std::endl;
         
 		// speedup by retaining the top bestN candidates after sufficient overlap length
 		// This is the 3rd filter less reliable than previous ones
@@ -815,9 +818,9 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
     BWTInterval Rvcinterval = BWTAlgorithms::findInterval(m_pBWT, reverseComplement(currKmer));
     
     
+    if(m_isDebug)
     
-    
-    // std::cout<<pNode->getFullString()<<" || "<< pNode->LocalErrorRateRecord.back()<<"\n" << currKmer << "\t" << Fwdinterval.size()+ Rvcinterval.size()<<"\n";
+    std::cout<<pNode->getFullString()<<" || "<< pNode->LocalErrorRateRecord.back()<<"\n" << currKmer << "\t" << Fwdinterval.size()+ Rvcinterval.size()<<"\n";
      
     char lastword = pNode->getFullString().back();     
     int  WeightofContinuousChar = pNode->WeightofContinuousChar;
@@ -854,7 +857,8 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
         
         totalcount += bcount;
         // std::string bkmer = pNode->getFullString().substr( pNode->getFullString().length()- 14 )+b;
-        // std::cout << "bcount:" << bcount << "||" << b << "\n";//testcw
+        if(m_isDebug)
+        std::cout << "bcount:" << bcount << "||" << b << "\n";//testcw
         
         bvector.push_back(std::make_pair(bcount, bip));
         if(bcount >  maxfreqsofleave)
@@ -865,7 +869,7 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
       // std::cout << "totalcount: " << totalcount << std::endl;//testcw
      
      
-    if(totalcount > 256)  // fillter low complex repeat e.g. AAAAAAAAAAAA
+    if(totalcount > 1024)  // fillter low complex repeat e.g. AAAAAAAAAAAA
         return out;
      
      
@@ -875,11 +879,13 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
        for(int i = 1; i < BWT_ALPHABET::size; ++i)
        {
            float bratio = (float)bvector.at(i-1).first/(float)totalcount;
+           size_t bdiff = std::abs((int)bvector.at(i-1).first-(int)maxfreqsofleave);
+          
            char b = BWT_ALPHABET::getChar(i);
           
         if (WeightofContinuousChar < 1)   
         {   
-            bvector.at(i-1).first = bvector.at(i-1).first+2 > maxfreqsofleave || (float)bvector.at(i-1).first / (float)maxfreqsofleave >= 0.6 ? bvector.at(i-1).first : 0;
+            bvector.at(i-1).first = (float)bvector.at(i-1).first / (float)maxfreqsofleave >= 0.6 ? bvector.at(i-1).first : 0;
            
          }
         
