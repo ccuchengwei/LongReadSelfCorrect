@@ -134,6 +134,9 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(const std::string& so
 	rvcIntervalTree = IntervalTree<size_t>(m_rvcIntervals);
 }
 
+
+
+
 //
 LongReadSelfCorrectByOverlap::~LongReadSelfCorrectByOverlap()
 {

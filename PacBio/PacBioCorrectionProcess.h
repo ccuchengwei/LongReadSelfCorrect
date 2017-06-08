@@ -43,7 +43,7 @@ struct SeedFeature
 		std::string seedStr;
 		bool isRepeat;
 		bool isPBSeed;
-		bool isNextRepeat;
+		bool isNextRepeat = false;
         bool isLargeVar = false;
 		
 		// estimated by calling estimateBestKmerSize
@@ -104,6 +104,20 @@ struct PacBioCorrectionParameters
     bool DebugSeed;    
 };
 
+// Parameter object for the FM extend
+struct FMextendParameters
+{
+    
+    size_t extendKmerSize;
+    size_t minextendKmerSize;
+    size_t maxextendKmerSize;
+    size_t maxLeaves;
+    size_t min_SA_threshold;
+    bool debugmode;
+    BWTIndexSet indices;
+    
+    
+};
 
 class PacBioCorrectionResult
 {
@@ -177,12 +191,12 @@ public:
 	}		
 
 private:
-
+    FMextendParameters setFMextendParameter();
     void separatebykmer(std::string readid,std::string readSeq,size_t kmerSize);
 	// PacBio correction by Yao-Ting Huang, v20151208
+    
 
-
-    std::vector<SeedFeature> hybridSeedingFromPB(const std::string& readSeq, size_t contaminatedCutoff=256);
+    std::vector<SeedFeature> hybridSeedingFromPB(const std::string& readSeq);
     
 	void initCorrect(std::string& readSeq, std::vector<SeedFeature>& seeds, std::vector<SeedFeature>& pacbioCorrectedStrs, PacBioCorrectionResult& result);
 	
@@ -194,8 +208,7 @@ private:
 
 	// return complexity of seq, default: 0.9
 	bool  isLowComplexity (std::string seq, float & GCratio, float threshold=0.7);
-    bool  isLowComplexity2(std::string& seq, const float& ratioThreshold);
-    float GCAndTandemRatio(std::string& seq);
+
 	// return <0: give up and break
 	// return 0: retry the same target
 	// return >0: continue to next target
@@ -206,10 +219,9 @@ private:
 	// Perform FMindex extension between source and target seeds
 	// Return FMWalkReturnType
 	int extendBetweenSeeds(SeedFeature& source, SeedFeature& target, std::string& rawSeq, std::string& mergedseq,
-							size_t smallKmerSize, size_t dis_between_src_target,PacBioCorrectionResult& result);
+							size_t smallKmerSize, size_t dis_between_src_target);
                             
-    int UseHashtoCorrection(std::string& srcStr,std::string& rawSubseq,SeedFeature& source, SeedFeature& target, std::string& mergedseq,
-							size_t extendKmerSize, size_t dis_between_src_target,   size_t& targetFreq,size_t& sourceFreq);
+
 	std::pair<size_t,size_t> alnscore;
 	PacBioCorrectionParameters m_params;
     size_t m_repeat_distance = 40;

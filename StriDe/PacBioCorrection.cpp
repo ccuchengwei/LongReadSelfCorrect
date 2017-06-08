@@ -52,9 +52,9 @@ static const char *CORRECT_USAGE_MESSAGE =
 "      -k, --kmer-size=N                The length of the kmer to use. (default: 31, recommend: 31 (PacBioH), 17 (PacBioS).)\n"
 "      -s, --min-kmer-size=N            The minimum length of the kmer to use. (default: 9, recommend: 21 (PacBioH), 9 (PacBioS).)\n"
 "      -x, --kmer-threshold=N           Attempt to correct kmers that are seen less than N times. (default: 3)\n"
-"      -y, --seed-kmer-threshold=N      Attempt to find kmers of seed that are seen large than N times. (default: 10)\n"
+
 "      -L, --max-leaves=N               Number of maximum leaves in the search tree. (default: 32)\n"
-"      -M, --max-overlap=N              the max overlap (default: -1, recommend: avg read length*0.9 (PacBioH).)\n"
+
 "      -d, --downward=N                 for each possible source, we consider N downward seeds as targets. (default: 1)\n"
 "      -c, --collect=N                  for each possible source, we consider N downward seeds to collect reads. (default: 5)\n"
 "      -C, --PBcoverage=N               Coverage of PacBio reads(default: 60)\n"
@@ -79,11 +79,10 @@ namespace opt
 	static int kmerThreshold = 3;
 
 	static int maxLeaves=32;
-	static int minOverlap=81;
-	static int maxOverlap=-1;
+
 	
 	static int minKmerLength = 15;
-	static int seedKmerThreshold = 10;
+	
 	static int numOfNextTarget = 1;
 	static int collect = 5;
 	
@@ -96,7 +95,7 @@ namespace opt
 	static PacBioCorrectionAlgorithm algorithm = PBC_SELF;
 }
 
-static const char* shortopts = "p:t:o:a:k:x:L:m:s:M:y:d:c:C:v";
+static const char* shortopts = "p:t:o:a:k:x:L:s:d:c:C:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_DISCARD, OPT_SPLIT, OPT_FIRST,OPT_DEBUGEXTEND,OPT_DEBUGSEED };
 
@@ -109,9 +108,9 @@ static const struct option longopts[] = {
 	{ "kmer-size",     required_argument, NULL, 'k' },
 	{ "kmer-threshold" ,required_argument, NULL, 'x' },
 	{ "max-leaves",    required_argument, NULL, 'L' },
-	{ "min-overlap"    ,required_argument, NULL, 'm' },
+
 	{ "min-kmer-size"  ,required_argument, NULL, 's' },
-	{ "seed-kmer-threshold"   ,required_argument, NULL, 'y' },
+	
 	{ "downward"       ,required_argument, NULL, 'd' },
 	{ "collect"        ,required_argument, NULL, 'c' },
     { "PBcoverage",    required_argument, NULL, 'C' },
@@ -182,10 +181,9 @@ int PacBioCorrectionMain(int argc, char** argv)
 	ecParams.algorithm = opt::algorithm;
 	ecParams.kmerLength = opt::kmerLength;
 	ecParams.maxLeaves = opt::maxLeaves;
-	ecParams.minOverlap = opt::minOverlap;
-	ecParams.maxOverlap = opt::maxOverlap;
+
 	ecParams.minKmerLength = opt::minKmerLength;
-	ecParams.seedKmerThreshold = opt::seedKmerThreshold;
+
 	ecParams.FMWKmerThreshold = opt::kmerThreshold;
 	ecParams.numOfNextTarget = opt::numOfNextTarget;
 	ecParams.collectedSeeds = opt::collect;
@@ -202,7 +200,7 @@ int PacBioCorrectionMain(int argc, char** argv)
 		<< "number of threads:\t" << opt::numThreads << std::endl
         << "PB reads coverage:\t" << ecParams.PBcoverage << std::endl
 		<< "large kmer size:\t" << ecParams.kmerLength << std::endl 
-		<< "large kmer freq. cutoff:\t" << ecParams.seedKmerThreshold << std::endl
+
 		<< "small kmer size:\t" << ecParams.minKmerLength << std::endl
 		<< "small kmer freq. cutoff:\t" << ecParams.FMWKmerThreshold << std::endl
 		<< "max leaves:\t" << ecParams.maxLeaves  << std::endl
@@ -288,10 +286,9 @@ void parsePacBioCorrectionOptions(int argc, char** argv)
 		case '?': die = true; break;
 		case 'v': opt::verbose++; break;
 		case 'L': arg >> opt::maxLeaves; break;
-		case 'm': arg >> opt::minOverlap; break;
-		case 'M': arg >> opt::maxOverlap; break;
+
 		case 's': arg >> opt::minKmerLength; break;
-		case 'y': arg >> opt::seedKmerThreshold; break;
+
 		case 'd': arg >> opt::numOfNextTarget; break;
 		case 'c': arg >> opt::collect; break;
         case 'C': arg >> opt::PBcoverage; break;
