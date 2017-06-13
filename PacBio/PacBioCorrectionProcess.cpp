@@ -120,7 +120,7 @@ void PacBioCorrectionProcess::initCorrect(std::string& readSeq, std::vector<Seed
 
     m_total_FMtime = 0;
     m_total_DPtime = 0;
-    // FMextendParameters setFMextendParameter();
+    FMextendParameters FMextendParameter(m_params.indices,m_params.idmerLength,m_params.maxLeaves,m_params.minKmerLength,m_params.PBcoverage,m_params.ErrorRate,m_params.DebugExtend);
     
 	for(size_t targetSeed = 1 ; targetSeed < seedVec.size() ; targetSeed++)
 	{				
@@ -157,14 +157,14 @@ void PacBioCorrectionProcess::initCorrect(std::string& readSeq, std::vector<Seed
 			int dis_between_src_target = target.seedStartPos - seedVec.at(targetSeed-1).seedStartPos - seedVec.at(targetSeed-1).seedStr.length();
 		
 			// skip seeds with large distance in between for speedup
-			if(dis_between_src_target >= (int)m_params.maxSeedInterval&& m_params.PBcoverage >=50) 
-				break;
+			// if(dis_between_src_target >= (int)m_params.maxSeedInterval&& m_params.PBcoverage >=50) 
+				// break;
 
 
 
 			// extension using local kmer hashtable collected from overlapping reads
 			std::string mergedseq;
-			FMWalkReturnType = extendBetweenSeeds(source, target, readSeq, mergedseq, extendKmerSize, dis_between_src_target);
+			FMWalkReturnType = extendBetweenSeeds(source, target, readSeq, mergedseq, extendKmerSize, dis_between_src_target,FMextendParameter);
             if(m_params.DebugExtend)
             std::cout<< targetSeed << " \t" <<FMWalkReturnType<< " result of extension\n"<< mergedseq << "\n"; //debugch
             // outfile << targetSeed << " \t" <<FMWalkReturnType << "\n";
@@ -268,145 +268,8 @@ void PacBioCorrectionProcess::initCorrect(std::string& readSeq, std::vector<Seed
     
     
 }
-/*
-FMextendParameters PacBioCorrectionProcess:setFMextendParameter()
-{
-    
-    FMextendParameters FMextendParametersFile;
-    if(m_params.PBcoverage < 60)
-        FMextendParametersFile.
-    
-    
-    
-    
-}*/
-void PacBioCorrectionProcess::realCorrect(std::string& readSeq, std::vector<SeedFeature>& seedVec, std::vector<SeedFeature>& pacbioCorrectedStrs, PacBioCorrectionResult& result)
-{
-	// for each pair of seeds, perform kmer extension using local kmer frequency
-	for(size_t targetSeed = 1 ; targetSeed < seedVec.size() ; targetSeed++)
-	{				
-		// number of trials of extension to the same target seed
-		size_t numOfTrials = 0;
-		
-		int FMWalkReturnType = 0, prevFMWalkReturnType = 0;
-		SeedFeature source = pacbioCorrectedStrs.back();
-		
-		//PB36993_4517, GTAATAAGGAATATCTCAATTTT is a repeat seed with large frequency leading to -2
-		// re-estimate the best kmer size if source becomes larger
-		if(source.endKmerFreq>90)
-			source.estimateBestKmerSize(m_params.indices.pBWT);
-		
-		SeedFeature target =  seedVec.at(targetSeed);
 
-		// small kmer is used for extension using kmer hashtable from overlapping reads
-		size_t extendKmerSize = std::min(source.endBestKmerSize, seedVec.at(targetSeed).startBestKmerSize) - 2;
 
-		// Multiple targets will be tested for FM-index walk from source to target, if target is error seed, until m_params.numOfNextTarget times.
-		for(int nextTargetSeed = 0 ; nextTargetSeed < (int)m_params.numOfNextTarget && targetSeed + nextTargetSeed < seedVec.size() ; nextTargetSeed++)
-		{
-			// std::cout << "======= " << result.totalWalkNum << " =======\n";
-			
-			// Estimate distance between source and target, but this may over-estimate due to more insertion errors
-			// Note that source seed has been updated and no long stands for the original seed, which is seedVec[targetSeed-1]
-			int dis_between_src_target = target.seedStartPos - seedVec.at(targetSeed-1).seedStartPos - seedVec.at(targetSeed-1).seedStr.length();
-					
-			// skip seeds with large distance in between for speedup
-			// if(dis_between_src_target >= (int)m_params.maxSeedInterval) 
-				// break;
-
-			// PB159615_16774.fa require smaller kmer
-			// else if(m_params.isFirst && dis_between_src_target >= 50 && !source.isRepeat && !target.isRepeat && extendKmerSize>11)
-				// extendKmerSize -= 2;
-		
-
-			std::string mergedseq;
-			FMWalkReturnType = extendBetweenSeeds(source, target, readSeq, mergedseq, extendKmerSize, dis_between_src_target);
-
-			if(FMWalkReturnType > 0)
-			{
-				// FMWalk success
-				// size_t extendStartPos = source.seedLength;
-				// std::string extendedStr = mergedseq.substr(extendStartPos);
-				
-				// append extended string into last corrected seed string and update related seed attributes
-				// pacbioCorrectedStrs.back().append(extendedStr);
-				pacbioCorrectedStrs.back().append(mergedseq);
-				
-				// the last seed will become new source and should be updated
-				pacbioCorrectedStrs.back().endBestKmerSize = target.endBestKmerSize;
-				pacbioCorrectedStrs.back().isRepeat = target.isRepeat;
-
-				// result statistics
-				// result.correctedLen += extendedStr.length();
-				result.correctedLen += mergedseq.length();
-				result.correctedNum++;
-				result.seedDis += dis_between_src_target;
-				
-				// jump to nextTargetSeed+1 if more than one target was tried and succeeded
-				targetSeed = targetSeed + nextTargetSeed;
-				break;
-			}
-			else
-			{ 
-				// return <0: give up this source seed
-				int ActionFlag = FMWalkFailedActions(extendKmerSize, numOfTrials, source, target, FMWalkReturnType, prevFMWalkReturnType);
-				if(ActionFlag <0)
-					break;
-				// return 0: retry the same target
-				else if(ActionFlag == 0)
-					nextTargetSeed--;
-				// return >0: move on to next target
-				else
-				{
-					// target =  targetSeed+nextTargetSeed+1<seedVec.size()?seedVec[targetSeed+nextTargetSeed+1]:target;
-					// extendKmerSize = std::min(source.endBestKmerSize, target.startBestKmerSize) - 2;
-				}
-			}
-			
-			prevFMWalkReturnType = FMWalkReturnType;
-		}// end of next target seed
-		
-		// All targets failure: 
-		// 0: seed inter-distance too large
-		// -1: kmer extension failed at later stage close to target
-		// -4: kmer extension failed at early stage close to source
-		// -2: exceed depth
-		// -3: exceed leaves
-		if(FMWalkReturnType <= 0)
-		{
-			// push seedVec[targetSeed] into results, which will become new source in the next iteration
-			result.seedDis += seedVec[targetSeed].seedStartPos - seedVec[targetSeed-1].seedStartPos - seedVec[targetSeed-1].seedStr.length();
-			result.correctedLen += seedVec[targetSeed].seedStr.length();
-
-			// retain uncorrected parts of reads
-			if(!m_params.isSplit)
-			{
-				size_t startPos = seedVec[targetSeed-1].seedStartPos + seedVec[targetSeed-1].seedStr.length();
-				size_t extendedLen = seedVec[targetSeed].seedStartPos + seedVec[targetSeed].seedStr.length() - startPos;
-
-				pacbioCorrectedStrs.back().append(readSeq.substr(startPos,extendedLen));
-				pacbioCorrectedStrs.back().endBestKmerSize = seedVec.at(targetSeed).endBestKmerSize;
-				pacbioCorrectedStrs.back().isRepeat = seedVec.at(targetSeed).isRepeat;
-			}
-			else
-			{
-				// split original read into seeds and discard uncorrected parts of reads
-				pacbioCorrectedStrs.push_back(seedVec[targetSeed]);
-			}
-			
-			// statistics of FM extension
-			if(FMWalkReturnType == -1 || FMWalkReturnType == -4)
-				result.highErrorNum++;
-			else if(FMWalkReturnType == -2)
-				result.exceedDepthNum++;
-			else if(FMWalkReturnType == -3)
-				result.exceedLeaveNum++;
-			
-		}
-		
-		//result.totalWalkNum++;
-	}// end of each target seed
-}
 
 
 int PacBioCorrectionProcess::checkseedcorrect(std::vector<SeedFeature> seeds,std::string currseedStr,size_t currseedStartpos)
@@ -829,7 +692,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 // Return FMWalkReturnType
 
 int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature& target, std::string& rawSeq, std::string& mergedseq, 
-												size_t extendKmerSize, size_t dis_between_src_target)
+												size_t extendKmerSize, size_t dis_between_src_target,FMextendParameters FMextendParameter)
 {
    // size_t srcKmerSize = std::max(source.endBestKmerSize, extendKmerSize);
    std::string srcStr = source.seedStr.substr(source.seedStr.length()-extendKmerSize);
@@ -844,17 +707,28 @@ int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature
     FMWalkResult2 fmwalkresult;
     Timer* FMTimer = new Timer("FM Time",true);
     int FMWalkReturnType =0;
-
-        LongReadSelfCorrectByOverlap OverlapTree(source.seedStr,strbetweensrctarget,target.seedStr,dis_between_src_target,extendKmerSize,extendKmerSize-2,extendKmerSize+2,m_params.indices,m_params.PBcoverage,m_params.maxLeaves,min_SA_threshold,m_params.DebugExtend);
+   if(source.isRepeat && ! target.isRepeat)
+   {
+       
+        LongReadSelfCorrectByOverlap OverlapTree(reverseComplement(target.seedStr),strbetweensrctarget,reverseComplement(srcStr),dis_between_src_target,extendKmerSize,extendKmerSize+2,FMextendParameter,min_SA_threshold);
         FMWalkReturnType = 	OverlapTree.extendOverlap(fmwalkresult);
-        if(FMWalkReturnType > 0)//extend success by fm extend
+        fmwalkresult.mergedSeq = reverseComplement(fmwalkresult.mergedSeq);
+   
+   }
+    else
+    {
+        LongReadSelfCorrectByOverlap OverlapTree(srcStr,strbetweensrctarget,target.seedStr,dis_between_src_target,extendKmerSize,extendKmerSize+2,FMextendParameter,min_SA_threshold);
+        FMWalkReturnType = 	OverlapTree.extendOverlap(fmwalkresult);  
+      
+    }
+    
+       if(FMWalkReturnType > 0)//extend success by fm extend
         {
             
-            mergedseq = fmwalkresult.mergedSeq;
-
-            if(!mergedseq.empty())
-                mergedseq = mergedseq.substr(extendKmerSize);
+          mergedseq = fmwalkresult.mergedSeq;
+          mergedseq = mergedseq.substr(extendKmerSize);
         }
+
           m_total_FMtime += FMTimer->getElapsedWallTime() ;
     
      
@@ -871,7 +745,7 @@ int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature
                                                         extendKmerSize, //m_params.PBKmerLength, 
                                                         extendKmerSize, //m_params.PBKmerLength,
                                                         rawSubseq.length()/10, 
-                                                        0.7,	// alignment identity < 0.7 are often false positive repeats
+                                                        0.66,	// alignment identity < 0.7 are often false positive repeats
                                                         m_params.PBcoverage,
                                                         m_params.indices);
         

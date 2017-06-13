@@ -14,44 +14,38 @@
 
 //
 // Class: SAIOverlapTree
-LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(const std::string& sourceSeed,
+LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(
+                const std::string& sourceSeed,
 				const std::string& strBetweenSrcTarget,
 				const std::string& targetSeed,				
 				int disBetweenSrcTarget,
                 size_t initkmersize,
-				size_t minOverlap,
                 size_t maxOverlap,
-				const BWTIndexSet BWTindices, 
-				
-                const size_t PBcoverage,
-                size_t maxLeaves,
-                size_t min_SA_threshold, 
-                const bool isDebug,				
-				double errorRate,
-				
-				size_t seedSize, 
+                const FMextendParameters params,
+                size_t min_SA_threshold, 				
+				double errorRate, 
 				size_t repeatFreq,
-                size_t localSimilarlykmerSize,
-                double PacBioErrorRate):
+                size_t localSimilarlykmerSize
+                ):
 				m_sourceSeed(sourceSeed), 
 				m_strBetweenSrcTarget(strBetweenSrcTarget),
 				m_targetSeed(targetSeed),				
 				m_disBetweenSrcTarget(disBetweenSrcTarget),
                 m_initkmersize(initkmersize),
-				m_minOverlap(minOverlap),
+				m_minOverlap(params.minKmerLength),
                 m_maxOverlap(maxOverlap),
-                m_BWTindices(BWTindices),
-				m_pBWT(BWTindices.pBWT), 
-				m_pRBWT(BWTindices.pRBWT),
-                m_PBcoverage(PBcoverage),
+                m_BWTindices(params.indices),
+				m_pBWT(params.indices.pBWT), 
+				m_pRBWT(params.indices.pRBWT),
+                m_PBcoverage(params.PBcoverage),
 				m_min_SA_threshold(min_SA_threshold),
 				m_errorRate(errorRate),
-				m_maxLeaves(maxLeaves), 
-				m_seedSize(seedSize), 
+				m_maxLeaves(params.maxLeaves), 
+				m_seedSize(params.idmerLength), 
 				m_repeatFreq(repeatFreq),
                 m_localSimilarlykmerSize(localSimilarlykmerSize),
-                m_PacBioErrorRate(PacBioErrorRate),
-                m_isDebug(isDebug)
+                m_PacBioErrorRate(params.ErrorRate),
+                m_isDebug(params.Debug)
 {	
 	std::string beginningkmer = m_sourceSeed.substr(m_sourceSeed.length()-m_initkmersize);
     
@@ -99,9 +93,9 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(const std::string& so
     
     
     // initialize the ending SA intervals with kmer length = m_initkmersize
-    for(int i =0 ;i <= m_targetSeed.length()-m_initkmersize; i++)
+    for(int i =0 ;i <= m_targetSeed.length()-m_minOverlap; i++)
     {
-        std::string endingkmer = m_targetSeed.substr(i, m_initkmersize);
+        std::string endingkmer = m_targetSeed.substr(i, m_minOverlap);
         m_fwdTerminatedInterval.push_back(BWTAlgorithms::findInterval(m_pRBWT, reverse(endingkmer)));
         m_rvcTerminatedInterval.push_back(BWTAlgorithms::findInterval(m_pBWT, reverseComplement(endingkmer)));
     }
@@ -886,7 +880,7 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
           
            char b = BWT_ALPHABET::getChar(i);
           
-        if (WeightofContinuousChar < 1)   
+        if (currKmer.substr(currKmer.length-1)==currKmer.substr(currKmer.length-2,1) && currKmer.substr(currKmer.length-2,1)==currKmer.substr(currKmer.length-3,1))   
         {   
             bvector.at(i-1).first = (float)bvector.at(i-1).first / (float)maxfreqsofleave >= 0.6 ? bvector.at(i-1).first : 0;
            
@@ -932,7 +926,7 @@ bool LongReadSelfCorrectByOverlap::isTerminated(SAIntervalNodeResultVector& resu
 		//If terminating kmer is a substr, the current SA interval is a sub-interval of the terminating interval
          bool isFwdTerminated = false;
          bool isRvcTerminated = false;
-        for(int i = (*iter)->resultindex.second > 0 ? (*iter)->resultindex.second : 0;i <= m_targetSeed.length()-(int)m_initkmersize; i++)
+        for(int i = (*iter)->resultindex.second > 0 ? (*iter)->resultindex.second : 0;i <= m_targetSeed.length()-(int)m_minOverlap; i++)
        {
         isFwdTerminated=currfwd.isValid() && currfwd.lower >= m_fwdTerminatedInterval.at(i).lower
                             && currfwd.upper <= m_fwdTerminatedInterval.at(i).upper;
@@ -942,7 +936,7 @@ bool LongReadSelfCorrectByOverlap::isTerminated(SAIntervalNodeResultVector& resu
        if(isFwdTerminated || isRvcTerminated)
         {
            
-            std::string STNodeStr = m_targetSeed.length() > m_initkmersize?(*iter)->getFullString() + m_targetSeed.substr(i+m_initkmersize):(*iter)->getFullString();
+            std::string STNodeStr = m_targetSeed.length() > m_minOverlap?(*iter)->getFullString() + m_targetSeed.substr(i+m_minOverlap):(*iter)->getFullString();
             
             SAIntervalNodeResult STresult;
             STresult.thread=STNodeStr;

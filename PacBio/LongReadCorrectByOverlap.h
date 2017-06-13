@@ -24,28 +24,47 @@ struct FMWalkResult2
 	int alnScore;
 	double kmerFreq;
 };
+struct FMextendParameters
+{
+    
+    public:
+    FMextendParameters(BWTIndexSet indices, int idmerLength, int maxLeaves,int minKmerLength,size_t PBcoverage, double ErrorRate,bool Debug):
+    indices(indices),
+    idmerLength(idmerLength),
+    maxLeaves(maxLeaves),
+    minKmerLength(minKmerLength),
+    PBcoverage(PBcoverage),
+    ErrorRate(ErrorRate),
+    Debug(Debug)
+    {};
+
+    FMextendParameters(){};
+    BWTIndexSet indices;
+    int idmerLength;
+    bool Debug;
+    double ErrorRate;
+    int maxLeaves;
+    int minKmerLength;
+    size_t PBcoverage;
+};
 
 class LongReadSelfCorrectByOverlap
 {
     public:
     LongReadSelfCorrectByOverlap();
-         LongReadSelfCorrectByOverlap(const std::string& sourceSeed,
+         LongReadSelfCorrectByOverlap(
+                const std::string& sourceSeed,
 				const std::string& strBetweenSrcTarget,
 				const std::string& targetSeed,
 				int m_disBetweenSrcTarget,
                 size_t initkmersize,
-				size_t minOverlap,
                 size_t maxOverlap,
-                const BWTIndexSet BWTindices, 
-                const size_t PBcoverage,
-                size_t maxLeaves ,
+                const FMextendParameters params,
 				size_t m_min_SA_threshold = 3,
-                const bool isDebug = false,
 				double errorRate = 0.25,	
-				size_t seedSize = 9, 
 				size_t repeatFreq = 256,
-                size_t localSimilarlykmerSize = 100,
-                double PacBioErrorRate = 0.15);
+                size_t localSimilarlykmerSize = 100
+               );
 		
         ~LongReadSelfCorrectByOverlap();
 

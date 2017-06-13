@@ -50,14 +50,14 @@ static const char *CORRECT_USAGE_MESSAGE =
 "                                       pacbioS: pacbio self correction (using PB reads to correct PB reads)(default)\n"
 "\nPacBio correction parameters:\n"
 "      -k, --kmer-size=N                The length of the kmer to use. (default: 31, recommend: 31 (PacBioH), 17 (PacBioS).)\n"
-"      -s, --min-kmer-size=N            The minimum length of the kmer to use. (default: 9, recommend: 21 (PacBioH), 9 (PacBioS).)\n"
+"      -s, --min-kmer-size=N            The minimum length of the kmer to use. (default: 13.)\n"
 "      -x, --kmer-threshold=N           Attempt to correct kmers that are seen less than N times. (default: 3)\n"
-
+"      -e, --error-rate=N               The error rate of PacBio reads.(default:0.15)"
+"      -i, --idmer-length=N       The length of the kmer to identify similar reads.(default: 9)"
 "      -L, --max-leaves=N               Number of maximum leaves in the search tree. (default: 32)\n"
-
-"      -d, --downward=N                 for each possible source, we consider N downward seeds as targets. (default: 1)\n"
-"      -c, --collect=N                  for each possible source, we consider N downward seeds to collect reads. (default: 5)\n"
 "      -C, --PBcoverage=N               Coverage of PacBio reads(default: 60)\n"
+
+
 "      --split                  		split the uncorrected reads (default: false)\n"
 
 "\nReport bugs to " PACKAGE_BUGREPORT "\n\n";
@@ -74,15 +74,12 @@ namespace opt
 	static std::string outFile;
 	static std::string discardFile;
 	static int sampleRate = BWT::DEFAULT_SAMPLE_RATE_SMALL;
-
 	static int kmerLength = 17;
 	static int kmerThreshold = 3;
-
 	static int maxLeaves=32;
-
-	
-	static int minKmerLength = 15;
-	
+    static int idmerLength = 9;
+    static double ErrorRate=0.15;	
+	static int minKmerLength = 13;	
 	static int numOfNextTarget = 1;
 	static int collect = 5;
 	
@@ -95,7 +92,7 @@ namespace opt
 	static PacBioCorrectionAlgorithm algorithm = PBC_SELF;
 }
 
-static const char* shortopts = "p:t:o:a:k:x:L:s:d:c:C:v";
+static const char* shortopts = "p:t:o:a:k:x:L:s:d:c:C:v:e:i";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_DISCARD, OPT_SPLIT, OPT_FIRST,OPT_DEBUGEXTEND,OPT_DEBUGSEED };
 
@@ -108,9 +105,9 @@ static const struct option longopts[] = {
 	{ "kmer-size",     required_argument, NULL, 'k' },
 	{ "kmer-threshold" ,required_argument, NULL, 'x' },
 	{ "max-leaves",    required_argument, NULL, 'L' },
-
 	{ "min-kmer-size"  ,required_argument, NULL, 's' },
-	
+    { "error-rate",    required_argument, NULL, 'e' },
+    { "idmer-length",    required_argument, NULL, 'i' },
 	{ "downward"       ,required_argument, NULL, 'd' },
 	{ "collect"        ,required_argument, NULL, 'c' },
     { "PBcoverage",    required_argument, NULL, 'C' },
@@ -181,9 +178,9 @@ int PacBioCorrectionMain(int argc, char** argv)
 	ecParams.algorithm = opt::algorithm;
 	ecParams.kmerLength = opt::kmerLength;
 	ecParams.maxLeaves = opt::maxLeaves;
-
 	ecParams.minKmerLength = opt::minKmerLength;
-
+    ecParams.idmerLength = opt::idmerLength;
+    ecParams.ErrorRate = opt::ErrorRate;
 	ecParams.FMWKmerThreshold = opt::kmerThreshold;
 	ecParams.numOfNextTarget = opt::numOfNextTarget;
 	ecParams.collectedSeeds = opt::collect;
@@ -286,9 +283,9 @@ void parsePacBioCorrectionOptions(int argc, char** argv)
 		case '?': die = true; break;
 		case 'v': opt::verbose++; break;
 		case 'L': arg >> opt::maxLeaves; break;
-
 		case 's': arg >> opt::minKmerLength; break;
-
+        case 'e': arg >> opt::ErrorRate; break;
+        case 'i': arg >> opt::idmerLength; break;
 		case 'd': arg >> opt::numOfNextTarget; break;
 		case 'c': arg >> opt::collect; break;
         case 'C': arg >> opt::PBcoverage; break;

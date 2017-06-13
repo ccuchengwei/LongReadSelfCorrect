@@ -85,7 +85,8 @@ struct PacBioCorrectionParameters
 	int maxLeaves;
 	int minOverlap;
 	int maxOverlap;
-	
+    int idmerLength;
+    
 
 	// PACBIO
 	int minKmerLength;
@@ -93,7 +94,7 @@ struct PacBioCorrectionParameters
 	int seedKmerThreshold;
 	int numOfNextTarget;
 	int collectedSeeds;
-
+    double ErrorRate;
 	bool isSplit;
 	bool isFirst;
 	size_t maxSeedInterval;
@@ -104,20 +105,8 @@ struct PacBioCorrectionParameters
     bool DebugSeed;    
 };
 
-// Parameter object for the FM extend
-struct FMextendParameters
-{
-    
-    size_t extendKmerSize;
-    size_t minextendKmerSize;
-    size_t maxextendKmerSize;
-    size_t maxLeaves;
-    size_t min_SA_threshold;
-    bool debugmode;
-    BWTIndexSet indices;
-    
-    
-};
+
+
 
 class PacBioCorrectionResult
 {
@@ -191,7 +180,7 @@ public:
 	}		
 
 private:
-    FMextendParameters setFMextendParameter();
+    FMextendParameters FMextendParameter();
     void separatebykmer(std::string readid,std::string readSeq,size_t kmerSize);
 	// PacBio correction by Yao-Ting Huang, v20151208
     
@@ -219,7 +208,7 @@ private:
 	// Perform FMindex extension between source and target seeds
 	// Return FMWalkReturnType
 	int extendBetweenSeeds(SeedFeature& source, SeedFeature& target, std::string& rawSeq, std::string& mergedseq,
-							size_t smallKmerSize, size_t dis_between_src_target);
+							size_t smallKmerSize, size_t dis_between_src_target,FMextendParameters FMextendParameter);
                             
 
 	std::pair<size_t,size_t> alnscore;
