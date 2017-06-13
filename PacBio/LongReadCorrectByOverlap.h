@@ -83,19 +83,23 @@ class LongReadSelfCorrectByOverlap
 		// return size of seed
 		inline size_t getCurrentLength(){return m_currentLength;};
 		
-        // Print all the strings represented by the tree
-        void printAll();
+
         
 
         size_t SelectFreqsOfrange(size_t LowerBound,size_t UpBound,SONode3PtrList &newLeaves);
         
-        void printleaves();
+
         std::pair<size_t,size_t> alnscore;
     private:
 
         //
         // Functions
         //
+        
+        SAIOverlapNode3 initialRootNode(std::string beginningkmer);
+        void buildOverlapbyFMindex(std::string beginningkmer);
+        
+        
 
         SONode3PtrList extendLeaves();
 
@@ -115,7 +119,7 @@ class LongReadSelfCorrectByOverlap
 		// prone the leaves without seeds in proximity
 		bool PrunedBySeedSupport(SONode3PtrList &newLeaves);
         //Check if need reduce kmer size
-        bool isLowCoverage(SONode3PtrList &newLeaves);
+        bool isInsufficientFreqs(SONode3PtrList &newLeaves);
         // Check if the leaves reach $
         bool isTerminated(SAIntervalNodeResultVector& results);
 		bool isOverlapAcceptable(SAIOverlapNode3* currNode);
@@ -148,7 +152,7 @@ class LongReadSelfCorrectByOverlap
 		size_t m_seedSize;
 		size_t m_repeatFreq;
         size_t m_localSimilarlykmerSize;
-        size_t m_standardKmerFreqs;
+        
 
 
         

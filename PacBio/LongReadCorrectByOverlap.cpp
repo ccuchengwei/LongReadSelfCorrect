@@ -53,59 +53,64 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(
     m_maxIndelSize  = m_disBetweenSrcTarget > 100 ? m_disBetweenSrcTarget * 0.2 : 20; 
     
     
-    
-	// create one root node
-	m_pRootNode = new SAIOverlapNode3(&m_sourceSeed, NULL);
-	
-	// store initial str of root
-	m_pRootNode->computeInitial(beginningkmer);
-	m_pRootNode->fwdInterval = BWTAlgorithms::findInterval(m_pRBWT, reverse(beginningkmer));
-	m_pRootNode->rvcInterval = BWTAlgorithms::findInterval(m_pBWT, reverseComplement(beginningkmer));
-	m_pRootNode->lastOverlapLen = m_currentLength = m_pRootNode->currOverlapLen = m_pRootNode->queryOverlapLen = m_initkmersize;
-	m_pRootNode->lastSeedIdx = m_pRootNode->initSeedIdx = m_initkmersize - m_seedSize;
-	m_pRootNode->totalSeeds = m_initkmersize - m_seedSize + 1;
-	m_pRootNode->numRedeemSeed = 0;
-    m_pRootNode->LocalErrorRateRecord.push_back(0);
-    m_pRootNode->GlobalErrorRateRecord.push_back(0);
+    //initialRootNode
+    m_pRootNode = initialRootNode(beginningkmer)
 	
 	// push new node into roots and leaves vector
 	m_RootNodes.push_back(m_pRootNode);
 	m_leaves.push_back(m_pRootNode);
     
-    m_pRootNode->WeightofContinuousChar = 2;//e.g.  AGCTGACGTAGGG      note exceed 2 base case 
-	for(int i=2;i<4;i++)//initial
-        if(beginningkmer.substr(beginningkmer.length()-1,1) == beginningkmer.substr(beginningkmer.length()-i,1)) m_pRootNode->WeightofContinuousChar--;
-
-        //frequencies of kmer size
+    
+    //frequencies of correspond k
     for(double i = m_minOverlap ; i <= m_maxOverlap+1 ; i++)
-
         freqsOfKmerSize.push_back(pow(1-m_PacBioErrorRate,i)*m_PBcoverage);
 
     
     
     if(m_isDebug)
 	std::cout << "BE: " << beginningkmer << " " << m_targetSeed << " "<< m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size() << "|" << disBetweenSrcTarget <<"\n"; //debugch
-	// PacBio reads are longer than real length due to insertions
+	
+    // PacBio reads are longer than real length due to insertions
 	m_maxLength = (1.2*(m_disBetweenSrcTarget+10))+2*m_initkmersize;
 	m_minLength = (0.8*(m_disBetweenSrcTarget-20))+2*m_initkmersize;
     
-
+  
     
-    
-    // initialize the ending SA intervals with kmer length = m_initkmersize
+    // initialize the ending SA intervals with kmer length = m_minOverlap
     for(int i =0 ;i <= m_targetSeed.length()-m_minOverlap; i++)
     {
         std::string endingkmer = m_targetSeed.substr(i, m_minOverlap);
         m_fwdTerminatedInterval.push_back(BWTAlgorithms::findInterval(m_pRBWT, reverse(endingkmer)));
         m_rvcTerminatedInterval.push_back(BWTAlgorithms::findInterval(m_pBWT, reverseComplement(endingkmer)));
     }
- 
-	m_currentLength = m_currentKmerSize = m_initkmersize;
+    //build overlap tree
+    buildOverlapbyFMindex(beginningkmer);
 
-	m_query = beginningkmer + m_strBetweenSrcTarget + m_targetSeed;
-	
-	// put SA intervals into m_fwdIntervals and m_rvcIntervals cache
+}
+
+SAIOverlapNode3 LongReadSelfCorrectByOverlap::initialRootNode(std::string beginningkmer)
+{	
+    // create one root node
+	m_pRootNode = new SAIOverlapNode3(&m_sourceSeed, NULL);
     
+    // store initial str of root
+	m_pRootNode->computeInitial(beginningkmer);
+	m_pRootNode->fwdInterval = BWTAlgorithms::findInterval(m_pRBWT, reverse(beginningkmer));
+	m_pRootNode->rvcInterval = BWTAlgorithms::findInterval(m_pBWT, reverseComplement(beginningkmer));
+	m_pRootNode->lastOverlapLen = m_currentLength = m_pRootNode->currOverlapLen = m_pRootNode->queryOverlapLen = m_currentKmerSize = m_initkmersize;
+	m_pRootNode->lastSeedIdx = m_pRootNode->initSeedIdx = m_initkmersize - m_seedSize;
+	m_pRootNode->totalSeeds = m_initkmersize - m_seedSize + 1;
+	m_pRootNode->numRedeemSeed = 0;
+    m_pRootNode->LocalErrorRateRecord.push_back(0);
+    m_pRootNode->GlobalErrorRateRecord.push_back(0);
+    return m_pRootNode;
+}
+
+void LongReadSelfCorrectByOverlap::buildOverlapbyFMindex(std::string beginningkmer)
+{
+   	m_query = beginningkmer + m_strBetweenSrcTarget + m_targetSeed;
+	
+	// put SA intervals into m_fwdIntervals and m_rvcIntervals cache 
 	m_fwdIntervals.reserve(m_query.length()-m_seedSize+1);
 	m_rvcIntervals.reserve(m_query.length()-m_seedSize+1);
 
@@ -120,17 +125,13 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(
 		bi = BWTAlgorithms::findInterval( m_pBWT, reverseComplement(seedStr) );       
 		if(bi.isValid())
 			m_rvcIntervals.push_back( TreeInterval<size_t>(bi.lower, bi.upper, i) );
-	}
-
-    m_standardKmerFreqs =(-0.5*m_initkmersize+16.17)*((float)m_PBcoverage/60);
-    
+	}    
 	fwdIntervalTree = IntervalTree<size_t>(m_fwdIntervals);
-	rvcIntervalTree = IntervalTree<size_t>(m_rvcIntervals);
+	rvcIntervalTree = IntervalTree<size_t>(m_rvcIntervals); 
+    
+    
+    
 }
-
-
-
-
 //
 LongReadSelfCorrectByOverlap::~LongReadSelfCorrectByOverlap()
 {
@@ -160,16 +161,12 @@ int LongReadSelfCorrectByOverlap::extendOverlap(FMWalkResult2 &FMWResult)
         
 		// ACGT-extend the leaf nodes via updating existing SA interval
         SONode3PtrList newLeaves = extendLeaves();
-         
 
-       
-        
-		// Remove leaves without seed support within m_maxIndelSize
-        
+		
+        //use overlap tree to trim branch
 		PrunedBySeedSupport(newLeaves);
-
        
-        
+        //update leaves
         m_leaves.clear();
         m_leaves = newLeaves;
 
@@ -178,40 +175,23 @@ int LongReadSelfCorrectByOverlap::extendOverlap(FMWalkResult2 &FMWResult)
         if(m_isDebug)
         std::cout << "----" << std::endl;
         
-		// speedup by retaining the top bestN candidates after sufficient overlap length
-		// This is the 3rd filter less reliable than previous ones
-		// const size_t bestN = 100;
-		// if(m_leaves.size()>= bestN)
-		// {
-			// m_leaves.sort(SeedComparator);
-			// SONode3PtrList::iterator iter1 = m_leaves.begin();
-			// SONode3PtrList::iterator iter2 = m_leaves.end();
-			// advance(iter1, bestN-1);
-			// m_leaves.erase(iter1, iter2);
-		// }
-	
-		// see if terminating string is reached
+
 		if(m_currentLength >= m_minLength)
-        isTerminated(results);
+            isTerminated(results);
         
         
 	}
 
 	// reach the terminal kmer
 	if(results.size() > 0)
-	{
 		// find the path with maximum match percent or kmer coverage
 		return findTheBestPath(results, FMWResult);
-	}
-	
+
 	// Did not reach the terminal kmer
     if(m_leaves.empty())	//high error   
         return -1;
     else if(m_currentLength > m_maxLength)	//exceed search depth
-	{
-		
         return -2;
-	}
     else if(m_leaves.size() > m_maxLeaves)	//too much repeats
         return -3;
 	else
@@ -221,7 +201,7 @@ int LongReadSelfCorrectByOverlap::extendOverlap(FMWalkResult2 &FMWResult)
 
 int LongReadSelfCorrectByOverlap::findTheBestPath(SAIntervalNodeResultVector results, FMWalkResult2 &FMWResult)
 {
-	int maxAlgScore = -100;
+	
     double minErrorRate = 1;
     // for (size_t i = 0 ; i < results.size() ;i++)
        // minErrorRate = minErrorRate < results[i].errorRate ? minErrorRate : results[i].errorRate;
@@ -229,35 +209,12 @@ int LongReadSelfCorrectByOverlap::findTheBestPath(SAIntervalNodeResultVector res
 	for (size_t i = 0 ; i < results.size() ;i++)
 	{
 		std::string candidateSeq;
-		
-		// bug fix: m_targetSeed may be shorter than m_minOverlap
-		if(m_targetSeed.length() > m_minOverlap)
-            candidateSeq = results[i].thread ;
-		else
-			candidateSeq = results[i].thread;		
-		
-		// find the path with maximum alignment score
-		// AlnAln *aln_global;
-		// aln_global = aln_stdaln(m_query.c_str(), candidateSeq.c_str(), &aln_param_pacbio, 1, 1);
-		
-        // std::cout<<   results[i].errorRate << "  " <<  aln_global->score  <<"  ooi\n";
-
-		// bool isAlgScoreBetter = maxAlgScore < aln_global->score ;
-		// if(isAlgScoreBetter)
-		// {
-			// maxAlgScore = aln_global->score;
-			// FMWResult.alnScore = maxAlgScore;
-			// FMWResult.mergedSeq = candidateSeq;
-		// }
-		
-		// aln_free_AlnAln(aln_global);
-        
-        
+        candidateSeq = results[i].thread ;
+      
         if(results[i].errorRate < minErrorRate )
-        {
             FMWResult.mergedSeq = candidateSeq;
             
-        }
+        
 	}
         // std::cout << FMWResult.mergedSeq << "merge seq\n"; //testcw
 
@@ -267,35 +224,9 @@ int LongReadSelfCorrectByOverlap::findTheBestPath(SAIntervalNodeResultVector res
 }
 
 
-
-// Print the string represented by every node
-void LongReadSelfCorrectByOverlap::printAll()
-{
-	for (std::list<SAIOverlapNode3*>::iterator it = m_RootNodes.begin(); it != m_RootNodes.end(); ++it)
-		(*it)->printAllStrings("");
-    std::cout<<"extend\n";
-
-}
-void LongReadSelfCorrectByOverlap::printleaves()
-{
-        std::cout << m_query << "raw read\n";
-	for(SONode3PtrList::iterator iter = m_leaves.begin(); iter != m_leaves.end(); ++iter)
-    {
-        std::cout<<(*iter)->getFullString()<<"\n";
-        std::cout<<computeErrorRate(*iter) <<" error rate\n";
-    }
-}
-
-
-
-
 SONode3PtrList LongReadSelfCorrectByOverlap::extendLeaves()
 {
     SONode3PtrList newLeaves;
-
-    
- 
-
 
     if(m_currentKmerSize > m_maxOverlap) // resize when size up to upper bound
         refineSAInterval(m_maxOverlap);
@@ -327,7 +258,7 @@ SONode3PtrList LongReadSelfCorrectByOverlap::extendLeaves()
     { 
         m_currentLength++;  
 		m_currentKmerSize++;
-        if( isLowCoverage(newLeaves)   )// if frequency are low , relax it
+        if( isInsufficientFreqs(newLeaves)   )// if frequency are low , relax it
         {
             
             // size_t ReduceSize = m_currentKmerSize > m_minOverlap-1 ? m_currentKmerSize-1: m_currentKmerSize;
@@ -429,7 +360,7 @@ size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(size_t LowerBound,size_t
 
 
 
-bool LongReadSelfCorrectByOverlap::isLowCoverage(SONode3PtrList &newLeaves)
+bool LongReadSelfCorrectByOverlap::isInsufficientFreqs(SONode3PtrList &newLeaves)
 {
     size_t highfreqscount = 0;
     for(SONode3PtrList::iterator iter = newLeaves.begin(); iter != newLeaves.end(); ++iter)
@@ -461,7 +392,6 @@ void LongReadSelfCorrectByOverlap::refineSAInterval(size_t newKmer)
         
         (*iter)->fwdInterval=BWTAlgorithms::findInterval(m_pRBWT, reverse(pkmer));
         (*iter)->rvcInterval=BWTAlgorithms::findInterval(m_pBWT, reverseComplement(pkmer));
-
 
     }
     

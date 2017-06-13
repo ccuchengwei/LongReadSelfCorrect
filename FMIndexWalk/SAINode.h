@@ -329,7 +329,7 @@ class SAIOverlapNode3 : public SAINode
         std::pair <int,int> resultindex = std::make_pair(-1,-1);
         // size_t currkmersize;
         
-        int WeightofContinuousChar;
+        
         std::vector<double> LocalErrorRateRecord;
         std::vector<double> GlobalErrorRateRecord;
         SONode3PtrList m_children3;
