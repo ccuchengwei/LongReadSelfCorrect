@@ -96,7 +96,7 @@ class LongReadSelfCorrectByOverlap
         // Functions
         //
         
-        SAIOverlapNode3 initialRootNode(std::string beginningkmer);
+         void initialRootNode(std::string beginningkmer);
         void buildOverlapbyFMindex(std::string beginningkmer);
         
         

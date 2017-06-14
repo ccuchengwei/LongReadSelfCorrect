@@ -54,12 +54,14 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(
     
     
     //initialRootNode
-    m_pRootNode = initialRootNode(beginningkmer)
+    initialRootNode(beginningkmer);
 	
 	// push new node into roots and leaves vector
 	m_RootNodes.push_back(m_pRootNode);
 	m_leaves.push_back(m_pRootNode);
-    
+    m_pRootNode->WeightofContinuousChar = 2;
+    for(int i=2;i<4;i++)//initial
+        if(beginningkmer.substr(beginningkmer.length()-1,1) == beginningkmer.substr(beginningkmer.length()-i,1)) m_pRootNode->WeightofContinuousChar--;
     
     //frequencies of correspond k
     for(double i = m_minOverlap ; i <= m_maxOverlap+1 ; i++)
@@ -88,7 +90,7 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(
 
 }
 
-SAIOverlapNode3 LongReadSelfCorrectByOverlap::initialRootNode(std::string beginningkmer)
+ void LongReadSelfCorrectByOverlap::initialRootNode(std::string beginningkmer)
 {	
     // create one root node
 	m_pRootNode = new SAIOverlapNode3(&m_sourceSeed, NULL);
@@ -103,7 +105,7 @@ SAIOverlapNode3 LongReadSelfCorrectByOverlap::initialRootNode(std::string beginn
 	m_pRootNode->numRedeemSeed = 0;
     m_pRootNode->LocalErrorRateRecord.push_back(0);
     m_pRootNode->GlobalErrorRateRecord.push_back(0);
-    return m_pRootNode;
+    
 }
 
 void LongReadSelfCorrectByOverlap::buildOverlapbyFMindex(std::string beginningkmer)
@@ -208,8 +210,11 @@ int LongReadSelfCorrectByOverlap::findTheBestPath(SAIntervalNodeResultVector res
     
 	for (size_t i = 0 ; i < results.size() ;i++)
 	{
-		std::string candidateSeq;
-        candidateSeq = results[i].thread ;
+        std::string candidateSeq;
+        if(m_targetSeed.length() > m_minOverlap)
+            candidateSeq = results[i].thread ;
+		else
+			candidateSeq = results[i].thread;
       
         if(results[i].errorRate < minErrorRate )
             FMWResult.mergedSeq = candidateSeq;
@@ -475,6 +480,7 @@ void LongReadSelfCorrectByOverlap::updateLeaves(SONode3PtrList &newLeaves,std::v
         {
             if( lastword == extensions.front().first.back())pNode->WeightofContinuousChar--;
             else pNode->WeightofContinuousChar = 2;
+
             // Single extension, do not branch
             pNode->extend(extensions.front().first);
             pNode->fwdInterval = extensions.front().second.interval[0];
@@ -501,8 +507,8 @@ void LongReadSelfCorrectByOverlap::updateLeaves(SONode3PtrList &newLeaves,std::v
 
             SAIOverlapNode3* pChildNode = pNode->createChild(extensions[i].first);
             
-            if( lastword == extensions[i].first.back()) pChildNode->WeightofContinuousChar --;
-            else pChildNode->WeightofContinuousChar = 2;
+            if( lastword == extensions.front().first.back())pNode->WeightofContinuousChar--;
+            else pNode->WeightofContinuousChar = 2;
             
             
             pChildNode->fwdInterval=extensions[i].second.interval[0];
@@ -737,17 +743,14 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
     std::vector<std::pair<size_t,BWTIntervalPair>> bvector;
      
     size_t totalcount = 0;
-    size_t totalhashcount = 0;
     size_t maxfreqsofleave = 0;
-    size_t maxhashfreqsofleave = 0;
     std::string currKmer = pNode->getFullString().substr( pNode->getFullString().length()-m_currentKmerSize);
-    BWTInterval Fwdinterval = BWTAlgorithms::findInterval(m_pRBWT, reverse(currKmer));
-    BWTInterval Rvcinterval = BWTAlgorithms::findInterval(m_pBWT, reverseComplement(currKmer));
+
     
     
     if(m_isDebug)
     
-    std::cout<<pNode->getFullString()<<" || "<< pNode->LocalErrorRateRecord.back()<<"\n" << currKmer << "\t" << Fwdinterval.size()+ Rvcinterval.size()<<"\n";
+    std::cout<<pNode->getFullString()<<" || "<< pNode->LocalErrorRateRecord.back()<<"\n" << currKmer << "\t" << pNode->fwdInterval.size()+ pNode->rvcInterval.size()<<"\n";
      
     char lastword = pNode->getFullString().back();     
     int  WeightofContinuousChar = pNode->WeightofContinuousChar;
@@ -769,7 +772,7 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
         bip.interval[0]=fwdProbe;
         bip.interval[1]=rvcProbe;
         size_t bcount = 0;
-        size_t hashcount = 0;
+        
         if(fwdProbe.isValid())
             bcount += fwdProbe.size();
         if(rvcProbe.isValid())
@@ -790,7 +793,7 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
         bvector.push_back(std::make_pair(bcount, bip));
         if(bcount >  maxfreqsofleave)
             maxfreqsofleave = bcount;
-        //check by hash
+        
 
     }// end of ACGT
       // std::cout << "totalcount: " << totalcount << std::endl;//testcw
@@ -810,7 +813,7 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
           
            char b = BWT_ALPHABET::getChar(i);
           
-        if (currKmer.substr(currKmer.length-1)==currKmer.substr(currKmer.length-2,1) && currKmer.substr(currKmer.length-2,1)==currKmer.substr(currKmer.length-3,1))   
+        if (WeightofContinuousChar < 1)   
         {   
             bvector.at(i-1).first = (float)bvector.at(i-1).first / (float)maxfreqsofleave >= 0.6 ? bvector.at(i-1).first : 0;
            

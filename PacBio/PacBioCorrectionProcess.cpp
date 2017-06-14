@@ -160,8 +160,8 @@ void PacBioCorrectionProcess::initCorrect(std::string& readSeq, std::vector<Seed
 			// if(dis_between_src_target >= (int)m_params.maxSeedInterval&& m_params.PBcoverage >=50) 
 				// break;
 
-
-
+            
+            
 			// extension using local kmer hashtable collected from overlapping reads
 			std::string mergedseq;
 			FMWalkReturnType = extendBetweenSeeds(source, target, readSeq, mergedseq, extendKmerSize, dis_between_src_target,FMextendParameter);
@@ -271,92 +271,6 @@ void PacBioCorrectionProcess::initCorrect(std::string& readSeq, std::vector<Seed
 
 
 
-
-int PacBioCorrectionProcess::checkseedcorrect(std::vector<SeedFeature> seeds,std::string currseedStr,size_t currseedStartpos)
-{
-	int *correctnum = new int[currseedStr.length()];
-	for(size_t i=0;i<currseedStr.length();i++)correctnum[i]=0;
-	size_t runtime=1;
-	size_t correctSeedlength=0;
-   
-	if(seeds.size()>=2&&!seeds.at(seeds.size()-1).isRepeat) runtime=2;
-	const size_t kmerSize = m_params.kmerLength;
-	for(;runtime>0;runtime--)
-	{
-	
-	std::string preseedStr = seeds.at(seeds.size()-runtime).seedStr;
-	std::string initKmer = preseedStr.substr(preseedStr.length() - kmerSize);
-	BWTInterval fwdInterval=BWTAlgorithms::findInterval(m_params.indices.pRBWT, reverse(initKmer));
-	BWTInterval rvcInterval=BWTAlgorithms::findInterval(m_params.indices.pBWT, reverseComplement(initKmer));
-	size_t extendlength = currseedStartpos-seeds.at(seeds.size()-runtime).seedStartPos+1+seeds.at(seeds.size()-runtime).seedStr.length();
-	            // cout<<"preseed:"<<preseedStr<<"\ncurrseedStr:"<<currseedStr<<"\n======================\n";
-				for(int64_t fwdRootIndex = fwdInterval.lower;fwdInterval.isValid()&& fwdRootIndex <= fwdInterval.upper ;fwdRootIndex++)
-				  {
-					 std::string currentFwdKmer = initKmer;
-					 std::string extendkmer = currentFwdKmer ;
-					 int64_t fwdIndex = fwdRootIndex;
-					 correctSeedlength=0;
-					 for(int64_t currentLength = (int64_t)kmerSize; currentLength <= 1.5*extendlength; currentLength++)
-					 {
-						 
-						 char b = m_params.indices.pRBWT->getChar(fwdIndex);
-			             if(b == '$'||kmerSize+correctSeedlength>currseedStr.length()) break;
-						 currentFwdKmer = currentFwdKmer.substr(1) + b ;
-						 extendkmer = extendkmer+b;
-						 if(currentFwdKmer == currseedStr.substr(correctSeedlength,kmerSize))
-						 {
-							 correctnum[correctSeedlength]++;
-							 correctSeedlength++;
-							 // cout << extendkmer <<"\n"; 
-						 }
-						 fwdIndex = m_params.indices.pRBWT->getPC(b) + m_params.indices.pRBWT->getOcc(b, fwdIndex - 1);
-					 }
-					 // cout << extendkmer <<"\n";
-				  }
-				  // cout<<"===============\nRvccurrseed:"<<reverseComplement(currseedStr.substr(0,kmerSize))<<"\n";
-				 
-				  for(int64_t rvcRootIndex=rvcInterval.lower;rvcRootIndex <= rvcInterval.upper && rvcInterval.isValid();rvcRootIndex++)
-				{
-					std::string currentRvcKmer = reverseComplement(initKmer);
-					std::string extendkmer = currentRvcKmer ;
-					int64_t rvcIndex = rvcRootIndex;
-					 correctSeedlength=0;
-					for(int64_t currentLength = (int64_t)kmerSize; currentLength <= 1.5*extendlength;currentLength++)
-					{
-					   char b = m_params.indices.pBWT->getChar(rvcIndex);
-			           if(b == '$'||kmerSize+correctSeedlength>currseedStr.length()) break;
-					   currentRvcKmer = b+currentRvcKmer.substr(0,kmerSize-1) ;
-					   
-					   if( currentRvcKmer == reverseComplement(currseedStr.substr(correctSeedlength,kmerSize)))
-					   {
-						   correctnum[correctSeedlength]++;
-							correctSeedlength++;
-					   }
-						rvcIndex = m_params.indices.pBWT->getPC(b) + m_params.indices.pBWT->getOcc(b, rvcIndex - 1);
-					}
-					// cout << extendkmer <<"<=\n";
-				}
-	}	
-	 int correctThreshold = 3;
-
-				for(correctSeedlength=0;kmerSize+correctSeedlength<=currseedStr.length();correctSeedlength++)
-				{
-					if(correctnum[correctSeedlength]<correctThreshold&&correctSeedlength>0)
-					{
-						
-						delete [] correctnum;
-						return kmerSize+correctSeedlength-1 ;
-					}
-					else if (correctnum[correctSeedlength]<correctThreshold&&correctSeedlength==0)
-					{
-						delete [] correctnum;
-						return -1;
-					}
-				}
-				
-				delete [] correctnum;
-				return kmerSize+correctSeedlength-1;
-}
 
 
 // dynamic seeding from pacbio reads, v20160517 by Ya.
