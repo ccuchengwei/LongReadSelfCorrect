@@ -1,16 +1,16 @@
-rm aclocal.m4
-rm compile
-rm depcomp
-rm missing
-rm install-sh
-rm Makefile
-rm Makefile.in
-rm stamp-h1
-rm configure
-rm config.status
-rm config.log
-rm config.h
-rm config.h.in
+git rm aclocal.m4
+git rm compile
+git rm depcomp
+git rm missing
+git rm install-sh
+git rm Makefile
+git rm Makefile.in
+git rm stamp-h1
+git rm configure
+git rm config.status
+git rm config.log
+git rm config.h
+git rm config.h.in
 
-rm */*.o
-rm */*.a
+git rm */*.o
+git rm */*.a

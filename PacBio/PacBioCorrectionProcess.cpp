@@ -439,16 +439,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
       
                     break;
                 }
-                
-                /*
-                if(kmerFreqs >= kmerThreshold.at(kmerSize) && FixedMerInterval.at(i).interval[0].size()>=1 && FixedMerInterval.at(i).interval[1].size()>=1)
-                    seedLen++;
 
-                else
-                
-                    break;
-                
-                */
                  
                 
 			} //second for end
@@ -520,23 +511,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 				// 1415: TTCAGCGGAAATTTTCC 20:11:9
 				// 1416: TCAGCGGAAATTTTCCA 1:1:0
 				// Seed:   17      TTCAGCGGAAATTTTCC
-				
-				/*
-				if(!seedVec.empty())
-				{
-					int checkresult=checkseedcorrect(seedVec,readSeq.substr(seedStartPos, seedEndPos-seedStartPos+1),i);
-					// cout<<seedEndPos-seedStartPos+1<<"\t"<<checkresult<<"\t"<<i<<endl;
-					
-					 if(checkresult>=17)
-					 {   
-						 seedEndPos=seedStartPos + checkresult -1;
-						 
-						}
-					 if(checkresult==-1){ 
-							
-							continue;
-						}
-				}*/
+
                 
                 if(maxKmerFreq > kmerThreshold.at(kmerSize) * 11)
                 
