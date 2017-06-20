@@ -63,7 +63,7 @@ PacBioCorrectionResult PacBioCorrectionProcess::PBSelfCorrection(const SequenceW
     
 
 	// push the first seed into pacbioCorrectedStrs, which will be popped later as source seed
-	if(seedVec.size() >= 2)
+	if(seedVec.size() >= 2 )
 	{
 		result.correctedLen += seedVec.at(0).seedStr.length();
 		// if(m_params.isSplit)
