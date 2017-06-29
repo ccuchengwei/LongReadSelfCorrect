@@ -746,7 +746,7 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
     
     if(m_isDebug)
     
-    std::cout<<pNode->getFullString()<<" || "<< pNode->LocalErrorRateRecord.back()<<"\n" << currKmer << "\t" << pNode->fwdInterval.size()+ pNode->rvcInterval.size()<<"\n";
+    std::cout<<pNode->getFullString()<<" || "<< pNode->LocalErrorRateRecord.back()<<"\n" << currKmer << "\t" << pNode->fwdInterval.size()+ pNode->rvcInterval.size()<< "\t" << pNode->LocalErrorRateRecord.back()  <<"\n";
      
 
     for(int i = 1; i < BWT_ALPHABET::size; ++i) //i=A,C,G,T

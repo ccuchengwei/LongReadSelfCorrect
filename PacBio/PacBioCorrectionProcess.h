@@ -217,7 +217,7 @@ private:
     std::string m_readid;
     double m_total_FMtime;
     double m_total_DPtime;
-
+    bool m_isSplit;
 };
 
 // Write the results from the overlap step to an ASQG file

@@ -56,6 +56,7 @@ class LongReadSelfCorrectByOverlap
                 const std::string& sourceSeed,
 				const std::string& strBetweenSrcTarget,
 				const std::string& targetSeed,
+
 				int m_disBetweenSrcTarget,
                 size_t initkmersize,
                 size_t maxOverlap,
@@ -131,7 +132,8 @@ class LongReadSelfCorrectByOverlap
         //
 		const std::string m_sourceSeed;
 		const std::string m_strBetweenSrcTarget;
-		const std::string m_targetSeed;	
+		const std::string m_targetSeed;
+        const std::string m_targetSeed2;        
         const bool m_isDebug;
 		int m_disBetweenSrcTarget;
         size_t m_minOverlap;
