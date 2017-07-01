@@ -267,9 +267,10 @@ SONode3PtrList LongReadSelfCorrectByOverlap::extendLeaves()
             // size_t ReduceSize = m_currentKmerSize > m_minOverlap-1 ? m_currentKmerSize-1: m_currentKmerSize;
             
 
-            size_t LowerBound = m_currentKmerSize > m_minOverlap + 1 ? m_currentKmerSize - 2 : m_minOverlap;
-            size_t ReduceSize = SelectFreqsOfrange(LowerBound,m_currentKmerSize,newLeaves);
+            size_t LowerBound = m_currentKmerSize > m_minOverlap + 2 ? m_currentKmerSize - 3 : m_minOverlap;
             
+            size_t ReduceSize = SelectFreqsOfrange(LowerBound,m_currentKmerSize,newLeaves);
+            // std::cout<<ReduceSize<<"\n";
             for(SONode3PtrList::iterator iter = newLeaves.begin(); iter != newLeaves.end(); ++iter)
             {   
                 
@@ -295,7 +296,7 @@ size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(size_t LowerBound,size_t
 {
    std::vector<std::pair<std::string,BWTIntervalPair>> pkmers;
    size_t tempmaxfmfreqs = 0;
-// std::cout<<      "here\n";
+// std::cout<<  LowerBound  << "  "<< m_minOverlap <<  "here\n";
    for(SONode3PtrList::iterator iter = newLeaves.begin(); iter != newLeaves.end() ; ++iter)
     {
         std::string pkmer = (*iter)->getFullString().substr((*iter)->getFullString().length() -UpperBound);
@@ -345,7 +346,7 @@ size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(size_t LowerBound,size_t
         
        }
 
-       
+       // std::cout<< tempmaxfmfreqs    <<" haha \n";
        if( (int)tempmaxfmfreqs - (int)freqsOfKmerSize.at(LowerBound - m_minOverlap + i) < 5 ) return LowerBound +i ;
        
        

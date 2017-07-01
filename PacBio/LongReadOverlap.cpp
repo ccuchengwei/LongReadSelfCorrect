@@ -12,7 +12,7 @@
 #include "BWTAlgorithms.h"
 #include "LongReadOverlap.h"
 #include "PBOverlapTree.h"
-
+#include <algorithm>
 //
 MultipleAlignment LongReadOverlap::buildMultipleAlignment(const std::string& query,
                                                        size_t srcKmerLength,
@@ -53,7 +53,66 @@ MultipleAlignment LongReadOverlap::buildMultipleAlignment(const std::string& que
 
     return multiple_alignment;
 }
+bool comparefunction (int i,int j) { return (i>j); }
+MultipleAlignment LongReadOverlap::buildMultipleAlignment2(const std::string& query,
+                                                       size_t srcKmerLength,
+													   size_t tarKmerLength,
+                                                       size_t min_overlap,
+                                                       double min_identity,
+                                                       size_t coverage,
+                                                       BWTIndexSet& indices)
+{
+    MultipleAlignment multiple_alignment;
+    multiple_alignment.addBaseSequence("query", query, "");
 
+	// forward overlap from source seed
+    SequenceOverlapPairVector overlap_vector;
+    std::vector<double>  identityList;
+    
+    
+	retrieveMatches(query, srcKmerLength, min_overlap, min_identity, coverage, indices, false, overlap_vector);
+	size_t srcSize = overlap_vector.size();
+    
+    
+	
+	// reverse overlap from target seed
+	retrieveMatches(query, tarKmerLength, min_overlap, min_identity, coverage, indices, true, overlap_vector);
+	for(SequenceOverlapPairVector::iterator it=overlap_vector.begin(); it!=overlap_vector.end(); ++it)
+        identityList.push_back(it->overlap.getPercentIdentity() / 100);
+    std::sort (identityList.begin(),identityList.end(),comparefunction);
+    size_t maxmumsize = 20;
+    
+	// push into multiple alignment matrix
+    for(size_t i = 0; i < srcSize; ++i)
+    {
+    if(identityList.size()>= maxmumsize &&overlap_vector[i].overlap.getPercentIdentity()/100 >= identityList.at(maxmumsize-1))
+        multiple_alignment.addOverlap("Src", overlap_vector[i].sequence[1], "", overlap_vector[i].overlap);
+    else if(identityList.size()<maxmumsize)
+        multiple_alignment.addOverlap("Src", overlap_vector[i].sequence[1], "", overlap_vector[i].overlap);
+    
+	}
+    for(size_t i = srcSize; i < overlap_vector.size(); ++i)
+    {    if(identityList.size()>=maxmumsize&&overlap_vector[i].overlap.getPercentIdentity()/100 >= identityList.at(maxmumsize-1))
+            multiple_alignment.addOverlap("Tar", overlap_vector[i].sequence[1], "", overlap_vector[i].overlap);
+        else if(identityList.size()<maxmumsize)
+            multiple_alignment.addOverlap("Tar", overlap_vector[i].sequence[1], "", overlap_vector[i].overlap);
+	}
+    
+    // std::cout << identityList.size() << " nnn\n";
+    // std::cout<< query << "|" <<srcSize << "||" <<overlap_vector.size()- srcSize << "kkkkkk\n";
+	// filter low-quality overlap
+	// if(!overlap_vector.empty())
+	// {
+		// // sort overlap by identity descend
+		// std::sort(overlap_vector.begin(), overlap_vector.end(), SequenceOverlapPair::sortByOverlapIdentityDesc);
+		// filterOverlap(overlap_vector);
+	// }
+
+	// for(size_t i = 0; i < overlap_vector.size(); ++i)
+        // multiple_alignment.addOverlap("NULL", overlap_vector[i].sequence[1], "", overlap_vector[i].overlap);
+
+    return multiple_alignment;
+}
 MultipleAlignment LongReadOverlap::endMultipleAlignment(const std::string& query,
                                                        size_t srcKmerLength,
 													   size_t min_overlap,

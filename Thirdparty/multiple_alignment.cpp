@@ -521,7 +521,7 @@ std::string MultipleAlignment::calculateBaseConsensus(int min_call_coverage, int
     MultipleAlignmentElement& base_element = m_sequences.front();
     size_t start_column = base_element.getStartColumn();
     size_t end_column = base_element.getEndColumn();
-
+    // std::cout << start_column <<":" << end_column << ":"<< base_element.getNumColumns() <<"\n";
     // This index records the last base in the consensus that had coverage greater than
     // min_trim_coverage. After the consensus calculation the read is trimmed back to this position
     int last_good_base = -1;
@@ -532,23 +532,30 @@ std::string MultipleAlignment::calculateBaseConsensus(int min_call_coverage, int
         char max_symbol = '\0';
         int max_count = -1;
         int total_depth = 0;
-
+        
 #ifdef MA_DEBUG_CONSENSUS
         printf("%zu\t", c);
 #endif
         for(size_t a = 0; a < m_alphabet_size; ++a) {
             char symbol = m_alphabet[a];
             total_depth += counts[a];
-
+            
+            // std::cout << counts[a] <<symbol << "   ";
+            
             if(symbol != 'N' && counts[a] > max_count) {
                 max_symbol = symbol;
                 max_count = counts[a];
             }
 #ifdef MA_DEBUG_CONSENSUS
             printf("%c:%d ", symbol, counts[a]);
-#endif
-        }
+#endif      
 
+            
+        }
+        
+        
+        // std::cout <<max_symbol;
+        // std::cout << "\n";
         char base_symbol = base_element.getColumnSymbol(c);
         int base_count = counts[symbol2index(base_symbol)];
 

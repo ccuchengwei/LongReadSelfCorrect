@@ -27,6 +27,13 @@ namespace LongReadOverlap
                                          double min_identity,
                                          size_t coverage,
                                          BWTIndexSet& indices);
+    MultipleAlignment buildMultipleAlignment2(const std::string& query,
+                                         size_t srcKmerLength,
+										 size_t tarKmerLength,
+                                         size_t min_overlap,
+                                         double min_identity,
+                                         size_t coverage,
+                                         BWTIndexSet& indices);
 
 	MultipleAlignment endMultipleAlignment(const std::string& query,
 										   size_t srcKmerLength,
