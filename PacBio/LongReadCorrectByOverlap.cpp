@@ -267,7 +267,7 @@ SONode3PtrList LongReadSelfCorrectByOverlap::extendLeaves()
             // size_t ReduceSize = m_currentKmerSize > m_minOverlap-1 ? m_currentKmerSize-1: m_currentKmerSize;
             
 
-            size_t LowerBound = m_currentKmerSize > m_minOverlap + 2 ? m_currentKmerSize - 3 : m_minOverlap;
+            size_t LowerBound = m_currentKmerSize > m_minOverlap + 1 ? m_currentKmerSize - 2 : m_minOverlap;
             
             size_t ReduceSize = SelectFreqsOfrange(LowerBound,m_currentKmerSize,newLeaves);
             // std::cout<<ReduceSize<<"\n";

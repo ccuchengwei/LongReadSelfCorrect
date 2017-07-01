@@ -685,13 +685,13 @@ int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature
         
         
         if(maquery.getNumRows() <= 3)
-        // {
-            // if (totalMaxFreqs > 30 )
-                // m_isSplit = true;
+        {
+            if (totalMaxFreqs > 20 )
+                m_isSplit = true;
             return FMWalkReturnType;
-        // }  
+        }  
        // std::cout << maquery.getAlignment(0,maquery.getNumRows()-1);
-        std::string consensus = maquery.calculateBaseConsensus(20, -1);
+        std::string consensus = maquery.calculateBaseConsensus(15, -1);
         // std::cout << "\n"+rawSubseq << "   raw\n";
         // std::cout << ">" << consensus.length() <<"\n" << consensus << "   <-- consensus"<<endl;
          
