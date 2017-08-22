@@ -268,9 +268,8 @@ SONode3PtrList LongReadSelfCorrectByOverlap::extendLeaves()
             
 
             size_t LowerBound = m_currentKmerSize > m_minOverlap + 1 ? m_currentKmerSize - 2 : m_minOverlap;
-            
             size_t ReduceSize = SelectFreqsOfrange(LowerBound,m_currentKmerSize,newLeaves);
-            // std::cout<<ReduceSize<<"\n";
+            
             for(SONode3PtrList::iterator iter = newLeaves.begin(); iter != newLeaves.end(); ++iter)
             {   
                 
@@ -296,7 +295,7 @@ size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(size_t LowerBound,size_t
 {
    std::vector<std::pair<std::string,BWTIntervalPair>> pkmers;
    size_t tempmaxfmfreqs = 0;
-// std::cout<<  LowerBound  << "  "<< m_minOverlap <<  "here\n";
+// std::cout<<      "here\n";
    for(SONode3PtrList::iterator iter = newLeaves.begin(); iter != newLeaves.end() ; ++iter)
     {
         std::string pkmer = (*iter)->getFullString().substr((*iter)->getFullString().length() -UpperBound);
@@ -346,7 +345,7 @@ size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(size_t LowerBound,size_t
         
        }
 
-       // std::cout<< tempmaxfmfreqs    <<" haha \n";
+       
        if( (int)tempmaxfmfreqs - (int)freqsOfKmerSize.at(LowerBound - m_minOverlap + i) < 5 ) return LowerBound +i ;
        
        
@@ -370,7 +369,9 @@ bool LongReadSelfCorrectByOverlap::isInsufficientFreqs(SONode3PtrList &newLeaves
     for(SONode3PtrList::iterator iter = newLeaves.begin(); iter != newLeaves.end(); ++iter)
     {
         
-       if( (*iter)->fwdInterval.size()+(*iter)->rvcInterval.size() > 3)
+       size_t t = m_PBcoverage > 60 ? int(m_PBcoverage/60)*3:3; 
+        
+       if( (*iter)->fwdInterval.size()+(*iter)->rvcInterval.size() > t)
            highfreqscount++;
 
     }
@@ -747,7 +748,7 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
     
     if(m_isDebug)
     
-    std::cout<<pNode->getFullString()<<" || "<< pNode->LocalErrorRateRecord.back()<<"\n" << currKmer << "\t" << pNode->fwdInterval.size()+ pNode->rvcInterval.size()<< "\t" << pNode->LocalErrorRateRecord.back()  <<"\n";
+    std::cout<<pNode->getFullString()<<" || "<< pNode->LocalErrorRateRecord.back()<<"\n" << currKmer << "\t" << pNode->fwdInterval.size()+ pNode->rvcInterval.size()<<"\n";
      
 
     for(int i = 1; i < BWT_ALPHABET::size; ++i) //i=A,C,G,T
