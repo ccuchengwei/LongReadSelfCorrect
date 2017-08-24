@@ -15,3 +15,5 @@ config.h.in
 autom4te.cache/requests
 *.o
 *.a
+.vscode
+autom4te.cache

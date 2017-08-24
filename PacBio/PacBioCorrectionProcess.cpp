@@ -583,12 +583,12 @@ bool PacBioCorrectionProcess::isCloseTorepeat(std::vector<BWTIntervalPair> Fixed
     {
         
          size_t CurrPosFreqs = FixedMerInterval.at(repeatCheckPos).interval[0].size() + FixedMerInterval.at(repeatCheckPos).interval[1].size();
-         std::cout << CurrPosFreqs << "\n";
+         //std::cout << CurrPosFreqs << "\n";
          if (CurrPosFreqs > NearbyMaxFreqs) NearbyMaxFreqs = CurrPosFreqs ;
     }
-    bool isLargeVariationOfFreqs = !(float)CurrSeedFreqs/(float)NearbyMaxFreqs < 0.6;
+    bool isLargeVariationOfFreqs = (float)CurrSeedFreqs/(float)NearbyMaxFreqs < 0.6;
     
-
+    return isLargeVariationOfFreqs;
 
 
 }
