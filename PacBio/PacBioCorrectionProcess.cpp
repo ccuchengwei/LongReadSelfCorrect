@@ -346,7 +346,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
     
     size_t lastRepeatSeedPos = 0;
     size_t lastRepeatSeedFreqs = 0;
-    //start seqrching seed  
+    //start searching seed  
     for(size_t i = 0 ; i + kmerSize <= readSeq.length() ; i++)
     {
         //find initial kmer frequency
@@ -381,6 +381,12 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 				
 				continue;
 			}
+            
+            if( isCloseTorepeat(FixedMerInterval,i,m_repeat_distance))
+            continue;
+            
+      
+                                   
 			size_t seedStartPos = i, 
 			seedLen = 0;
 			
@@ -458,19 +464,6 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 			{
                 
                 
-                // For seeds within repeats, error seeds will still exceed the cutoff, e.g., 12 11 15 60 65 70 20 19..
-                // refine the exact boundary by finding the segments with highest kmer frequency 60 65 70
-                // std::pair<size_t, size_t> kmerFreqPair = refineRepeatSeed(readSeq, seedStartPos, seedEndPos,kmerThreshold.at(kmerSize));
-
-                // PB135123_7431.fa, error seeds close to repeats are also with high frequency
-                bool isPrevSeedCloseToRepeat = !seedVec.empty() 
-                                        // remove previous seed if it's too close 
-                                        && seedStartPos - seedVec.back().seedEndPos < m_repeat_distance 
-                                        // ensure that the kmer frequency difference is large
-                                        && ((float)seedVec.back().endKmerFreq/(float)maxKmerFreq  < 0.6); 
-                
-                if(isPrevSeedCloseToRepeat)	
-                    seedVec.pop_back();
 
                 // PB135123_7431.fa TGTAATCAGGCTGAAAA
                 bool isPrevSeedBetweenRepeat = seedVec.size()>=2 && !seedVec.back().isRepeat // previous seed is not repeat
@@ -515,12 +508,10 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 				// 1416: TCAGCGGAAATTTTCCA 1:1:0
 				// Seed:   17      TTCAGCGGAAATTTTCC
 
-                bool isLargeVariationOfFreqs = !seedVec.empty() && (seedStartPos-lastRepeatSeedPos) < m_repeat_distance && (float)maxKmerFreq/(float)lastRepeatSeedFreqs < 0.6;
+            
                 
-                
-                lastRepeatSeedPos = seedStartPos;
-                lastRepeatSeedFreqs = maxKmerFreq;
-                if(maxKmerFreq > 1024|| isLargeVariationOfFreqs)
+
+                if(maxKmerFreq > 1024)
                 
 				continue;
                 
@@ -537,16 +528,13 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 			}
 			else 
 			{
-				bool isCloseToPrevRepeatSeed = !seedVec.empty() && seedVec.back().isRepeat 
-												&& (seedStartPos - seedVec.back().seedEndPos <= kmerSize);
-									
-				bool isLargeVariationOfFreqs = !seedVec.empty() && (seedStartPos-lastRepeatSeedPos) < m_repeat_distance && (float)maxKmerFreq/(float)lastRepeatSeedFreqs < 0.6;					
+								
 				// most error seeds are not too large or with lower frequency
 				// PB135123_7431.fa: AAAACTTCGCAGTGAAC is not error but discarded
 				// && seedEndPos+1-seedStartPos-kmerSize < 7;
 												
 				// if(seedVec.empty() || !seedVec.back().isRepeat || (seedStartPos - seedVec.back().seedEndPos > kmerSize) )
-				if(seedVec.empty() || !isLargeVariationOfFreqs)
+				if(seedVec.empty() )
                    
 				{
 					// push concatenated seeds into seed vector
@@ -583,6 +571,27 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 }
 
 
+//check if in repeat region and there is high variation 
+bool PacBioCorrectionProcess::isCloseTorepeat(std::vector<BWTIntervalPair> FixedMerInterval,size_t &currpos,size_t m_repeat_distance)
+{
+    size_t NearbyMaxFreqs = 0;
+    //Curr Seed Freqs
+    size_t CurrSeedFreqs  = FixedMerInterval.at(currpos).interval[0].size() + FixedMerInterval.at(currpos).interval[1].size();
+    
+    //Search Maximum Freqs in this region
+    for(size_t repeatCheckPos = currpos - m_repeat_distance > 0 ? currpos - m_repeat_distance : 0; repeatCheckPos <= currpos + m_repeat_distance; repeatCheckPos++ )
+    {
+        
+         size_t CurrPosFreqs = FixedMerInterval.at(repeatCheckPos).interval[0].size() + FixedMerInterval.at(repeatCheckPos).interval[1].size();
+         std::cout << CurrPosFreqs << "\n";
+         if (CurrPosFreqs > NearbyMaxFreqs) NearbyMaxFreqs = CurrPosFreqs ;
+    }
+    bool isLargeVariationOfFreqs = !(float)CurrSeedFreqs/(float)NearbyMaxFreqs < 0.6;
+    
+
+
+
+}
 
 // Perform FMindex extension between source and target seeds
 // Return FMWalkReturnType

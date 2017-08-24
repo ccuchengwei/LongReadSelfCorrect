@@ -190,7 +190,7 @@ private:
 	void initCorrect(std::string& readSeq, std::vector<SeedFeature>& seeds, std::vector<SeedFeature>& pacbioCorrectedStrs, PacBioCorrectionResult& result);
 	
 	void realCorrect(std::string& readSeq, std::vector<SeedFeature>& seeds, std::vector<SeedFeature>& pacbioCorrectedStrs, PacBioCorrectionResult& result);
-	int checkseedcorrect(std::vector<SeedFeature> seeds,std::string currseed,size_t currseedStartpos);
+	bool isCloseTorepeat(std::vector<BWTIntervalPair> FixedMerInterval,size_t &currpos,size_t m_repeat_distance);
 	// kmers around repeat seeds are often error seeds, split the repeat regions into high-confident seeds
 	// return kmer freq of beginning and ending kmers
 	std::pair<size_t, size_t> refineRepeatSeed(const std::string readSeq, size_t& seedStartPos, size_t& seedEndPos,size_t normal_freqs);
