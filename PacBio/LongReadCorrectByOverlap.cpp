@@ -805,7 +805,7 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
         
        for(int i = 1; i < BWT_ALPHABET::size; ++i)
        {
-           float bratio = (float)bvector.at(i-1).first/(float)totalcount;
+           float bratio = (float)bvector.at(i-1).first/(float)maxfreqsofleave;
            size_t bdiff = std::abs((int)bvector.at(i-1).first-(int)maxfreqsofleave);
           
            char b = BWT_ALPHABET::getChar(i);
@@ -817,7 +817,7 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
          }
         
 
-       if(bratio >= 0.1 &&(bvector.at(i-1).first >= IntervalSizeCutoff || ((float)bvector.at(i-1).first / (float)maxfreqsofleave >= 0.6 && totalcount >= IntervalSizeCutoff+2)))
+       if((bratio >= 0.3 || bdiff < 30)  &&(bvector.at(i-1).first >= IntervalSizeCutoff || (bratio >= 0.6 && totalcount >= IntervalSizeCutoff+2)))
         {
 			
             // extend to b
