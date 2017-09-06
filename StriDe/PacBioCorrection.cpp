@@ -80,7 +80,7 @@ namespace opt
     static int idmerLength = 9;
     static double ErrorRate=0.15;	
 	static int minKmerLength = 13;	
-	static int numOfNextTarget = 1;
+	static int numOfNextTarget = 2;
 	static int collect = 5;
 	
 	static bool split = false;

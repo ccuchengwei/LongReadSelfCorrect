@@ -152,7 +152,7 @@ class LongReadSelfCorrectByOverlap
 		size_t m_seedSize;
 		size_t m_repeatFreq;
         size_t m_localSimilarlykmerSize;
-        
+         size_t m_maxfreqs;
 
 
         

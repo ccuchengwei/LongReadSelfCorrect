@@ -143,7 +143,7 @@ void PacBioCorrectionProcess::initCorrect(std::string& readSeq, std::vector<Seed
 		for(int nextTargetSeed = 0 ; nextTargetSeed < (int)m_params.numOfNextTarget && targetSeed + nextTargetSeed < seedVec.size() ; nextTargetSeed++)
 		{
 			// std::cout << "======= " << result.totalWalkNum << " =======\n";
-			
+			target =  seedVec.at(targetSeed + nextTargetSeed);
 			// extendKmerSize should be large for repeat seeds
 			if((source.isRepeat || target.isRepeat) )
 			{
@@ -211,8 +211,9 @@ void PacBioCorrectionProcess::initCorrect(std::string& readSeq, std::vector<Seed
 					// target =  targetSeed+nextTargetSeed+1<seedVec.size()?seedVec[targetSeed+nextTargetSeed+1]:target;
 					// extendKmerSize = std::min(source.endBestKmerSize, target.startBestKmerSize) - 2;
 				}
+                // target =  targetSeed+nextTargetSeed+1<seedVec.size()?seedVec[targetSeed+nextTargetSeed+1]:target;
 			}
-           */
+          */
 
 			// prevFMWalkReturnType = FMWalkReturnType;
 		}// end of next target seed
@@ -371,10 +372,11 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 			if(isLowComplexity(kmer, GCRatio))
 			{
 				bool isPrevSeedCloseToRepeat = !seedVec.empty() && !seedVec.back().isRepeat 
-										// remove previous seed if it's too close to the current repeat within kmerSize
+										// remove previous seed if it's too close 
 										&& i - seedVec.back().seedEndPos < m_repeat_distance 
 										// ensure that the kmer frequency difference is also large
-										&& seedVec.back().seedLength-kmerSize<=3; 
+                                         && ((float)seedVec.back().endKmerFreq/(float)kmerFreqs  < 0.6); 
+										
 				
 				if(isPrevSeedCloseToRepeat)	
 					seedVec.pop_back();
@@ -503,12 +505,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 				// if(isPrevSeedCloseToRepeat || isPrevSeedBetweenRepeat || isPrevSeedWithinLargeRepeat)	
 					// seedVec.pop_back();
 				
-				// Unsolved cases
-				// PB38933_7552.fa
-				// 1414: GTTCAGCGGAAATTTTC 1:1:0
-				// 1415: TTCAGCGGAAATTTTCC 20:11:9
-				// 1416: TCAGCGGAAATTTTCCA 1:1:0
-				// Seed:   17      TTCAGCGGAAATTTTCC
+
 
             
                 
@@ -518,7 +515,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 				continue;
                 
                 
-                
+                std::cout<<     "repeats\n";
 				i=seedEndPos;
 				SeedFeature newSeed(seedStartPos, readSeq.substr(seedStartPos, seedEndPos-seedStartPos+1), true, kmerSize, m_params.PBcoverage/2);
 				newSeed.estimateBestKmerSize(m_params.indices.pBWT);
@@ -574,6 +571,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 //check if in repeat region and there is high variation 
 bool PacBioCorrectionProcess::isCloseTorepeat(std::vector<BWTIntervalPair> FixedMerInterval,size_t &currpos,size_t m_repeat_distance)
 {
+    
     size_t NearbyMaxFreqs = 0;
     //Curr Seed Freqs
     size_t CurrSeedFreqs  = FixedMerInterval.at(currpos).interval[0].size() + FixedMerInterval.at(currpos).interval[1].size();
@@ -617,7 +615,8 @@ int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature
     Timer* FMTimer = new Timer("FM Time",true);
     int FMWalkReturnType =0;
    if(source.isRepeat && ! target.isRepeat)
-   {
+   {    
+        // std::cout<<      "0.0\n";
        
         LongReadSelfCorrectByOverlap OverlapTree(reverseComplement(target.seedStr),strbetweensrctarget,reverseComplement(srcStr),dis_between_src_target,extendKmerSize,extendKmerSize+2,FMextendParameter,min_SA_threshold);
         FMWalkReturnType = 	OverlapTree.extendOverlap(fmwalkresult);
