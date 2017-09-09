@@ -515,7 +515,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 				continue;
                 
                 
-                std::cout<<     "repeats\n";
+                // std::cout<<     "repeats\n";
 				i=seedEndPos;
 				SeedFeature newSeed(seedStartPos, readSeq.substr(seedStartPos, seedEndPos-seedStartPos+1), true, kmerSize, m_params.PBcoverage/2);
 				newSeed.estimateBestKmerSize(m_params.indices.pBWT);
@@ -618,7 +618,7 @@ int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature
    {    
         // std::cout<<      "0.0\n";
        
-        LongReadSelfCorrectByOverlap OverlapTree(reverseComplement(target.seedStr),strbetweensrctarget,reverseComplement(srcStr),dis_between_src_target,extendKmerSize,extendKmerSize+2,FMextendParameter,min_SA_threshold);
+        LongReadSelfCorrectByOverlap OverlapTree(reverseComplement(target.seedStr),reverseComplement(strbetweensrctarget),reverseComplement(srcStr),dis_between_src_target,extendKmerSize,extendKmerSize+2,FMextendParameter,min_SA_threshold);
         FMWalkReturnType = 	OverlapTree.extendOverlap(fmwalkresult);
         fmwalkresult.mergedSeq = reverseComplement(fmwalkresult.mergedSeq);
    
