@@ -662,13 +662,13 @@ int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature
 		if (totalMaxFreqs > 50)
 		{
 			identity =0.7;
-			min_call_coverage =totalMaxFreqs*0.4;
+			min_call_coverage = totalMaxFreqs*0.4;
 		   
 		}
 		if (totalMaxFreqs > 100)
 		{
 			identity =0.75;
-			min_call_coverage =totalMaxFreqs*0.4;
+			min_call_coverage = totalMaxFreqs*0.4;
 		   
         }
         Timer* DPTimer = new Timer("DP Time",true);

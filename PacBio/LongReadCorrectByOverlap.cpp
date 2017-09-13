@@ -62,7 +62,7 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(
 
     
     //frequencies of correspond k
-    for(double i = m_minOverlap ; i <= 150 ; i++)
+    for(double i = m_minOverlap ; i <= 100 ; i++)
         freqsOfKmerSize.push_back(pow(1-m_PacBioErrorRate,i)*m_PBcoverage);
 
     
@@ -234,18 +234,19 @@ int LongReadSelfCorrectByOverlap::findTheBestPath(SAIntervalNodeResultVector res
 SONode3PtrList LongReadSelfCorrectByOverlap::extendLeaves()
 {
     SONode3PtrList newLeaves;
- 
-   /* if(m_currentKmerSize > m_maxOverlap && m_maxfreqs < 300) // resize when size up to upper bound
+ /*
+    if(m_currentKmerSize > m_maxOverlap ) // resize when size up to upper bound
     {   
-        
+        std::cout<<     "0.0\n";
         size_t LowerBound = m_currentKmerSize  >= m_maxOverlap + 10  ? m_currentKmerSize - 10 : m_maxOverlap;
-        size_t UpperBound = m_currentKmerSize > 140 ? 140: m_currentKmerSize;
-        size_t ReduceSize = SelectFreqsOfrange(LowerBound,UpperBound,m_leaves,300);
+        size_t UpperBound = m_currentKmerSize > 100 ? 100: m_currentKmerSize;
+        size_t ReduceSize = SelectFreqsOfrange(LowerBound,UpperBound,m_leaves,100);
         // std::cout<<   m_currentKmerSize << " " << ReduceSize  <<"mer\n"; 
         refineSAInterval(ReduceSize);
        
 
     }*/
+    
    
     
     if(m_currentKmerSize > m_maxOverlap) refineSAInterval(m_maxOverlap);
@@ -467,6 +468,10 @@ void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList &newLeaves)
 
         
     }
+    
+    
+    size_t leavesSize = m_leaves.size();
+    // std::cout<<  leavesSize    <<"   123\n";
     for(SONode3PtrList::iterator iter = m_leaves.begin(); iter != m_leaves.end(); ++iter)
     {
 
@@ -483,7 +488,13 @@ void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList &newLeaves)
            iter = m_leaves.erase(iter);
            continue;
         } 
-        
+        /*
+        if( leavesSize > 10 && (double)(*iter)->LocalErrorRateRecord.back() - (double)minimumErrorRate > 0.03)
+         {
+            
+           iter = m_leaves.erase(iter);
+           continue;
+        } */
     }
 
     for(SONode3PtrList::iterator iter = m_leaves.begin(); iter != m_leaves.end(); ++iter)

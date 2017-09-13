@@ -80,7 +80,7 @@ MultipleAlignment LongReadOverlap::buildMultipleAlignment2(const std::string& qu
 	for(SequenceOverlapPairVector::iterator it=overlap_vector.begin(); it!=overlap_vector.end(); ++it)
         identityList.push_back(it->overlap.getPercentIdentity() / 100);
     std::sort (identityList.begin(),identityList.end(),comparefunction);
-    size_t maxmumsize = 20;
+    size_t maxmumsize = 30;
     
 	// push into multiple alignment matrix
     for(size_t i = 0; i < srcSize; ++i)
@@ -649,7 +649,7 @@ void LongReadOverlap::retrieveMatches(const std::string& query,
         if(bPassedOverlap && bPassedIdentity)
         {
 			// std::cout << ">" << overlap.getPercentIdentity() / 100 << ":" << overlap.getOverlapLength() << "\n" 
-			// << match_sequence << "\n";
+			// << match_sequence <<" " << min_identity<< "\n" ;
             SequenceOverlapPair op;
             //op.sequence[0] = query;
             op.sequence[1] = match_sequence;
@@ -657,6 +657,7 @@ void LongReadOverlap::retrieveMatches(const std::string& query,
 			op.is_reversed = false;
             overlap_vector.push_back(op);
         }
+       
     }
 }
 
