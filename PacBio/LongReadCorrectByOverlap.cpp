@@ -250,7 +250,7 @@ SONode3PtrList LongReadSelfCorrectByOverlap::extendLeaves()
    
     
     if(m_currentKmerSize > m_maxOverlap) refineSAInterval(m_maxOverlap);
-            
+    // std::cout<<   m_currentKmerSize << " " << m_maxOverlap  <<"mer\n";          
         
     attempToExtend(newLeaves);
         
@@ -260,7 +260,7 @@ SONode3PtrList LongReadSelfCorrectByOverlap::extendLeaves()
         size_t LowerBound = m_currentKmerSize - 2 >= m_minOverlap ? m_currentKmerSize - 2 : m_minOverlap;
         size_t ReduceSize = SelectFreqsOfrange(LowerBound,m_currentKmerSize,m_leaves);
         refineSAInterval(ReduceSize);
-         // std::cout<<   m_currentKmerSize << " " << ReduceSize  <<"mer\n";  
+         
         attempToExtend(newLeaves);
         
       
@@ -488,8 +488,8 @@ void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList &newLeaves)
            iter = m_leaves.erase(iter);
            continue;
         } 
-        /*
-        if( leavesSize > 10 && (double)(*iter)->LocalErrorRateRecord.back() - (double)minimumErrorRate > 0.03)
+        
+        /*if( leavesSize > 15 && (double)(*iter)->LocalErrorRateRecord.back() - (double)minimumErrorRate > 0.03)
          {
             
            iter = m_leaves.erase(iter);
@@ -865,12 +865,14 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
           
         if (currKmer.substr(currKmer.length()-2,1) == currKmer.substr(currKmer.length()-1,1) && currKmer.substr(currKmer.length()-3,1) ==currKmer.substr(currKmer.length()-2,1))   
         {   
-            bvector.at(i-1).first = (float)bvector.at(i-1).first / (float)maxfreqsofleave >= 0.6 ? bvector.at(i-1).first : 0;
+            bvector.at(i-1).first =  bratio >= 0.6  ? bvector.at(i-1).first : 0;
+            // bvector.at(i-1).first = ((totalcount <= 100 && bratio >= 0.6) || (totalcount > 100 && bratio >= 0.5) ) ? bvector.at(i-1).first : 0;
            
          }
         
-
-       if((bratio >= 0.3 || bdiff < 30)  &&(bvector.at(i-1).first >= IntervalSizeCutoff || (bratio >= 0.6 && totalcount >= IntervalSizeCutoff+2)))
+        // std::cout<<   bratio   <<"  r\n";
+       if(( bratio >= 0.6 ||  bdiff < 30 )  &&(bvector.at(i-1).first >= IntervalSizeCutoff || (bratio >= 0.6 && totalcount >= IntervalSizeCutoff+2 )))
+       // if(((totalcount <= 100 && bratio >= 0.3) ||  (bratio >= 0.4 &&  totalcount > 100))  &&(bvector.at(i-1).first >= IntervalSizeCutoff || (bratio >= 0.6 && totalcount >= IntervalSizeCutoff+2 )))
         {
 			
             // extend to b
