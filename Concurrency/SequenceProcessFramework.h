@@ -59,6 +59,7 @@ size_t processWorkSerial(Generator& generator, Processor* pProcessor, PostProces
 
 // Wrapper function for performing operations over n elements from a SeqReader
 // This wrapper exists for interfacing with legacy code
+/* legacy code ignored by KuanWeiLee
 template<class Input, class Output, class Processor, class PostProcessor>
 size_t processSequencesSerial(SeqReader& reader, Processor* pProcessor, PostProcessor* pPostProcessor, size_t n = -1)
 {
@@ -69,6 +70,7 @@ size_t processSequencesSerial(SeqReader& reader, Processor* pProcessor, PostProc
                              Processor,
                              PostProcessor>(generator, pProcessor, pPostProcessor, n);
 }
+*/
 
 // Wrapper function for performing operations over every sequence read in readsFile
 template<class Input, class Output, class Processor, class PostProcessor>
@@ -162,29 +164,18 @@ size_t processWorkParallelPthread(Generator& generator,
         Input workItem;
         bool valid = generator.generate(workItem);
         if(valid)
-        {/*
-            inputBuffers[next_thread]->push_back(workItem);
-            numWorkItemsRead += 1;
-
-            // Change buffers if this one is full
-            if(inputBuffers[next_thread]->size() == BUFFER_SIZE)
-            {
-                ++num_buffers_full;
-                ++next_thread;
-            }*/
+        {
             
            inputBuffers[next_thread]->push_back(workItem);
             numWorkItemsRead += 1;
-
-            // Change buffers if this one is full
-			if(inputBuffers[next_thread]->size() == BUFFER_SIZE)
-                ++num_buffers_full;
 			
-			// move to next circular buffer vector
-			next_thread = (next_thread+1)% numThreads; 
+			if(inputBuffers[numThreads-1]->size() == BUFFER_SIZE)
+				num_buffers_full = numThreads;
+		
         }
-
-        done = !valid || generator.getNumConsumed() == n;
+		next_thread = (next_thread+1)% numThreads; 
+        
+		done = !valid || generator.getNumConsumed() == n;
 
         // Once all buffers are full or the input is finished, dispatch the reads to the threads
         // by swapping work buffers.
@@ -353,6 +344,7 @@ size_t processWorkParallelOpenMP(Generator& generator,
 }
 
 // Wrapper function for operating over n elements of from a SeqReader
+/*legacy code ignored by KuanWeiLee
 template<class Input, class Output, class Processor, class PostProcessor>
 size_t processSequencesParallel(SeqReader& reader,
                                 std::vector<Processor*> processPtrVector,
@@ -367,8 +359,9 @@ size_t processSequencesParallel(SeqReader& reader,
                                       Processor,
                                       PostProcessor>(generator, processPtrVector, pPostProcessor, n);
 }
-
+*/
 // Wrapper function for operating over n elements of from a SeqReader
+/*legacy code ignored by KuanWeiLee
 template<class Input, class Output, class Processor, class PostProcessor>
 size_t processSequencesParallelOpenMP(SeqReader& reader,
                                       std::vector<Processor*> processPtrVector,
@@ -383,13 +376,19 @@ size_t processSequencesParallelOpenMP(SeqReader& reader,
                                      Processor,
                                      PostProcessor>(generator, processPtrVector, pPostProcessor, n);
 }
-
+*/
 // Wrapper function for operating over a file of sequences
 template<class Input, class Output, class Processor, class PostProcessor>
 size_t processSequencesParallel(const std::string& readsFile, std::vector<Processor*> processPtrVector, PostProcessor* pPostProcessor)
 {
     SeqReader reader(readsFile);
-    return processSequencesParallel<Input, Output, Processor, PostProcessor>(reader, processPtrVector, pPostProcessor);
+	WorkItemGenerator<Input> generator(&reader);
+	return processWorkParallelPthread<Input,
+                                      Output,
+                                      WorkItemGenerator<Input>,
+                                      Processor,
+                                      PostProcessor>(generator, processPtrVector, pPostProcessor, n);
+    //return processSequencesParallel<Input, Output, Processor, PostProcessor>(reader, processPtrVector, pPostProcessor);
 }
 
 // Wrapper function for operating over a file of sequences
@@ -397,7 +396,13 @@ template<class Input, class Output, class Processor, class PostProcessor>
 size_t processSequencesParallelOpenMP(const std::string& readsFile, std::vector<Processor*> processPtrVector, PostProcessor* pPostProcessor)
 {
     SeqReader reader(readsFile);
-    return processSequencesParallelOpenMP<Input, Output, Processor, PostProcessor>(reader, processPtrVector, pPostProcessor);
+	WorkItemGenerator<Input> generator(&reader);
+	return processWorkParallelOpenMP<Input,
+                                      Output,
+                                      WorkItemGenerator<Input>,
+                                      Processor,
+                                      PostProcessor>(generator, processPtrVector, pPostProcessor, n);
+    //return processSequencesParallelOpenMP<Input, Output, Processor, PostProcessor>(reader, processPtrVector, pPostProcessor);
 }
 
 
