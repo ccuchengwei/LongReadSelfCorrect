@@ -124,6 +124,7 @@ class LongReadSelfCorrectByOverlap
         bool isTerminated(SAIntervalNodeResultVector& results);
 		bool isOverlapAcceptable(SAIOverlapNode3* currNode);
 		bool isSupportedByNewSeed(SAIOverlapNode3* currNode, size_t smallSeedIdx, size_t largeSeedIdx);
+        bool ismatchedbykmer(BWTInterval currFwdInterval,BWTInterval currRvcInterval);
 		double computeErrorRate(SAIOverlapNode3* currNode);
 	
         //
