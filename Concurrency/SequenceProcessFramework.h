@@ -103,7 +103,7 @@ size_t processSequencesSerial(const std::string& readsFile, Processor* pProcesso
 // This version is based on pthreads.
 template<class Input, class Output, class Generator, class Processor, class PostProcessor>
 size_t processWorkParallelPthread(Generator& generator,
-                                  std::vector<Processor*> processPtrVector,
+                                  std::vector<Processor*> pProcessorVector,
                                   PostProcessor* pPostProcessor,
                                   size_t n = -1)
 {
@@ -111,23 +111,23 @@ size_t processWorkParallelPthread(Generator& generator,
 
     // Helpful typedefs
     typedef ThreadWorker<Input, Output, Processor> Thread;
-    typedef std::vector<Thread*> ThreadPtrVector;
+    typedef std::vector<Thread*> pThreadVector;
 
     typedef std::vector<Input> InputItemVector;
     typedef std::vector<InputItemVector*> InputBufferVector;
 
     typedef std::vector<Output> OutputVector;
     typedef std::vector<OutputVector*> OutputBufferVector;
-    typedef std::vector<sem_t*> SemaphorePtrVector;
+    typedef std::vector<sem_t*> pSemaphoreVector;
 
 
     // Initialize threads, one thread per processor that was passed in
-    int numThreads = processPtrVector.size();
+    int numThreads = pProcessorVector.size();
 
-    ThreadPtrVector threadVec(numThreads);
+    pThreadVector threadVec(numThreads);
     InputBufferVector inputBuffers(numThreads);
     OutputBufferVector outputBuffers(numThreads);
-    SemaphorePtrVector semVec(numThreads);
+    pSemaphoreVector semVec(numThreads);
 
     // Create the threads
     for(int i = 0; i < numThreads; ++i)
@@ -142,7 +142,7 @@ size_t processWorkParallelPthread(Generator& generator,
         }
 
         // Create and start the thread
-        threadVec[i] = new Thread(semVec[i], processPtrVector[i], BUFFER_SIZE);
+        threadVec[i] = new Thread(semVec[i], pProcessorVector[i], BUFFER_SIZE);
         threadVec[i]->start();
 
         inputBuffers[i] = new InputItemVector;
@@ -260,7 +260,7 @@ size_t processWorkParallelPthread(Generator& generator,
 // This version is based on OpenMP.
 template<class Input, class Output, class Generator, class Processor, class PostProcessor>
 size_t processWorkParallelOpenMP(Generator& generator,
-                                 std::vector<Processor*> processPtrVector,
+                                 std::vector<Processor*> pProcessorVector,
                                  PostProcessor* pPostProcessor,
                                  size_t n = -1)
 {
@@ -276,7 +276,7 @@ size_t processWorkParallelOpenMP(Generator& generator,
 
     size_t numWorkItemsRead = 0;
     size_t numWorkItemsWrote = 0;
-    size_t numThreads = processPtrVector.size();
+    size_t numThreads = pProcessorVector.size();
 
     omp_set_num_threads(numThreads);
 
@@ -305,7 +305,7 @@ size_t processWorkParallelOpenMP(Generator& generator,
             {
                 // Dispatch the work to a processor and write the output to the output buffer
                 size_t tid = omp_get_thread_num();
-                outputBuffer[i] = processPtrVector[tid]->process(inputBuffer[i]);
+                outputBuffer[i] = pProcessorVector[tid]->process(inputBuffer[i]);
             }
 			
 			// Process the output with a single thread
@@ -335,7 +335,7 @@ size_t processWorkParallelOpenMP(Generator& generator,
 
 	#else // NO OPENMP
     (void)generator;
-    (void)processPtrVector;
+    (void)pProcessorVector;
     (void)pPostProcessor;
     (void)n;
     printf("Error: threading enabled but you did not compile with OpenMP\n");
@@ -347,7 +347,7 @@ size_t processWorkParallelOpenMP(Generator& generator,
 /*legacy code ignored by KuanWeiLee
 template<class Input, class Output, class Processor, class PostProcessor>
 size_t processSequencesParallel(SeqReader& reader,
-                                std::vector<Processor*> processPtrVector,
+                                std::vector<Processor*> pProcessorVector,
                                 PostProcessor* pPostProcessor,
                                 size_t n = -1)
 {
@@ -357,14 +357,14 @@ size_t processSequencesParallel(SeqReader& reader,
                                       Output,
                                       InputGenerator,
                                       Processor,
-                                      PostProcessor>(generator, processPtrVector, pPostProcessor, n);
+                                      PostProcessor>(generator, pProcessorVector, pPostProcessor, n);
 }
 */
 // Wrapper function for operating over n elements of from a SeqReader
 /*legacy code ignored by KuanWeiLee
 template<class Input, class Output, class Processor, class PostProcessor>
 size_t processSequencesParallelOpenMP(SeqReader& reader,
-                                      std::vector<Processor*> processPtrVector,
+                                      std::vector<Processor*> pProcessorVector,
                                       PostProcessor* pPostProcessor,
                                       size_t n = -1)
 {
@@ -374,12 +374,12 @@ size_t processSequencesParallelOpenMP(SeqReader& reader,
                                      Output,
                                      InputGenerator,
                                      Processor,
-                                     PostProcessor>(generator, processPtrVector, pPostProcessor, n);
+                                     PostProcessor>(generator, pProcessorVector, pPostProcessor, n);
 }
 */
 // Wrapper function for operating over a file of sequences
 template<class Input, class Output, class Processor, class PostProcessor>
-size_t processSequencesParallel(const std::string& readsFile, std::vector<Processor*> processPtrVector, PostProcessor* pPostProcessor)
+size_t processSequencesParallel(const std::string& readsFile, std::vector<Processor*> pProcessorVector, PostProcessor* pPostProcessor)
 {
     SeqReader reader(readsFile);
 	WorkItemGenerator<Input> generator(&reader);
@@ -387,13 +387,13 @@ size_t processSequencesParallel(const std::string& readsFile, std::vector<Proces
                                       Output,
                                       WorkItemGenerator<Input>,
                                       Processor,
-                                      PostProcessor>(generator, processPtrVector, pPostProcessor, n);
-    //return processSequencesParallel<Input, Output, Processor, PostProcessor>(reader, processPtrVector, pPostProcessor);
+                                      PostProcessor>(generator, pProcessorVector, pPostProcessor);
+    //return processSequencesParallel<Input, Output, Processor, PostProcessor>(reader, pProcessorVector, pPostProcessor);
 }
 
 // Wrapper function for operating over a file of sequences
 template<class Input, class Output, class Processor, class PostProcessor>
-size_t processSequencesParallelOpenMP(const std::string& readsFile, std::vector<Processor*> processPtrVector, PostProcessor* pPostProcessor)
+size_t processSequencesParallelOpenMP(const std::string& readsFile, std::vector<Processor*> pProcessorVector, PostProcessor* pPostProcessor)
 {
     SeqReader reader(readsFile);
 	WorkItemGenerator<Input> generator(&reader);
@@ -401,8 +401,8 @@ size_t processSequencesParallelOpenMP(const std::string& readsFile, std::vector<
                                       Output,
                                       WorkItemGenerator<Input>,
                                       Processor,
-                                      PostProcessor>(generator, processPtrVector, pPostProcessor, n);
-    //return processSequencesParallelOpenMP<Input, Output, Processor, PostProcessor>(reader, processPtrVector, pPostProcessor);
+                                      PostProcessor>(generator, pProcessorVector, pPostProcessor);
+    //return processSequencesParallelOpenMP<Input, Output, Processor, PostProcessor>(reader, pProcessorVector, pPostProcessor);
 }
 
 

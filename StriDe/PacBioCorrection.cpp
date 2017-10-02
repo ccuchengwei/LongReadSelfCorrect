@@ -221,26 +221,26 @@ int PacBioCorrectionMain(int argc, char** argv)
 	else
 	{
 		// Parallel mode
-		std::vector<PacBioCorrectionProcess*> processorVector;
+		std::vector<PacBioCorrectionProcess*> pProcessorVector;
 		for(int i = 0; i < opt::numThreads; ++i)
 		{
 			PacBioCorrectionProcess* pProcessor = new PacBioCorrectionProcess(ecParams);
-			processorVector.push_back(pProcessor);
+			pProcessorVector.push_back(pProcessor);
 		}
 
 		SequenceProcessFramework::processSequencesParallel<SequenceWorkItem,
 		PacBioCorrectionResult,
 		PacBioCorrectionProcess,
-		PacBioCorrectionPostProcess>(opt::readsFile, processorVector, &postProcessor);
+		PacBioCorrectionPostProcess>(opt::readsFile, pProcessorVector, &postProcessor);
 
 		// SequenceProcessFramework::processSequencesParallelOpenMP<SequenceWorkItem,
 		// PacBioCorrectionResult,
 		// PacBioCorrectionProcess,
-		// PacBioCorrectionPostProcess>(opt::readsFile, processorVector, &postProcessor);
+		// PacBioCorrectionPostProcess>(opt::readsFile, pProcessorVector, &postProcessor);
 		
 		for(int i = 0; i < opt::numThreads; ++i)
 		{
-			delete processorVector[i];
+			delete pProcessorVector[i];
 		}
 	}
 
