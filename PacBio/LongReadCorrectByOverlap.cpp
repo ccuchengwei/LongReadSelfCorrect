@@ -868,18 +868,19 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
            size_t bdiff = std::abs((int)bvector.at(i-1).first-(int)maxfreqsofleave);
           
            char b = BWT_ALPHABET::getChar(i);
-          
+          // bool match = false;
         if (currKmer.substr(currKmer.length()-2,1) == currKmer.substr(currKmer.length()-1,1) && currKmer.substr(currKmer.length()-3,1) ==currKmer.substr(currKmer.length()-2,1))   
         {   
             // bvector.at(i-1).first =  bratio >= 0.6  ? bvector.at(i-1).first : 0;
-            bvector.at(i-1).first = ((totalcount <= 100 && bratio >= 0.6) || (totalcount > 100 && bratio >= 0.5) ) ? bvector.at(i-1).first : 0;
-           
+            bratio = ((maxfreqsofleave <= 100 && bratio >= 0.6) || (maxfreqsofleave > 100 && bratio >= 0.3) ) ? bratio : 0;
+            // std::cout<<   bratio   <<"\n";
+           // if ( totalcount > 100 && bratio >= 0.4 && ismatchedbykmer(bvector.at(i-1).second.interval[0],bvector.at(i-1).second.interval[1])) match = true;
          }
-         //bool match = false;
-        //if ( maxfreqsofleave > 100&& bratio >= 0.25 &&ismatchedbykmer(bvector.at(i-1).second.interval[0],bvector.at(i-1).second.interval[1])) match = true;
+       
+        // if ( maxfreqsofleave > 100&& bratio >= 0.25 &&ismatchedbykmer(bvector.at(i-1).second.interval[0],bvector.at(i-1).second.interval[1])) match = true;
         //bool isPassedhighfreqsThreshold = maxfreqsofleave > 100 && bratio >= 0.5  ? true : false; 
         bool isPassedThreshold =  bratio >= 0.25 && (bvector.at(i-1).first >= IntervalSizeCutoff || (bratio >= 0.6 && totalcount >= IntervalSizeCutoff+2 )) ? true: false;
-       if(isPassedThreshold)
+       if( isPassedThreshold )
        // if(((totalcount <= 100 && bratio >= 0.3) ||  (bratio >= 0.4 &&  totalcount > 100))  &&(bvector.at(i-1).first >= IntervalSizeCutoff || (bratio >= 0.6 && totalcount >= IntervalSizeCutoff+2 )))
         {
 			

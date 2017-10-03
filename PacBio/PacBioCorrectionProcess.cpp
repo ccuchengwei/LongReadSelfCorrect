@@ -50,7 +50,7 @@ PacBioCorrectionResult PacBioCorrectionProcess::PBSelfCorrection(const SequenceW
    // separatebykmer(workItem.read.id,readSeq,m_params.kmerLength);
    
 	// find seeds using fixed or dynamic kmers depending on 1st round or not
-     
+    
     seedVec = hybridSeedingFromPB(readSeq);
     
     
@@ -84,8 +84,9 @@ PacBioCorrectionResult PacBioCorrectionProcess::PBSelfCorrection(const SequenceW
 
     // reserve sufficient str length for fast append
     pacbioCorrectedStrs.back().seedStr.reserve(readSeq.length());
+   
     initCorrect(readSeq, seedVec, pacbioCorrectedStrs, result);
-
+ 
 	
 	result.merge = true;
 	result.totalReadsLen = readSeq.length();
@@ -180,7 +181,7 @@ void PacBioCorrectionProcess::initCorrect(std::string& readSeq, std::vector<Seed
 				// the last seed will become new source and should be updated
 				pacbioCorrectedStrs.back().endBestKmerSize = target.endBestKmerSize;
 				pacbioCorrectedStrs.back().isRepeat = target.isRepeat;
-
+                pacbioCorrectedStrs.back().maxFixedMerFreqs = target.maxFixedMerFreqs;
 				// result statistics
 				// result.correctedLen += extendedStr.length();
 				result.correctedLen += mergedseq.length();
@@ -324,15 +325,15 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
     
     std::vector<float> kmerThreshold;
 	kmerThreshold.resize(51,0);
-	for(size_t fixedmerSize=kmerSize ; fixedmerSize<51 ; fixedmerSize++)
+	for(size_t fixedmerSize = kmerSize ; fixedmerSize<51 ; fixedmerSize++)
 	{
         float kmerThresholdValue;
         if(!isLowCoverage)
             // kmerThresholdValue=(-0.5*fixedmerSize+16.17)*((float)m_params.PBcoverage/60);//threshold of normal coverage
-            kmerThresholdValue = 0.0710704607*m_params.PBcoverage-0.5445663957*kmerSize+ 12.26253388;
+            kmerThresholdValue = 0.0710704607*m_params.PBcoverage-0.5445663957*fixedmerSize+ 12.26253388;
         else    
             // kmerThresholdValue = (-0.43*fixedmerSize+14.1)*((float)m_params.PBcoverage/60);//threshold of low coverage
-            kmerThresholdValue =  0.05776992234*m_params.PBcoverage-0.4583043394*kmerSize+10.19159685;
+            kmerThresholdValue =  0.05776992234*m_params.PBcoverage-0.4583043394*fixedmerSize+10.19159685;
 		kmerThreshold.at(fixedmerSize) = kmerThresholdValue  < 3 ? 3: kmerThresholdValue;
 	}
     
@@ -614,14 +615,15 @@ int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature
     FMWalkResult2 fmwalkresult;
     Timer* FMTimer = new Timer("FM Time",true);
     int FMWalkReturnType =0;
-   if(source.isRepeat && ! target.isRepeat)
+     // std::cout<<  source.maxFixedMerFreqs  <<"||" <<target.maxFixedMerFreqs    <<" test\n";
+   if(source.isRepeat && source.maxFixedMerFreqs > target.maxFixedMerFreqs  )
    {    
-        // std::cout<<      "0.0\n";
-       
+         // if(extendKmerSize > target.seedStr.length()) extendKmerSize = target.seedStr.length();
         LongReadSelfCorrectByOverlap OverlapTree(reverseComplement(target.seedStr),reverseComplement(strbetweensrctarget),reverseComplement(srcStr),dis_between_src_target,extendKmerSize,extendKmerSize+2,FMextendParameter,min_SA_threshold);
-        FMWalkReturnType = 	OverlapTree.extendOverlap(fmwalkresult);
+     
+       FMWalkReturnType = 	OverlapTree.extendOverlap(fmwalkresult);
         fmwalkresult.mergedSeq = reverseComplement(fmwalkresult.mergedSeq);
-   
+  
    }
     else
     {
@@ -635,6 +637,7 @@ int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature
             
           mergedseq = fmwalkresult.mergedSeq;
           mergedseq = mergedseq.substr(extendKmerSize);
+          
         }
 
           m_total_FMtime += FMTimer->getElapsedWallTime() ;
@@ -647,7 +650,7 @@ int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature
     
     
     
-    
+   
    
     if(FMWalkReturnType <= 0)
     //v2
@@ -698,7 +701,7 @@ int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature
     
     }
     
-    
+     
 	return FMWalkReturnType;
 }
 // refine seed interval using larger kmer
