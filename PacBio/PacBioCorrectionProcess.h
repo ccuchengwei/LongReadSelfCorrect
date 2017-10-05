@@ -181,7 +181,8 @@ public:
 
 private:
     FMextendParameters FMextendParameter();
-    void separatebykmer(std::string readid,std::string readSeq,size_t kmerSize);
+	//Legacy code ignored by KuanWeiLee
+    //void separatebykmer(std::string readid,std::string readSeq,size_t kmerSize);
 	// PacBio correction by Yao-Ting Huang, v20151208
     
 
