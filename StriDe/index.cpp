@@ -335,7 +335,7 @@ void parseIndexOptions(int argc, char** argv)
 
     // Parse the input filenames
     opt::readsFile = argv[optind++];
-    //if(opt::prefix.empty())
+    if(opt::prefix.empty())
         opt::prefix = stripFilename(opt::readsFile);
 
     // Check if input file is empty

@@ -44,7 +44,7 @@ static const char *CORRECT_USAGE_MESSAGE =
 "      --help                           display this help and exit\n"
 "      -v, --verbose                    display verbose output\n"
 "      -p, --prefix=PREFIX              use PREFIX for the names of the index files (default: prefix of the input file)\n"
-"      -o, --outfile=FILE               write the corrected reads to FILE (default: READSFILE.ec.fa)\n"
+"      -o, --directory=PATH             Directory of results\n"
 "      -t, --threads=NUM                use NUM threads for the computation (default: 1)\n"
 "      -a, --algorithm=STR              pacbioH: pacbio hybrid correction (using NGS reads to correct PB reads)\n"
 "                                       pacbioS: pacbio self correction (using PB reads to correct PB reads)(default)\n"
@@ -53,12 +53,12 @@ static const char *CORRECT_USAGE_MESSAGE =
 "      -s, --min-kmer-size=N            The minimum length of the kmer to use. (default: 13.)\n"
 "      -x, --kmer-threshold=N           Attempt to correct kmers that are seen less than N times. (default: 3)\n"
 "      -e, --error-rate=N               The error rate of PacBio reads.(default:0.15)"
-"      -i, --idmer-length=N       The length of the kmer to identify similar reads.(default: 9)"
+"      -i, --idmer-length=N             The length of the kmer to identify similar reads.(default: 9)"
 "      -L, --max-leaves=N               Number of maximum leaves in the search tree. (default: 32)\n"
 "      -C, --PBcoverage=N               Coverage of PacBio reads(default: 60)\n"
 
 
-"      --split                  		split the uncorrected reads (default: false)\n"
+"      --split                          split the uncorrected reads (default: false)\n"
 
 "\nReport bugs to " PACKAGE_BUGREPORT "\n\n";
 
@@ -90,6 +90,7 @@ namespace opt
     static bool DebugExtend = false;
     static bool DebugSeed = false;
 	static PacBioCorrectionAlgorithm algorithm = PBC_SELF;
+	static std::string directory;
 }
 
 static const char* shortopts = "p:t:o:a:k:x:L:s:d:c:C:v:e:i";
@@ -99,7 +100,7 @@ enum { OPT_HELP = 1, OPT_VERSION, OPT_DISCARD, OPT_SPLIT, OPT_FIRST,OPT_DEBUGEXT
 static const struct option longopts[] = {
 	{ "verbose",       no_argument,       NULL, 'v' },
 	{ "threads",       required_argument, NULL, 't' },
-	{ "outfile",       required_argument, NULL, 'o' },
+	{ "directory",       required_argument, NULL, 'o' },
 	{ "prefix",        required_argument, NULL, 'p' },
 	{ "algorithm",     required_argument, NULL, 'a' },
 	{ "kmer-size",     required_argument, NULL, 'k' },
@@ -172,7 +173,7 @@ int PacBioCorrectionMain(int argc, char** argv)
 	
 	// Open outfiles and start a timer
 	std::ostream* pWriter = createWriter(opt::outFile);
-	std::ostream* pDiscardWriter = (!opt::discardFile.empty() ? createWriter(opt::discardFile) : NULL);
+	std::ostream* pDiscardWriter = createWriter(opt::discardFile);
 	Timer* pTimer = new Timer(PROGRAM_IDENT);
 
 	ecParams.algorithm = opt::algorithm;
@@ -190,6 +191,7 @@ int PacBioCorrectionMain(int argc, char** argv)
     ecParams.DebugExtend = opt::DebugExtend;
     ecParams.DebugSeed = opt::DebugSeed;
 	ecParams.maxSeedInterval = opt::maxSeedInterval;
+	ecParams.directory = opt::directory;
 	
 	if(ecParams.algorithm == PBC_SELF)
 	{
@@ -275,7 +277,7 @@ void parsePacBioCorrectionOptions(int argc, char** argv)
 		switch (c)
 		{
 		case 'p': arg >> opt::prefix; break;
-		case 'o': arg >> opt::outFile; break;
+		case 'o': arg >> opt::directory; break;
 		case 't': arg >> opt::numThreads; break;
 		case 'a': arg >> algo_str; break;
 		case 'k': arg >> opt::kmerLength; break;
@@ -365,14 +367,17 @@ void parsePacBioCorrectionOptions(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 	CorrectionThresholds::Instance().setBaseMinSupport(opt::kmerThreshold);
-
+	
+	opt::directory = (opt::directory.empty() ? "." : opt::directory) + "/";
+	system(("mkdir -p " + opt::directory + "seed/").c_str());
+	
 	std::string out_prefix = stripFilename(opt::readsFile);
-	if(opt::outFile.empty())
+	if(opt::algorithm == PBC_SELF)
 	{
-		if (opt::algorithm == PBC_SELF)
-		opt::outFile = out_prefix + ".PBSelfCor.fa";
-		else
-		assert(false);
+		opt::outFile = opt::directory + out_prefix + ".correct.fa";
+		opt::discardFile = opt::directory + out_prefix + ".discard.fa";
 	}
-	opt::discardFile = out_prefix + ".discard.fa";
+	else
+		assert(false);
+	
 }

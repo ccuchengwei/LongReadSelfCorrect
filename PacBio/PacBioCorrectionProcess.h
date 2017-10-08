@@ -102,7 +102,8 @@ struct PacBioCorrectionParameters
 	KmerDistribution kd;
     
     bool DebugExtend;
-    bool DebugSeed;    
+    bool DebugSeed;
+	std::string directory;
 };
 
 
