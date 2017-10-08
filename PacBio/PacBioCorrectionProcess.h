@@ -181,7 +181,8 @@ public:
 
 private:
     FMextendParameters FMextendParameter();
-    void separatebykmer(std::string readid,std::string readSeq,size_t kmerSize);
+	//Legacy code ignored by KuanWeiLee
+    //void separatebykmer(std::string readid,std::string readSeq,size_t kmerSize);
 	// PacBio correction by Yao-Ting Huang, v20151208
     
 
@@ -196,7 +197,7 @@ private:
 	std::pair<size_t, size_t> refineRepeatSeed(const std::string readSeq, size_t& seedStartPos, size_t& seedEndPos,size_t normal_freqs);
 
 	// return complexity of seq, default: 0.9
-	bool  isLowComplexity (std::string seq, float & GCratio, float threshold=0.7);
+	bool  isLowComplexity (const std::string& seq, float & GCratio, float threshold=0.7);
 
 	// return <0: give up and break
 	// return 0: retry the same target
