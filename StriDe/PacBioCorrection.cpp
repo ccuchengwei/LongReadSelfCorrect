@@ -41,11 +41,11 @@ static const char *CORRECT_USAGE_MESSAGE =
 "Usage: " PACKAGE_NAME " " SUBPROGRAM " [OPTION] ... READSFILE\n"
 "Correct PacBio reads via FM-index walk\n"
 "\n"
-"      --help                           display this help and exit\n"
-"      -v, --verbose                    display verbose output\n"
-"      -p, --prefix=PREFIX              use PREFIX for the names of the index files (default: prefix of the input file)\n"
-"      -o, --directory=PATH             Directory of results\n"
-"      -t, --threads=NUM                use NUM threads for the computation (default: 1)\n"
+"      --help                           Display this help and exit\n"
+"      -v, --verbose                    Display verbose output\n"
+"      -p, --prefix=PREFIX              Use PREFIX for the names of the index files (default: prefix of the input file)\n"
+"      -o, --directory=PATH             Put results in the directory\n"
+"      -t, --threads=NUM                Use NUM threads for the computation (default: 1)\n"
 "      -a, --algorithm=STR              pacbioH: pacbio hybrid correction (using NGS reads to correct PB reads)\n"
 "                                       pacbioS: pacbio self correction (using PB reads to correct PB reads)(default)\n"
 "\nPacBio correction parameters:\n"
@@ -57,8 +57,8 @@ static const char *CORRECT_USAGE_MESSAGE =
 "      -L, --max-leaves=N               Number of maximum leaves in the search tree. (default: 32)\n"
 "      -C, --PBcoverage=N               Coverage of PacBio reads(default: 60)\n"
 
-
-"      --split                          split the uncorrected reads (default: false)\n"
+"      --debugseed                      Output seeds file for each reads (default: false)\n"
+"      --split                          Split the uncorrected reads (default: false)\n"
 
 "\nReport bugs to " PACKAGE_BUGREPORT "\n\n";
 

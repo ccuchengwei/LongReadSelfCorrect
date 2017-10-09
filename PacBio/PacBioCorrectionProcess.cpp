@@ -373,17 +373,19 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 				}
 			}
 			*/
-			if(!OVERTHRESHOLD(currentKmerFreqs,dynamicKmerThresholdValue,fwdKmerFreqs,rvcKmerFreqs)
-				|| isLowComplexity(kmer,GCratio)
-				|| dynamicKmerSize > kmerLengthUpperBound
-				|| fixedMerFreqs < initKmerThresholdValue
-				|| (float)fixedMerFreqs / (float)maxFixedMerFreqs < 0.6)
+			if  (
+				   dynamicKmerSize > kmerLengthUpperBound																	//1.read length				
+				|| isLowComplexity(kmer,GCratio)																			//2.read complexity
+				|| fixedMerFreqs < initKmerThresholdValue																	//3.fixed kmer frequency
+				|| !OVERTHRESHOLD(currentKmerFreqs,dynamicKmerThresholdValue,fwdKmerFreqs,rvcKmerFreqs)						//4.dynamic kmer frequency
+				|| ( maxFixedMerFreqs > 5*initKmerThresholdValue && (float)fixedMerFreqs / (float)maxFixedMerFreqs < 0.6)	//5.hitchhiking kmer (HIGH-->LOW)
+				)
 			{
 				if(isSeed)
 					kmer.erase(--dynamicKmerSize);
 				break;
 			}
-			if((float)fixedMerFreqs / (float)maxFixedMerFreqs > 1.67)
+			if( fixedMerFreqs > 5*initKmerThresholdValue && (float)fixedMerFreqs / (float)maxFixedMerFreqs > 1.67)			//6.hitchhiking kmer (LOW-->HIGH)
 			{
 				isSeed = false;
 				startPos = movePos - 1;
@@ -393,7 +395,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 		}
 		if(isSeed && maxFixedMerFreqs <= 1024)
 		{
-			bool isRepeat = maxFixedMerFreqs > 5*kmerThresholdTable[staticKmerSize];
+			bool isRepeat = maxFixedMerFreqs > 5*initKmerThresholdValue;
 			seedEndPos = seedStartPos + dynamicKmerSize - 1;
 			SeedFeature newSeed(seedStartPos, kmer, isRepeat, staticKmerSize, m_params.PBcoverage/2);
 			//newSeed.estimateBestKmerSize(m_params.indices.pBWT);
@@ -405,7 +407,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 	//[Debugseed] should be output more dedicately.Noted & abbreviated by KuanWeiLee
     if(m_params.DebugSeed)
     {
-		std::string outfilename = m_params.directory + "seed/" + m_readid + "_seedfile2.out";
+		std::string outfilename = m_params.directory + "seed/" + m_readid + ".seed";
          std::ofstream outfile (outfilename);
          // outfile << ">" + m_readid << std::endl;
 		for(std::vector<SeedFeature>::iterator it = seedVec.begin() ; it != seedVec.end() ; it++)
