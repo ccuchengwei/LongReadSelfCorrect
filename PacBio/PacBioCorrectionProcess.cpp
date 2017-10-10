@@ -378,14 +378,25 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 				|| isLowComplexity(kmer,GCratio)																			//2.read complexity
 				|| fixedMerFreqs < initKmerThresholdValue																	//3.fixed kmer frequency
 				|| !OVERTHRESHOLD(currentKmerFreqs,dynamicKmerThresholdValue,fwdKmerFreqs,rvcKmerFreqs)						//4.dynamic kmer frequency
-				|| ( maxFixedMerFreqs > 5*initKmerThresholdValue && (float)fixedMerFreqs / (float)maxFixedMerFreqs < 0.6)	//5.hitchhiking kmer (HIGH-->LOW)
+				//|| ( maxFixedMerFreqs > 5*initKmerThresholdValue && (float)fixedMerFreqs / (float)maxFixedMerFreqs < 0.6)
 				)
 			{
 				if(isSeed)
+				{
 					kmer.erase(--dynamicKmerSize);
+					seedEndPos = seedStartPos + dynamicKmerSize - 1;
+					startPos = seedEndPos;
+				}
 				break;
 			}
-			if( fixedMerFreqs > 5*initKmerThresholdValue && (float)fixedMerFreqs / (float)maxFixedMerFreqs > 1.67)			//6.hitchhiking kmer (LOW-->HIGH)
+			if( maxFixedMerFreqs > 5*initKmerThresholdValue && (float)fixedMerFreqs / (float)maxFixedMerFreqs < 0.6)		//5.hitchhiking kmer (HIGH-->LOW)
+			{
+				kmer.erase(--dynamicKmerSize);
+				seedEndPos = seedStartPos + dynamicKmerSize - 1;
+				startPos = seedEndPos + 1;
+				break;
+			}
+			else if( fixedMerFreqs > 5*initKmerThresholdValue && (float)fixedMerFreqs / (float)maxFixedMerFreqs > 1.67)		//6.hitchhiking kmer (LOW-->HIGH)
 			{
 				isSeed = false;
 				startPos = movePos - 1;
@@ -396,12 +407,12 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 		if(isSeed && maxFixedMerFreqs <= 1024)
 		{
 			bool isRepeat = maxFixedMerFreqs > 5*initKmerThresholdValue;
-			seedEndPos = seedStartPos + dynamicKmerSize - 1;
 			SeedFeature newSeed(seedStartPos, kmer, isRepeat, staticKmerSize, m_params.PBcoverage/2);
 			//newSeed.estimateBestKmerSize(m_params.indices.pBWT);
 			newSeed.maxFixedMerFreqs = maxFixedMerFreqs;
 			seedVec.push_back(newSeed);
-			startPos = seedEndPos;
+			//seedEndPos = seedStartPos + dynamicKmerSize - 1;
+			//startPos = seedEndPos;
 		}
 	}
 	//[Debugseed] should be output more dedicately.Noted & abbreviated by KuanWeiLee
