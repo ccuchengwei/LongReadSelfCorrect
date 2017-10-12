@@ -318,7 +318,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 	for(size_t k=staticKmerSize ; k <= kmerLengthUpperBound ; k++)
 	{        
 		float kmerThresholdValue = FORMULA(isLowCoverage,m_params.PBcoverage,k);
-		kmerThresholdTable[k] = kmerThresholdValue  < 3 ? 3 : kmerThresholdValue;
+		kmerThresholdTable[k] = kmerThresholdValue  < 5 ? 5 : kmerThresholdValue;
 	}
 	//Part 3 : Search seeds; slide through the read sequence with dynamic kmers. Noted by KuanWeiLee
 	for(size_t startPos = 0; startPos <= readSeq.length() - staticKmerSize; startPos++)
@@ -378,7 +378,6 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 				|| isLowComplexity(kmer,GCratio)																			//2.read complexity
 				|| fixedMerFreqs < initKmerThresholdValue																	//3.fixed kmer frequency
 				|| !OVERTHRESHOLD(currentKmerFreqs,dynamicKmerThresholdValue,fwdKmerFreqs,rvcKmerFreqs)						//4.dynamic kmer frequency
-				//|| ( maxFixedMerFreqs > 5*initKmerThresholdValue && (float)fixedMerFreqs / (float)maxFixedMerFreqs < 0.6)
 				)
 			{
 				if(isSeed)
@@ -388,7 +387,8 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 					startPos = seedEndPos;
 				}
 				break;
-			}
+			}			
+			//Kmer Hitchhike			
 			if( maxFixedMerFreqs > 5*initKmerThresholdValue && (float)fixedMerFreqs / (float)maxFixedMerFreqs < 0.6)		//5.hitchhiking kmer (HIGH-->LOW)
 			{
 				kmer.erase(--dynamicKmerSize);
@@ -402,27 +402,42 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 				startPos = movePos - 1;
 				break;
 			}
+			
 			maxFixedMerFreqs = std::max(maxFixedMerFreqs,fixedMerFreqs);
 		}
-		if(isSeed && maxFixedMerFreqs <= 1024)
+		if	(
+			isSeed 
+			//&& maxFixedMerFreqs <= 1024
+			)
 		{
 			bool isRepeat = maxFixedMerFreqs > 5*initKmerThresholdValue;
+			//Seed Hitchhike
+			bool isHitchhiked = !seedVec.empty() 
+								&& seedStartPos - seedVec.back().seedEndPos < m_repeat_distance
+								&& (float)seedVec.back().maxFixedMerFreqs / (float)maxFixedMerFreqs > 1.67;
+			bool prevIsHitchhiked = isRepeat 
+									&& !seedVec.empty()
+									&& seedStartPos -seedVec.back().seedEndPos < m_repeat_distance
+									&& (float)seedVec.back().maxFixedMerFreqs / (float)maxFixedMerFreqs < 0.6;
+			if (isHitchhiked)
+				continue;
+			if (prevIsHitchhiked)
+				seedVec.pop_back();
+			
 			SeedFeature newSeed(seedStartPos, kmer, isRepeat, staticKmerSize, m_params.PBcoverage/2);
-			//newSeed.estimateBestKmerSize(m_params.indices.pBWT);
+			newSeed.estimateBestKmerSize(m_params.indices.pBWT);
 			newSeed.maxFixedMerFreqs = maxFixedMerFreqs;
 			seedVec.push_back(newSeed);
-			//seedEndPos = seedStartPos + dynamicKmerSize - 1;
-			//startPos = seedEndPos;
 		}
 	}
 	//[Debugseed] should be output more dedicately.Noted & abbreviated by KuanWeiLee
     if(m_params.DebugSeed)
     {
-		std::string outfilename = m_params.directory + "seed/" + m_readid + ".seed";
+		std::string outfilename = m_params.directory + "seed/" + m_readid + (isLowCoverage ? ".lc" : "") + ".seed";
          std::ofstream outfile (outfilename);
          // outfile << ">" + m_readid << std::endl;
 		for(std::vector<SeedFeature>::iterator it = seedVec.begin() ; it != seedVec.end() ; it++)
-			outfile << (*it).seedStr << "\t" << (*it).maxFixedMerFreqs << "\t" << (*it).seedStartPos << std::endl;
+			outfile << (*it).seedStr << "\t" << (*it).maxFixedMerFreqs << "\t" << (*it).seedStartPos << "\t" << ((*it).isRepeat ? "TRUE" : "FALSE") << "\n";
          outfile.close();
     }
 	return seedVec;

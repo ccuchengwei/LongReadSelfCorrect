@@ -26,7 +26,7 @@
 #include "CorrectionThresholds.h"
 #include "BWTIntervalCache.h"
 
-
+#define FORMULA( x,y,z ) ( (x) ? (0.05776992234 * y - 0.4583043394 * z + 10.19159685) : (0.0710704607 * y - 0.5445663957 * z + 12.26253388) )
 //
 // Getopt
 //
@@ -52,8 +52,8 @@ static const char *CORRECT_USAGE_MESSAGE =
 "      -k, --kmer-size=N                The length of the kmer to use. (default: 17 (PacBioS).)\n"
 "      -s, --min-kmer-size=N            The minimum length of the kmer to use. (default: 13.)\n"
 "      -x, --kmer-threshold=N           Attempt to correct kmers that are seen less than N times. (default: 3)\n"
-"      -e, --error-rate=N               The error rate of PacBio reads.(default:0.15)"
-"      -i, --idmer-length=N             The length of the kmer to identify similar reads.(default: 9)"
+"      -e, --error-rate=N               The error rate of PacBio reads.(default:0.15)\n"
+"      -i, --idmer-length=N             The length of the kmer to identify similar reads.(default: 9)\n"
 "      -L, --max-leaves=N               Number of maximum leaves in the search tree. (default: 32)\n"
 "      -C, --PBcoverage=N               Coverage of PacBio reads(default: 60)\n"
 
@@ -345,32 +345,34 @@ void parsePacBioCorrectionOptions(int argc, char** argv)
 			die = true;
 		}
 	}
-
-	if (die)
+	
+	if(opt::prefix.empty())
+	{
+		std::cerr << SUBPROGRAM << ": no prefix: " << opt::prefix << "\n";
+		die = true;
+	}
+	
+	if(opt::directory.empty())
+	{
+		std::cerr << SUBPROGRAM << ": no directory: " << "\n";
+		die = true;
+	}
+	else
+	{		
+		opt::directory = opt::directory + "/";
+		if( system(("mkdir -p " + opt::directory + "seed/").c_str()) != 0)
+		{
+			std::cerr << SUBPROGRAM << ": something wrong in directory: " << opt::directory << "\n";
+			die = true;
+		}
+	}
+	if(die)
 	{
 		std::cout << "\n" << CORRECT_USAGE_MESSAGE;
 		exit(EXIT_FAILURE);
 	}
-
-	// Parse the input filenames
+	
 	opt::readsFile = argv[optind++];
-
-	if(opt::prefix.empty())
-	{
-		opt::prefix = stripFilename(opt::readsFile);
-	}
-
-	// Set the correction threshold
-	if(opt::kmerThreshold <= 0)
-	{
-		std::cerr << "Invalid kmer support threshold: " << opt::kmerThreshold << "\n";
-		exit(EXIT_FAILURE);
-	}
-	CorrectionThresholds::Instance().setBaseMinSupport(opt::kmerThreshold);
-	
-	opt::directory = (opt::directory.empty() ? "." : opt::directory) + "/";
-	system(("mkdir -p " + opt::directory + "seed/").c_str());
-	
 	std::string out_prefix = stripFilename(opt::readsFile);
 	if(opt::algorithm == PBC_SELF)
 	{
@@ -379,5 +381,27 @@ void parsePacBioCorrectionOptions(int argc, char** argv)
 	}
 	else
 		assert(false);
+
+	// Parse the input filenames
+	/*
+	// Set the correction threshold
+	if(opt::kmerThreshold <= 0)
+	{
+		std::cerr << "Invalid kmer support threshold: " << opt::kmerThreshold << "\n";
+		exit(EXIT_FAILURE);
+	}
+	*/
+	CorrectionThresholds::Instance().setBaseMinSupport(opt::kmerThreshold);
 	
+	std::string outfilename = opt::directory+"threshold-table";
+	std::ofstream outfile(outfilename);
+	for(int i=opt::kmerLength; i<=50; i++)
+	{
+		float kmerThresholdValueWithLowCoverage = FORMULA(true,opt::PBcoverage,i);
+		float kmerThresholdValue = FORMULA(false,opt::PBcoverage,i);
+		outfile << i << "\t";
+		outfile << (kmerThresholdValue < 5 ? 5 : kmerThresholdValue) << "\t";
+		outfile << (kmerThresholdValueWithLowCoverage < 5 ? 5 : kmerThresholdValueWithLowCoverage) << "\n";
+	}
+	outfile.close();
 }
