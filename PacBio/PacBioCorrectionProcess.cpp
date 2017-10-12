@@ -437,7 +437,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
          std::ofstream outfile (outfilename);
          // outfile << ">" + m_readid << std::endl;
 		for(std::vector<SeedFeature>::iterator it = seedVec.begin() ; it != seedVec.end() ; it++)
-			outfile << (*it).seedStr << "\t" << (*it).maxFixedMerFreqs << "\t" << (*it).seedStartPos << "\t" << ((*it).isRepeat ? "TRUE" : "FALSE") << "\n";
+			outfile << (*it).seedStr << "\t" << (*it).maxFixedMerFreqs << "\t" << (*it).seedStartPos << "\t" << ((*it).isRepeat ? "Yes" : "No") << "\n";
          outfile.close();
     }
 	return seedVec;
