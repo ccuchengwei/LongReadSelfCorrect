@@ -161,8 +161,7 @@ int LongReadSelfCorrectByOverlap::extendOverlap(FMWalkResult2 &FMWResult)
 	
 	//Overlap extension via FM-index walk
     while(!m_leaves.empty() && m_leaves.size() <= m_maxLeaves && m_currentLength <= m_maxLength)
-    {
-        
+    {   
 		// ACGT-extend the leaf nodes via updating existing SA interval
         SONode3PtrList newLeaves = extendLeaves();
 
@@ -175,15 +174,11 @@ int LongReadSelfCorrectByOverlap::extendOverlap(FMWalkResult2 &FMWResult)
         m_leaves = newLeaves;
 
 		
-		// printleaves();
+		
         if(m_isDebug)
-        std::cout << "----" << std::endl;
-        
-
+            std::cout << "----" << std::endl;
 		if(m_currentLength >= m_minLength)
-            isTerminated(results);
-        
-        
+            isTerminated(results);       
 	}
 
 	// reach the terminal kmer
@@ -207,8 +202,6 @@ int LongReadSelfCorrectByOverlap::findTheBestPath(SAIntervalNodeResultVector res
 {
 	
     double minErrorRate = 1;
-    // for (size_t i = 0 ; i < results.size() ;i++)
-       // minErrorRate = minErrorRate < results[i].errorRate ? minErrorRate : results[i].errorRate;
     
 	for (size_t i = 0 ; i < results.size() ;i++)
 	{
@@ -226,7 +219,7 @@ int LongReadSelfCorrectByOverlap::findTheBestPath(SAIntervalNodeResultVector res
             
         
 	}
-        // std::cout << FMWResult.mergedSeq << "merge seq\n"; //testcw
+
 
 	if(FMWResult.mergedSeq.length() != 0)
 		return 1;
@@ -238,8 +231,7 @@ SONode3PtrList LongReadSelfCorrectByOverlap::extendLeaves()
 {
     SONode3PtrList newLeaves;
     
-   
-    
+    //resize if length too long
     if(m_currentKmerSize > m_maxOverlap) refineSAInterval(m_maxOverlap);
         
         
@@ -301,14 +293,14 @@ SONode3PtrList LongReadSelfCorrectByOverlap::extendLeaves()
        return newLeaves;
     
 }
-size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(size_t LowerBound,size_t UpperBound,SONode3PtrList &newLeaves, int threshold )
+size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(size_t LowerBound,size_t UpperBound,SONode3PtrList &newLeaves)
 {
    std::vector<std::pair<std::string,BWTIntervalPair>> pkmers;
-   size_t tempmaxfmfreqs = 0;
+   int tempmaxfmfreqs = 0;
 // std::cout<<      "here\n";
-   for(SONode3PtrList::iterator iter = newLeaves.begin(); iter != newLeaves.end() ; ++iter)
+   for(auto& iter : newLeaves)
     {
-        std::string pkmer = (*iter)->getFullString().substr((*iter)->getFullString().length() -UpperBound);
+        std::string pkmer = iter->getFullString().substr(iter->getFullString().length()-UpperBound);
 
         std::string startkmer = pkmer.substr(UpperBound - LowerBound); //  string of lower bound kmer size
         
@@ -320,7 +312,7 @@ size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(size_t LowerBound,size_t
         
 
         pkmers.push_back(std::make_pair(pkmer,bip));
-        // std::cout<< startkmer << "  "<< Fwdinterval.size() +  Rvcinterval.size()    <<" haha \n";
+
         if( Fwdinterval.size() +  Rvcinterval.size() > (int)tempmaxfmfreqs) //check interval size
             tempmaxfmfreqs = Fwdinterval.size() +  Rvcinterval.size();
 
@@ -328,61 +320,39 @@ size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(size_t LowerBound,size_t
     
     
     // std::cout<<   (int)tempmaxfmfreqs - (int)freqsOfKmerSize.at(LowerBound - m_minOverlap)    <<" mm\n";
-    if (threshold < 0)
-    {
-        if( (int)tempmaxfmfreqs - (int)freqsOfKmerSize.at(LowerBound - m_minOverlap) < 5 ) return LowerBound;
-    }
-    else
-    {
-        
-        if( tempmaxfmfreqs  < threshold )
+    if( (int)tempmaxfmfreqs - (int)freqsOfKmerSize.at(LowerBound - m_minOverlap) < 5 ) return LowerBound;
  
-            return LowerBound;
-        
-    }
-    
-    
-    
-    
     for(size_t i=1 ; i <= UpperBound - LowerBound; i++ )
     {
        tempmaxfmfreqs = 0;
        for(size_t j = 0; j < pkmers.size(); j++)
        {
-        std::string startkmer = pkmers.at(j).first.substr(UpperBound - LowerBound - i);
-        BWTInterval Fwdinterval = pkmers.at(j).second.interval[0];
-        BWTInterval Rvcinterval = pkmers.at(j).second.interval[1];
-        
-        char b = startkmer[0];
-        char rcb;
-        if(b == 'A' ) rcb = 'T' ;
-        else if(b == 'C' ) rcb = 'G' ;
-        else if(b == 'G' ) rcb = 'C' ;
-        else if(b == 'T' ) rcb = 'A' ;
-        BWTAlgorithms::updateInterval(Fwdinterval,b,m_pBWT);
-        BWTAlgorithms::updateInterval(Rvcinterval,rcb,m_pRBWT);
-        pkmers.at(j).second.interval[0] = Fwdinterval;
-        pkmers.at(j).second.interval[1] = Rvcinterval;
+            std::string startkmer = pkmers.at(j).first.substr(UpperBound - LowerBound - i);
+            BWTInterval Fwdinterval = pkmers.at(j).second.interval[0];
+            BWTInterval Rvcinterval = pkmers.at(j).second.interval[1];
+            
+            char b = startkmer[0];
+            char rcb;
+            if(b == 'A' ) rcb = 'T' ;
+            else if(b == 'C' ) rcb = 'G' ;
+            else if(b == 'G' ) rcb = 'C' ;
+            else if(b == 'T' ) rcb = 'A' ;
+            BWTAlgorithms::updateInterval(Fwdinterval,b,m_pBWT);
+            BWTAlgorithms::updateInterval(Rvcinterval,rcb,m_pRBWT);
+            pkmers.at(j).second.interval[0] = Fwdinterval;
+            pkmers.at(j).second.interval[1] = Rvcinterval;
 
-        
-        if( Fwdinterval.size() +  Rvcinterval.size()> (int)tempmaxfmfreqs)
-            tempmaxfmfreqs = Fwdinterval.size() +  Rvcinterval.size();
+            
+            if( Fwdinterval.size() +  Rvcinterval.size()> (int)tempmaxfmfreqs)
+                tempmaxfmfreqs = Fwdinterval.size() +  Rvcinterval.size();
 
         
         }
     
-    // std::cout<<  (int)tempmaxfmfreqs - (int)freqsOfKmerSize.at(LowerBound - m_minOverlap + i)  <<" m2\n";
-
-    if (threshold < 0)
-    {    
-        if( (int)tempmaxfmfreqs - (int)freqsOfKmerSize.at(LowerBound - m_minOverlap + i) < 5 ) return LowerBound +i ;
-    }
-    else
-    {    
-        if( (int)tempmaxfmfreqs  < threshold ) return LowerBound + i;
-    }    
    
-       
+   
+        if( (int)tempmaxfmfreqs - (int)freqsOfKmerSize.at(LowerBound - m_minOverlap + i) < 5 ) return LowerBound +i ;
+             
 
     }
     
@@ -399,12 +369,12 @@ size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(size_t LowerBound,size_t
 bool LongReadSelfCorrectByOverlap::isInsufficientFreqs(SONode3PtrList &newLeaves)
 {
     size_t highfreqscount = 0;
-    for(SONode3PtrList::iterator iter = newLeaves.begin(); iter != newLeaves.end(); ++iter)
+    for(auto& iter : newLeaves)
     {
         
-       size_t t = m_PBcoverage > 60 ? int(m_PBcoverage/60)*3:3; 
+       int t = m_PBcoverage > 60 ? int(m_PBcoverage/60)*3:3; 
         
-       if( (*iter)->fwdInterval.size()+(*iter)->rvcInterval.size() > t)
+       if( iter->fwdInterval.size() + iter->rvcInterval.size() > t)
            highfreqscount++;
 
     }
@@ -423,16 +393,14 @@ void LongReadSelfCorrectByOverlap::refineSAInterval(size_t newKmer)
 {   
     std::vector<std::pair<BWTInterval,BWTInterval>> refine_interval;
 
-    for(SONode3PtrList::iterator iter = m_leaves.begin(); iter != m_leaves.end(); ++iter)
+    for(auto& iter : m_leaves)
     {
         
         // reset the SA intervals using original m_minOverlap
-        std::string pkmer = (*iter)->getSuffix(newKmer);
-        
-        
-        
-        (*iter)->fwdInterval = BWTAlgorithms::findInterval(m_pRBWT, reverse(pkmer));
-        (*iter)->rvcInterval = BWTAlgorithms::findInterval(m_pBWT, reverseComplement(pkmer));
+        std::string pkmer = iter->getSuffix(newKmer);
+
+        iter->fwdInterval = BWTAlgorithms::findInterval(m_pRBWT, reverse(pkmer));
+        iter->rvcInterval = BWTAlgorithms::findInterval(m_pBWT, reverseComplement(pkmer));
        
        
     }
@@ -452,16 +420,16 @@ void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList &newLeaves)
 
     std::vector<size_t> frequencies;
    
-    for(SONode3PtrList::iterator iter = m_leaves.begin(); iter != m_leaves.end(); ++iter)
+     for(auto& iter : m_leaves)
     {
-        if((*iter)->LocalErrorRateRecord.back() < minimumErrorRate)
-            minimumErrorRate = (*iter)->LocalErrorRateRecord.back();
+        if(iter->LocalErrorRateRecord.back() < minimumErrorRate)
+            minimumErrorRate = iter->LocalErrorRateRecord.back();
 
         
     }
     
     
-    size_t leavesSize = m_leaves.size();
+   // size_t leavesSize = m_leaves.size();
     // std::cout<<  leavesSize    <<"   123\n";
     for(SONode3PtrList::iterator iter = m_leaves.begin(); iter != m_leaves.end(); ++iter)
     {
@@ -496,7 +464,7 @@ void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList &newLeaves)
     {
         
         std::vector< std::pair<std::string, BWTIntervalPair> > extensions;
-        char lastword = (*iter)->getFullString().back();
+        
            
         extensions = getFMIndexExtensions(*iter);
         // std::cout<<extensions.size()<<"  size\n";
@@ -528,7 +496,7 @@ void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList &newLeaves)
 
 void LongReadSelfCorrectByOverlap::updateLeaves(SONode3PtrList &newLeaves,std::vector< std::pair<std::string, BWTIntervalPair> > &extensions,SAIOverlapNode3* pNode)
 {
-    char lastword =  pNode->getFullString().back();
+    
     if(extensions.size() == 1)
         {
  
@@ -605,8 +573,8 @@ bool LongReadSelfCorrectByOverlap::PrunedBySeedSupport(SONode3PtrList &newLeaves
     while(iter != newLeaves.end())
     {
         bool isNewSeedFound = false;
-		if( m_currentLength - (*iter)->lastOverlapLen > m_seedSize ||
-			m_currentLength - (*iter)->lastOverlapLen <= 1)
+        
+		if( m_currentLength - (*iter)->lastOverlapLen > m_seedSize || m_currentLength - (*iter)->lastOverlapLen <= 1)
 		{
             size_t preSeedIdx = (*iter)->lastSeedIdx;
 			// search for matched new seeds
@@ -623,26 +591,18 @@ bool LongReadSelfCorrectByOverlap::PrunedBySeedSupport(SONode3PtrList &newLeaves
 			// If the seed extension is stopped by SNP or indel error for the 1st time
 			// increment the error number in order to distinguish two separate seeds
 			// and one larger consecutive seed during error rate computation
-			if(!isNewSeedFound && currSeedIdx+(*iter)->lastSeedIdxOffset == (*iter)->lastSeedIdx+1)
-				(*iter)->numOfErrors ++;
-            
-            else if((currSeedIdx+(*iter)->lastSeedIdxOffset - (*iter)->lastSeedIdx) % m_seedSize == 1 )
+            if(!isNewSeedFound &&(currSeedIdx+(*iter)->lastSeedIdxOffset - (*iter)->lastSeedIdx) % m_seedSize == 1 )
                 (*iter)->numOfErrors ++;
 			else if(!isNewSeedFound && currSeedIdx+(*iter)->lastSeedIdxOffset - (*iter)->lastSeedIdx > m_seedSize-1)
 				(*iter)->numRedeemSeed += 1-m_PacBioErrorRate;
-            
-            // else if(!isNewSeedFound && currSeedIdx+(*iter)->lastSeedIdxOffset - (*iter)->lastSeedIdx > m_seedSize+1)
-				// (*iter)->numRedeemSeed += 0.5;
 		}
         
 		else
 			(*iter)->numRedeemSeed += 1-m_PacBioErrorRate;
 		
-		
-        // if(m_currentLength == 200)
-        // {
+		 
               
-            double currErrorRate = computeErrorRate(*iter);
+        double currErrorRate = computeErrorRate(*iter);
           
            
   
@@ -854,7 +814,7 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
        for(int i = 1; i < BWT_ALPHABET::size; ++i)
        {
            float bratio = (float)bvector.at(i-1).first/(float)maxfreqsofleave;
-           size_t bdiff = std::abs((int)bvector.at(i-1).first-(int)maxfreqsofleave);
+           //size_t bdiff = std::abs((int)bvector.at(i-1).first-(int)maxfreqsofleave);
           
            char b = BWT_ALPHABET::getChar(i);
           bool match = false;
@@ -866,7 +826,7 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
            // if ( totalcount > 100 && bratio >= 0.4 && ismatchedbykmer(bvector.at(i-1).second.interval[0],bvector.at(i-1).second.interval[1])) match = true;
          }
        
-        if ( maxfreqsofleave > 100&& bratio >= 0.15 &&ismatchedbykmer(bvector.at(i-1).second.interval[0],bvector.at(i-1).second.interval[1])) match = true;
+        if ( maxfreqsofleave > 50 && bratio >= 0.1 &&ismatchedbykmer(bvector.at(i-1).second.interval[0],bvector.at(i-1).second.interval[1])) match = true;
         //bool isPassedhighfreqsThreshold = maxfreqsofleave > 100 && bratio >= 0.5  ? true : false; 
         bool isPassedThreshold =  bratio >= 0.25 && (bvector.at(i-1).first >= IntervalSizeCutoff || (bratio >= 0.6 && totalcount >= IntervalSizeCutoff+2 )) ? true: false;
        if( match|| isPassedThreshold )
@@ -948,7 +908,7 @@ bool LongReadSelfCorrectByOverlap::isTerminated(SAIntervalNodeResultVector& resu
 		//If terminating kmer is a substr, the current SA interval is a sub-interval of the terminating interval
          bool isFwdTerminated = false;
          bool isRvcTerminated = false;
-        for(int i = (*iter)->resultindex.second > 0 ? (*iter)->resultindex.second : 0;i <= m_targetSeed.length()-(int)m_minOverlap; i++)
+        for(size_t i = (*iter)->resultindex.second > 0 ? (*iter)->resultindex.second : 0;i <= m_targetSeed.length()-(int)m_minOverlap; i++)
        {
         isFwdTerminated=currfwd.isValid() && currfwd.lower >= m_fwdTerminatedInterval.at(i).lower
                             && currfwd.upper <= m_fwdTerminatedInterval.at(i).upper;

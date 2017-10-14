@@ -87,7 +87,7 @@ class LongReadSelfCorrectByOverlap
 
         
 
-        size_t SelectFreqsOfrange(size_t LowerBound,size_t UpBound,SONode3PtrList &newLeaves,int threshold = -1);
+        size_t SelectFreqsOfrange(size_t LowerBound,size_t UpBound,SONode3PtrList &newLeaves);
         
 
         std::pair<size_t,size_t> alnscore;
