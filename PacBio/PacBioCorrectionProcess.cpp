@@ -263,7 +263,7 @@ void PacBioCorrectionProcess::initCorrect(std::string& readSeq, std::vector<Seed
 
 // Seeding by fixed and dynamic kmer size 
 std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std::string& readSeq)
-{   
+{
     std::vector<SeedFeature> seedVec;
     const size_t staticKmerSize = m_params.kmerLength;
 	if(readSeq.length() < staticKmerSize) 
@@ -412,18 +412,32 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 		{
 			bool isRepeat = maxFixedMerFreqs > 5*initKmerThresholdValue;
 			//Seed Hitchhike
-			bool isHitchhiked = !seedVec.empty() 
+			std::vector<SeedFeature>::reverse_iterator prevSeed = seedVec.rbegin();
+			bool isHitchhiked = false;
+			while(prevSeed != seedVec.rend() && seedStartPos - (*prevSeed).seedEndPos < m_repeat_distance)
+			{
+				if(!isHitchhiked)
+					isHitchhiked = (*prevSeed).isRepeat && (float)(*prevSeed).maxFixedMerFreqs / (float)maxFixedMerFreqs > 1.67;
+				bool prevIsHitchhiked = isRepeat && (float)(*prevSeed).maxFixedMerFreqs / (float)maxFixedMerFreqs < 0.6;
+				prevSeed++;
+				if(prevIsHitchhiked)
+					seedVec.pop_back();
+			}
+			/*
+			bool isHitchhiked =	!seedVec.empty() 
 								&& seedStartPos - seedVec.back().seedEndPos < m_repeat_distance
 								&& (float)seedVec.back().maxFixedMerFreqs / (float)maxFixedMerFreqs > 1.67;
-			bool prevIsHitchhiked = isRepeat 
+			bool prevIsHitchhiked =	isRepeat 
 									&& !seedVec.empty()
 									&& seedStartPos -seedVec.back().seedEndPos < m_repeat_distance
 									&& (float)seedVec.back().maxFixedMerFreqs / (float)maxFixedMerFreqs < 0.6;
+			*/
 			if (isHitchhiked)
 				continue;
+			/*
 			if (prevIsHitchhiked)
 				seedVec.pop_back();
-			
+			*/
 			SeedFeature newSeed(seedStartPos, kmer, isRepeat, staticKmerSize, m_params.PBcoverage/2);
 			newSeed.estimateBestKmerSize(m_params.indices.pBWT);
 			newSeed.maxFixedMerFreqs = maxFixedMerFreqs;
@@ -434,10 +448,10 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
     if(m_params.DebugSeed)
     {
 		std::string outfilename = m_params.directory + "seed/" + m_readid + (isLowCoverage ? ".lc" : "") + ".seed";
-         std::ofstream outfile (outfilename);
+        std::ofstream outfile (outfilename);
          // outfile << ">" + m_readid << std::endl;
-		for(std::vector<SeedFeature>::iterator it = seedVec.begin() ; it != seedVec.end() ; it++)
-			outfile << (*it).seedStr << "\t" << (*it).maxFixedMerFreqs << "\t" << (*it).seedStartPos << "\t" << ((*it).isRepeat ? "Yes" : "No") << "\n";
+		for(std::vector<SeedFeature>::iterator seed = seedVec.begin() ; seed != seedVec.end() ; seed++)
+			outfile << (*seed).seedStr << "\t" << (*seed).maxFixedMerFreqs << "\t" << (*seed).seedStartPos << "\t" << ((*seed).isRepeat ? "Yes" : "No") << "\n";
          outfile.close();
     }
 	return seedVec;
