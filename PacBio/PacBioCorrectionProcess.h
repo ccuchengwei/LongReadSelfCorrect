@@ -103,6 +103,7 @@ struct PacBioCorrectionParameters
     
     bool DebugExtend;
     bool DebugSeed;
+	bool OnlySeed;
 	std::string directory;
 };
 

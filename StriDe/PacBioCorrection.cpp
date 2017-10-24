@@ -56,8 +56,8 @@ static const char *CORRECT_USAGE_MESSAGE =
 "      -i, --idmer-length=N             The length of the kmer to identify similar reads.(default: 9)\n"
 "      -L, --max-leaves=N               Number of maximum leaves in the search tree. (default: 32)\n"
 "      -C, --PBcoverage=N               Coverage of PacBio reads(default: 60)\n"
-
 "      --debugseed                      Output seeds file for each reads (default: false)\n"
+"      --onlyseed                       Only search seeds file for each reads (default: false)\n"
 "      --split                          Split the uncorrected reads (default: false)\n"
 
 "\nReport bugs to " PACKAGE_BUGREPORT "\n\n";
@@ -89,13 +89,14 @@ namespace opt
     static size_t PBcoverage = 60;// PB seed searh depth
     static bool DebugExtend = false;
     static bool DebugSeed = false;
+	static bool OnlySeed = false;
 	static PacBioCorrectionAlgorithm algorithm = PBC_SELF;
 	static std::string directory;
 }
 
 static const char* shortopts = "p:t:o:a:k:x:L:s:d:c:C:v:e:i";
 
-enum { OPT_HELP = 1, OPT_VERSION, OPT_DISCARD, OPT_SPLIT, OPT_FIRST,OPT_DEBUGEXTEND,OPT_DEBUGSEED };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_DISCARD, OPT_SPLIT, OPT_FIRST,OPT_DEBUGEXTEND,OPT_DEBUGSEED,OPT_ONLYSEED };
 
 static const struct option longopts[] = {
 	{ "verbose",       no_argument,       NULL, 'v' },
@@ -116,6 +117,7 @@ static const struct option longopts[] = {
 	{ "first",       	no_argument,       NULL, OPT_FIRST },
     { "debugextend",       	no_argument,       NULL, OPT_DEBUGEXTEND },
     { "debugseed",       	no_argument,       NULL, OPT_DEBUGSEED },
+	{ "onlyseed",       	no_argument,       NULL, OPT_ONLYSEED },
 	{ "discard",       no_argument,       NULL, OPT_DISCARD },
 	{ "help",          no_argument,       NULL, OPT_HELP },
 	{ "version",       no_argument,       NULL, OPT_VERSION },
@@ -190,6 +192,7 @@ int PacBioCorrectionMain(int argc, char** argv)
 	ecParams.isFirst = opt::isFirst;
     ecParams.DebugExtend = opt::DebugExtend;
     ecParams.DebugSeed = opt::DebugSeed;
+	ecParams.OnlySeed = opt::OnlySeed;
 	ecParams.maxSeedInterval = opt::maxSeedInterval;
 	ecParams.directory = opt::directory;
 	
@@ -295,6 +298,7 @@ void parsePacBioCorrectionOptions(int argc, char** argv)
 		case OPT_FIRST: opt::isFirst = true; break;
         case OPT_DEBUGEXTEND: opt::DebugExtend = true; break;
         case OPT_DEBUGSEED: opt::DebugSeed = true; break;
+		case OPT_ONLYSEED: opt::OnlySeed = true; break;
 		case OPT_HELP:
 			std::cout << CORRECT_USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
@@ -360,7 +364,8 @@ void parsePacBioCorrectionOptions(int argc, char** argv)
 	else
 	{		
 		opt::directory = opt::directory + "/";
-		if( system(("mkdir -p " + opt::directory + "seed/").c_str()) != 0)
+		std::string workingDir = opt::directory + (opt::DebugSeed ? "seed/stat/" : "");
+		if( system(("mkdir -p " + workingDir).c_str()) != 0)
 		{
 			std::cerr << SUBPROGRAM << ": something wrong in directory: " << opt::directory << "\n";
 			die = true;
