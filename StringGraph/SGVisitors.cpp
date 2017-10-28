@@ -1122,7 +1122,7 @@ void SGRemoveEdgeByPEVisitor::previsit(StringGraph* pGraph)
     m_edgecount=0;
 	
 	// KmerDistribution m_kd = BWTAlgorithms::sampleKmerCounts(m_kmerSize, 100000, m_indices.pRBWT);
-	// m_repeatKmerCutoff = m_kd.getMedian()*2; 
+	// m_repeatKmerCutoff = m_kd.getQuartile(2)*2; 
 
 }
 
@@ -1374,10 +1374,10 @@ void SGIslandCollectVisitor::previsit(StringGraph* /*pGraph*/)
 	m_kd = BWTAlgorithms::sampleKmerCounts(m_kmerSize, 100000, m_indices.pRBWT);
 	m_repeatKmerCutoff = m_kd.getCutoffForProportion(0.75); 
 	m_kd.computeKDAttributes();
-	// m_repeatKmerCutoff =  m_kd.getMedian()*1.3;
+	// m_repeatKmerCutoff =  m_kd.getQuartile(2)*1.3;
 
 	std::cout << "\n[ Collect paired-end reads mapped onto islands/tips ]" <<std::endl;
-	std::cout << "Median kmer freq: " << m_kd.getMedian() <<  "\t Repeat kmer cutoff: " << m_repeatKmerCutoff << "\t minimum island/tip size: " << m_minIslandSize 
+	std::cout << "Median kmer freq: " << m_kd.getQuartile(2) <<  "\t Repeat kmer cutoff: " << m_repeatKmerCutoff << "\t minimum island/tip size: " << m_minIslandSize 
 				  << "\t kmer size: "<< m_kmerSize << "\t insert size: "<< m_insertSize <<  "\n";
 }
 

@@ -90,9 +90,9 @@ libutil_a-KmerDistribution.o: KmerDistribution.cpp \
  /usr/include/c++/4.8.2/bits/basic_string.tcc \
  /usr/include/c++/4.8.2/bits/uses_allocator.h \
  /usr/include/c++/4.8.2/bits/stl_multimap.h \
- /usr/include/c++/4.8.2/cstddef /usr/include/assert.h \
- /usr/include/c++/4.8.2/iostream /usr/include/c++/4.8.2/ostream \
- /usr/include/c++/4.8.2/ios /usr/include/c++/4.8.2/bits/ios_base.h \
+ /usr/include/c++/4.8.2/cstddef /usr/include/c++/4.8.2/iostream \
+ /usr/include/c++/4.8.2/ostream /usr/include/c++/4.8.2/ios \
+ /usr/include/c++/4.8.2/bits/ios_base.h \
  /usr/include/c++/4.8.2/bits/locale_classes.h \
  /usr/include/c++/4.8.2/bits/locale_classes.tcc \
  /usr/include/c++/4.8.2/streambuf \
@@ -106,7 +106,11 @@ libutil_a-KmerDistribution.o: KmerDistribution.cpp \
  /usr/include/c++/4.8.2/bits/locale_facets.tcc \
  /usr/include/c++/4.8.2/bits/basic_ios.tcc \
  /usr/include/c++/4.8.2/bits/ostream.tcc /usr/include/c++/4.8.2/istream \
- /usr/include/c++/4.8.2/bits/istream.tcc /usr/include/c++/4.8.2/limits \
+ /usr/include/c++/4.8.2/bits/istream.tcc /usr/include/c++/4.8.2/fstream \
+ /usr/include/c++/4.8.2/bits/codecvt.h \
+ /usr/include/c++/4.8.2/x86_64-redhat-linux/bits/basic_file.h \
+ /usr/include/c++/4.8.2/x86_64-redhat-linux/bits/c++io.h \
+ /usr/include/c++/4.8.2/bits/fstream.tcc /usr/include/c++/4.8.2/limits \
  /usr/include/c++/4.8.2/algorithm /usr/include/c++/4.8.2/bits/stl_algo.h \
  /usr/include/c++/4.8.2/bits/algorithmfwd.h \
  /usr/include/c++/4.8.2/bits/stl_heap.h \
@@ -387,8 +391,6 @@ KmerDistribution.h:
 
 /usr/include/c++/4.8.2/cstddef:
 
-/usr/include/assert.h:
-
 /usr/include/c++/4.8.2/iostream:
 
 /usr/include/c++/4.8.2/ostream:
@@ -428,6 +430,16 @@ KmerDistribution.h:
 /usr/include/c++/4.8.2/istream:
 
 /usr/include/c++/4.8.2/bits/istream.tcc:
+
+/usr/include/c++/4.8.2/fstream:
+
+/usr/include/c++/4.8.2/bits/codecvt.h:
+
+/usr/include/c++/4.8.2/x86_64-redhat-linux/bits/basic_file.h:
+
+/usr/include/c++/4.8.2/x86_64-redhat-linux/bits/c++io.h:
+
+/usr/include/c++/4.8.2/bits/fstream.tcc:
 
 /usr/include/c++/4.8.2/limits:
 

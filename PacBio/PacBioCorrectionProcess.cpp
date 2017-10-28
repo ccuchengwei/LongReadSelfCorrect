@@ -13,15 +13,13 @@
 #include <iomanip>
 #include <time.h>
 #include "SAIPBHybridCTree.h"
-
-
 #include "LongReadOverlap.h"
 #include "Timer.h"
+#include "KmerDistribution.h"
 //Formula for calculating kmer threshold value ( x,y,z ) = ( isLowCoverage,m_params.PBcoverage,staticKmerSize )
 #define FORMULA( x,y,z ) ( (x) ? (0.05776992234 * y - 0.4583043394 * z + 10.19159685) : (0.0710704607 * y - 0.5445663957 * z + 12.26253388) )
 //Generic judgment of a kmer ( a,b,c,d ) = ( currentKmerFreqs,dynamicKmerThresholdValue,fwdKmerFreqs,rvcKmerFreqs )
 #define OVERTHRESHOLD( a,b,c,d ) ( (a>=b) && (c>=1) && (d>=1) )
-//using namespace std;
 
 PacBioCorrectionProcess::PacBioCorrectionProcess(const PacBioCorrectionParameters params) : m_params(params)
 {
@@ -263,7 +261,7 @@ void PacBioCorrectionProcess::initCorrect(std::string& readSeq, std::vector<Seed
 // which is suitable for the PacBio hybrid error correction,
 // where repeat regions require large kmers and error-prone regions require small kmers.
 
-// Seeding by fixed and dynamic kmer size 
+// Seeding by fixed and dynamic kmer size. Noted by KuanWeiLee 20171027
 std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std::string& readSeq)
 {
     std::vector<SeedFeature> seedVec,newSeedVec;
@@ -276,7 +274,8 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 	std::vector<BWTIntervalPair> FixedMerInterval;
     std::vector<size_t> freqsCount;
     freqsCount.assign(m_params.PBcoverage*2,0);
-	std::map<size_t,size_t>freqStat;
+	KmerDistribution freqStat;
+	
     for(size_t i = 0 ; i <= readSeq.length() - staticKmerSize ; i++)
 	{
 		//(1) : Collection of fixed kmer interval(s) at every position on the read sequence
@@ -292,27 +291,24 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 		size_t currentKmerFreqs = bip.getFreqs();
 		if(currentKmerFreqs < freqsCount.size())
             freqsCount[currentKmerFreqs]++;
-
-		if(freqStat.find(currentKmerFreqs) != freqStat.end())
-			freqStat[currentKmerFreqs]++;
-		else
-			freqStat[currentKmerFreqs] = 1;
+		freqStat.add(currentKmerFreqs);
 		//[Debugseed] should be output more dedicately by KuanWeiLee
 		/*
 		if(m_params.DebugSeed)
 		{
 			std::cout << i << ": "<< kmer << " total " << currentKmerFreqs << ":";
-			std::cout << fwdInterval.getFreqs() << ":" << rvcInterval.getFreqs() << " <=" << std::endl;
+			std::cout << fwdInterval.getFreqs() << ":" << rvcInterval.getFreqs() << " <=\n";
 		}
 		*/
     }       
     //Determine whether the read is of low coverage;
 	//Thresholds need further inspectation.Noted by KuanWeiLee
-    bool isLowCoverage ;
+	//Threshold table mode of low coverage is canceled. Noted by KuanWeiLee 20171028
+    bool isLowCoverage = false;
 	{
 		float initKmerThresholdValueWithLowCoverage = FORMULA(true,m_params.PBcoverage,staticKmerSize);
 		float initKmerThresholdValue = FORMULA(false,m_params.PBcoverage,staticKmerSize);
-		isLowCoverage = freqsCount[(int)initKmerThresholdValueWithLowCoverage] > freqsCount[(int)initKmerThresholdValue];
+		//isLowCoverage = freqsCount[(int)initKmerThresholdValueWithLowCoverage] > freqsCount[(int)initKmerThresholdValue];
 		//[Debugseed] should be output more dedicately.Noted & abbreviated by KuanWeiLee
 		/*
 		if(m_params.DebugSeed)
@@ -320,7 +316,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 		*/
 	}
 	//Part 2 : Get threshold table (index:k [staticKmerSize~kmerLengthUpperBound]); 
-	//there are 2 modes in the formula: of low coverage or not, and the lower bound is 3. Noted by KuanWeiLee
+	//there are 2 modes in the formula: of low coverage or not, and the lower bound is 5. Noted by KuanWeiLee
     std::vector<float> kmerThresholdTable;
 	const size_t kmerLengthUpperBound = 50;
 	kmerThresholdTable.assign(kmerLengthUpperBound+1,0);
@@ -382,6 +378,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 				}
 			}
 			*/
+			//Gerneral seed extension strategy. Noted by KuanWeiLee
 			if  (
 				   dynamicKmerSize > kmerLengthUpperBound																	//1.read length				
 				|| isLowComplexity(kmer,GCratio)																			//2.read complexity
@@ -396,8 +393,9 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 					startPos = seedEndPos;
 				}
 				break;
-			}			
-			//Kmer Hitchhike			
+			}
+			//The order between general seed extentsion and kmer hitchhiking strategy may make difference but need advanced observation. Noted by KuanWeiLee 20171027
+			//Kmer Hitchhike
 			if( maxFixedMerFreqs > 5*initKmerThresholdValue && (float)fixedMerFreqs / (float)maxFixedMerFreqs < 0.6)		//5.hitchhiking kmer (HIGH-->LOW)
 			{
 				kmer.erase(--dynamicKmerSize);
@@ -414,21 +412,22 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 			
 			maxFixedMerFreqs = std::max(maxFixedMerFreqs,fixedMerFreqs);
 		}
-		if	(isSeed)
+		if(isSeed)
 		{
 			bool isRepeat = maxFixedMerFreqs > 5*initKmerThresholdValue;
-			//Seed Hitchhike part 1
-			std::vector<SeedFeature>::reverse_iterator pPrevSeed = seedVec.rbegin();
+			
+			//Seed Hitchhike part 1 : mark hitchhiking seeds
+			std::vector<SeedFeature>::reverse_iterator iterPrevSeed = seedVec.rbegin();
 			bool isHitchhiked = false;
-			while(pPrevSeed != seedVec.rend() && seedStartPos - (*pPrevSeed).seedEndPos < m_repeat_distance)
+			while(iterPrevSeed != seedVec.rend() && seedStartPos - (*iterPrevSeed).seedEndPos < m_repeat_distance)
 			{
 				if(!isHitchhiked)
-					isHitchhiked = (*pPrevSeed).isRepeat && (float)(*pPrevSeed).maxFixedMerFreqs / (float)maxFixedMerFreqs > 1.67;
-				bool prevIsHitchhiked = isRepeat && (float)(*pPrevSeed).maxFixedMerFreqs / (float)maxFixedMerFreqs < 0.6;
-				size_t index = seedVec.size() -  (pPrevSeed - seedVec.rbegin() + 1);
+					isHitchhiked = (*iterPrevSeed).isRepeat && (float)(*iterPrevSeed).maxFixedMerFreqs / (float)maxFixedMerFreqs > 1.67;
+				bool prevIsHitchhiked = isRepeat && (float)(*iterPrevSeed).maxFixedMerFreqs / (float)maxFixedMerFreqs < 0.6;
+				size_t index = seedVec.size() -  (iterPrevSeed - seedVec.rbegin() + 1);
 				if(prevIsHitchhiked)
 					hitchhikingSeedSet.insert(index);
-				pPrevSeed++;
+				iterPrevSeed++;
 			}
 			if (isHitchhiked)
 				continue;
@@ -439,28 +438,29 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 			seedVec.push_back(newSeed);
 		}
 	}
-	//Seed Hitchhike part 2
+	//Seed Hitchhike part 2 : delete hitchhiking seeds
 	newSeedVec.reserve(seedVec.size());
 	{
 		size_t index = 0;
-		for(std::vector<SeedFeature>::iterator pSeed = seedVec.begin(); pSeed != seedVec.end(); pSeed++, index++)
+		for(std::vector<SeedFeature>::iterator iterSeed = seedVec.begin(); iterSeed != seedVec.end(); iterSeed++, index++)
 			if(hitchhikingSeedSet.count(index) == 0)
-				newSeedVec.push_back((*pSeed));
+				newSeedVec.push_back((*iterSeed));
 	}
-	//[Debugseed] should be output more dedicately.Noted & abbreviated by KuanWeiLee
+	//[Debugseed] Output seeds & kmer count distribution for each reads.Noted by KuanWeiLee
     if(m_params.DebugSeed)
     {
 		std::string seedfilename = m_params.directory + "seed/" + m_readid + (isLowCoverage ? ".lc" : "") + ".seed";
-        std::ofstream seedfile (seedfilename);
-		for(std::vector<SeedFeature>::iterator pSeed = newSeedVec.begin(); pSeed != newSeedVec.end(); pSeed++)
-			seedfile << (*pSeed).seedStr << "\t" << (*pSeed).maxFixedMerFreqs << "\t" << (*pSeed).seedStartPos << "\t" << ((*pSeed).isRepeat ? "Yes" : "No") << "\n";
+        std::ofstream seedfile(seedfilename);
+		for(std::vector<SeedFeature>::iterator iterSeed = newSeedVec.begin(); iterSeed != newSeedVec.end(); iterSeed++)
+			seedfile << (*iterSeed).seedStr << "\t" << (*iterSeed).maxFixedMerFreqs << "\t" << (*iterSeed).seedStartPos << "\t" << ((*iterSeed).isRepeat ? "Yes" : "No") << "\n";
 		seedfile.close();
 		 
+		
 		std::string freqstatfilename = m_params.directory + "seed/stat/" + m_readid + ".stat";
-		std::ofstream freqstatfile (freqstatfilename);
-		for(std::map<size_t,size_t>::iterator element = freqStat.begin(); element!=freqStat.end(); element++)
-			freqstatfile << element->first << "\t" << element->second << "\n";
+		std::ofstream freqstatfile(freqstatfilename);
+		freqStat.write(freqstatfile);
 		freqstatfile.close();
+		
     }
 	return newSeedVec;
 }

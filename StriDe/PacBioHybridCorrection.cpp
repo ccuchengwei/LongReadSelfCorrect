@@ -180,7 +180,7 @@ int PacBioHybridCorrectionMain(int argc, char** argv)
 	// ecParams.kd.computeKDAttributes();
 	// ecParams.kd.print(100);
 	// const size_t RepeatKmerFreq = ecParams.kd.getCutoffForProportion(0.95); 
-	// std::cout << "Median kmer frequency: " <<ecParams.kd.getMedian() << "\t Std: " <<  ecParams.kd.getSdv() 
+	// std::cout << "Median kmer frequency: " <<ecParams.kd.getQuartile(2) << "\t Std: " <<  ecParams.kd.getSdv() 
 				// <<"\t 95% kmer frequency: " << ecParams.kd.getCutoffForProportion(0.95)
 				// << "\t Repeat frequency cutoff: " << ecParams.kd.getRepeatKmerCutoff() << "\n";
 	

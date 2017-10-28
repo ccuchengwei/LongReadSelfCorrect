@@ -49,13 +49,13 @@ static const char *CORRECT_USAGE_MESSAGE =
 "      -a, --algorithm=STR              pacbioH: pacbio hybrid correction (using NGS reads to correct PB reads)\n"
 "                                       pacbioS: pacbio self correction (using PB reads to correct PB reads)(default)\n"
 "\nPacBio correction parameters:\n"
-"      -k, --kmer-size=N                The length of the kmer to use. (default: 17 (PacBioS).)\n"
+"      -k, --kmer-size=N                The length of the kmer to use. (default: 19 (PacBioS).)\n"
 "      -s, --min-kmer-size=N            The minimum length of the kmer to use. (default: 13.)\n"
 "      -x, --kmer-threshold=N           Attempt to correct kmers that are seen less than N times. (default: 3)\n"
 "      -e, --error-rate=N               The error rate of PacBio reads.(default:0.15)\n"
 "      -i, --idmer-length=N             The length of the kmer to identify similar reads.(default: 9)\n"
 "      -L, --max-leaves=N               Number of maximum leaves in the search tree. (default: 32)\n"
-"      -C, --PBcoverage=N               Coverage of PacBio reads(default: 60)\n"
+"      -C, --PBcoverage=N               Coverage of PacBio reads(default: 90)\n"
 "      --debugseed                      Output seeds file for each reads (default: false)\n"
 "      --onlyseed                       Only search seeds file for each reads (default: false)\n"
 "      --split                          Split the uncorrected reads (default: false)\n"
@@ -74,7 +74,7 @@ namespace opt
 	static std::string outFile;
 	static std::string discardFile;
 	static int sampleRate = BWT::DEFAULT_SAMPLE_RATE_SMALL;
-	static int kmerLength = 17;
+	static int kmerLength = 19;
 	static int kmerThreshold = 3;
 	static int maxLeaves=32;
     static int idmerLength = 9;
@@ -86,7 +86,7 @@ namespace opt
 	static bool split = false;
 	static bool isFirst = false;
 	size_t maxSeedInterval = 500;
-    static size_t PBcoverage = 60;// PB seed searh depth
+    static size_t PBcoverage = 90;// PB seed searh depth
     static bool DebugExtend = false;
     static bool DebugSeed = false;
 	static bool OnlySeed = false;
@@ -162,7 +162,7 @@ int PacBioCorrectionMain(int argc, char** argv)
 	// ecParams.kd.computeKDAttributes();
 	// ecParams.kd.print(100);
 	// const size_t RepeatKmerFreq = ecParams.kd.getCutoffForProportion(0.95); 
-	// std::cout << "Median kmer frequency: " <<ecParams.kd.getMedian() << "\t Std: " <<  ecParams.kd.getSdv() 
+	// std::cout << "Median kmer frequency: " <<ecParams.kd.getQuartile(2)() << "\t Std: " <<  ecParams.kd.getSdv() 
 				// <<"\t 95% kmer frequency: " << ecParams.kd.getCutoffForProportion(0.95)
 				// << "\t Repeat frequency cutoff: " << ecParams.kd.getRepeatKmerCutoff() << "\n";
 	

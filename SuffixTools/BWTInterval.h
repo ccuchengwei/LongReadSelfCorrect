@@ -74,7 +74,7 @@ struct BWTIntervalPair
     // Functions
     BWTInterval& get(unsigned int idx) { return interval[idx]; }
     bool isValid() const { return interval[0].isValid() && interval[1].isValid(); }
-	int64_t getFreqs() const { return (interval[0].getFreqs() + interval[1].getFreqs()); }
+	inline int64_t getFreqs() const { return (interval[0].getFreqs() + interval[1].getFreqs()); }
 	
     friend bool operator==(const BWTIntervalPair& a, const BWTIntervalPair& b)
     {

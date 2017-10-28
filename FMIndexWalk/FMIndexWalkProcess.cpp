@@ -399,7 +399,7 @@ bool FMIndexWalkProcess::isSuitableForFMWalk(std::string& seqFirst, std::string&
 
 	//estimate repeat kmer
 	// const size_t RepeatKmerFreq = m_params.kd.getRepeatKmerCutoff();
-	const size_t RepeatKmerFreq = m_params.kd.getMedian()*1.3; 
+	const size_t RepeatKmerFreq = m_params.kd.getQuartile(2)*1.3; 
 	size_t KmerFreq1 = BWTAlgorithms::countSequenceOccurrences( seqFirst, m_params.indices.pBWT );
 	bool isFirstReadUnique =  KmerFreq1 < RepeatKmerFreq;
 
@@ -409,7 +409,7 @@ bool FMIndexWalkProcess::isSuitableForFMWalk(std::string& seqFirst, std::string&
 	if( (isFirstReadUnique && isSecondReadUnique) ) return true;
 	
 	//
-	// if(KmerFreq1 < m_params.kd.getMedian()*1.8 && KmerFreq2 < m_params.kd.getMedian()*1.8) return 2;
+	// if(KmerFreq1 < m_params.kd.getQuartile(2)*1.8 && KmerFreq2 < m_params.kd.getQuartile(2)*1.8) return 2;
 	
 	return false;
 }
@@ -727,7 +727,7 @@ int FMIndexWalkProcess::splitRepeat (KmerContext& seq, std::vector<std::string> 
 {
 	if (seq.empty()) return -1 ;
 	//getMedian returns sum of forward and reverse kmers
-	const size_t RepeatKmerFreq = m_params.kd.getMedian(); 
+	const size_t RepeatKmerFreq = m_params.kd.getQuartile(2); 
 
 	std::vector<size_t> countQualified (seq.numKmer,0) ;
 	for (size_t i=0 ;i<seq.numKmer;i++)
