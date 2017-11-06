@@ -41,11 +41,12 @@ struct FMextendParameters
     FMextendParameters(){};
     BWTIndexSet indices;
     int idmerLength;
-    bool Debug;
-    double ErrorRate;
     int maxLeaves;
     int minKmerLength;
     size_t PBcoverage;
+    double ErrorRate;    
+    bool Debug;
+    
 };
 
 class LongReadSelfCorrectByOverlap
@@ -86,7 +87,7 @@ class LongReadSelfCorrectByOverlap
 
         
 
-        size_t SelectFreqsOfrange(size_t LowerBound,size_t UpBound,SONode3PtrList &newLeaves,int threshold = -1);
+        size_t SelectFreqsOfrange(size_t LowerBound,size_t UpBound,SONode3PtrList &newLeaves);
         
 
         std::pair<size_t,size_t> alnscore;
@@ -124,42 +125,51 @@ class LongReadSelfCorrectByOverlap
         bool isTerminated(SAIntervalNodeResultVector& results);
 		bool isOverlapAcceptable(SAIOverlapNode3* currNode);
 		bool isSupportedByNewSeed(SAIOverlapNode3* currNode, size_t smallSeedIdx, size_t largeSeedIdx);
+        bool ismatchedbykmer(BWTInterval currFwdInterval,BWTInterval currRvcInterval);
 		double computeErrorRate(SAIOverlapNode3* currNode);
 	
         //
         // Data
         //
-		const std::string m_sourceSeed;
+		const std::string m_sourceSeed;        
 		const std::string m_strBetweenSrcTarget;
-		const std::string m_targetSeed;	
-        const bool m_isDebug;
-		int m_disBetweenSrcTarget;
+		const std::string m_targetSeed;
+        int m_disBetweenSrcTarget;        	
+        size_t m_initkmersize;
         size_t m_minOverlap;
 		size_t m_maxOverlap;
-        size_t m_initkmersize;
-		size_t m_maxIndelSize;
         BWTIndexSet m_BWTindices;
-		const BWT* m_pBWT;
+        const BWT* m_pBWT;
 		const BWT* m_pRBWT;
         const size_t m_PBcoverage;
+        size_t m_min_SA_threshold;
+        double m_errorRate;
+        size_t m_maxLeaves;
+        size_t m_seedSize;
+        size_t m_repeatFreq;
+        size_t m_localSimilarlykmerSize;
+        double m_PacBioErrorRate;
+        const bool m_isDebug;
+        
+		size_t m_maxIndelSize;
         std::vector<double> freqsOfKmerSize;
 		// Optional parameters
-        size_t m_min_SA_threshold;
+        
 
-		double m_errorRate;
-        double m_PacBioErrorRate;
-        size_t m_maxLeaves;
-		size_t m_seedSize;
-		size_t m_repeatFreq;
-        size_t m_localSimilarlykmerSize;
-         size_t m_maxfreqs;
-
+		
+        
+        
+		
+		
+        
+        size_t m_maxfreqs;
+        
 
         
 		std::string m_query;
 		
-        int m_maxLength;
-		int m_minLength;
+        size_t m_maxLength;
+		size_t m_minLength;
         std::vector<BWTInterval> m_fwdTerminatedInterval;   //in rBWT
         std::vector<BWTInterval> m_rvcTerminatedInterval;   //in BWT
 		
