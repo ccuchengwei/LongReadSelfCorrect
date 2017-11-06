@@ -15,9 +15,9 @@
 #include "SAIPBHybridCTree.h"
 #include "LongReadOverlap.h"
 #include "Timer.h"
-#include "KmerDistribution.h"
+//#include "KmerDistribution.h"
 //Formula for calculating kmer threshold value ( x,y,z ) = ( isLowCoverage,m_params.PBcoverage,staticKmerSize )
-#define FORMULA( x,y,z ) ( (x) ? (0.05776992234 * y - 0.4583043394 * z + 10.19159685) : (0.0710704607 * y - 0.5445663957 * z + 12.26253388) )
+#define FORMULA( x,y,z ) ( (x) ? (0.05776992234f * y - 0.4583043394f * z + 10.19159685f) : (0.0710704607f * y - 0.5445663957f * z + 12.26253388f) )
 //Generic judgment of a kmer ( a,b,c,d ) = ( currentKmerFreqs,dynamicKmerThresholdValue,fwdKmerFreqs,rvcKmerFreqs )
 #define OVERTHRESHOLD( a,b,c,d ) ( (a>=b) && (c>=1) && (d>=1) )
 
@@ -274,7 +274,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 	std::vector<BWTIntervalPair> FixedMerInterval;
     std::vector<size_t> freqsCount;
     freqsCount.assign(m_params.PBcoverage*2,0);
-	KmerDistribution freqStat;
+	KmerDistribution freqStat(m_readid);
 	
     for(size_t i = 0 ; i <= readSeq.length() - staticKmerSize ; i++)
 	{
@@ -308,21 +308,21 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 	{
 		float initKmerThresholdValueWithLowCoverage = FORMULA(true,m_params.PBcoverage,staticKmerSize);
 		float initKmerThresholdValue = FORMULA(false,m_params.PBcoverage,staticKmerSize);
+		//freqStat.computeKDAttributes(1.0f);
+		freqStat.computeKDAttributes(initKmerThresholdValue);
 		//isLowCoverage = freqsCount[(int)initKmerThresholdValueWithLowCoverage] > freqsCount[(int)initKmerThresholdValue];
-		//[Debugseed] should be output more dedicately.Noted & abbreviated by KuanWeiLee
-		/*
-		if(m_params.DebugSeed)
-			std::cout << ( isLowCoverage ? "is low" : "isn't low" ) << std::endl;
-		*/
 	}
 	//Part 2 : Get threshold table (index:k [staticKmerSize~kmerLengthUpperBound]); 
 	//there are 2 modes in the formula: of low coverage or not, and the lower bound is 5. Noted by KuanWeiLee
     std::vector<float> kmerThresholdTable;
-	const size_t kmerLengthUpperBound = 50;
+	const int kmerLengthUpperBound = 50;
 	kmerThresholdTable.assign(kmerLengthUpperBound+1,0);
-	for(size_t k=staticKmerSize ; k <= kmerLengthUpperBound ; k++)
+	//float weight = 1.f;
+	float weight = m_params.PBcoverage / 7.5f * freqStat.getQuartile(1);
+	weight = (weight == 0.f ? 1.f : sqrt(weight));
+	for(int k=staticKmerSize; k <= kmerLengthUpperBound; k++)
 	{        
-		float kmerThresholdValue = FORMULA(isLowCoverage,m_params.PBcoverage,k);
+		float kmerThresholdValue = FORMULA(isLowCoverage,m_params.PBcoverage,k) * weight;
 		kmerThresholdTable[k] = kmerThresholdValue  < 5 ? 5 : kmerThresholdValue;
 	}
 	//Part 3 : Search seeds; slide through the read sequence with dynamic kmers. Noted by KuanWeiLee
@@ -331,12 +331,12 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 		bool isSeed = false;
 		char b,rcb;
 		std::string kmer = readSeq.substr(startPos,staticKmerSize);
-		size_t dynamicKmerSize = staticKmerSize, dynamicKmerThresholdValue;
+		size_t dynamicKmerSize = staticKmerSize;
 		BWTInterval fwdInterval = FixedMerInterval[startPos].interval[0],
 					rvcInterval = FixedMerInterval[startPos].interval[1];
 		size_t fwdKmerFreqs, rvcKmerFreqs, currentKmerFreqs;
 		size_t fixedMerFreqs, maxFixedMerFreqs = FixedMerInterval[startPos].getFreqs(); 
-		size_t initKmerThresholdValue = kmerThresholdTable[staticKmerSize];
+		float initKmerThresholdValue = kmerThresholdTable[staticKmerSize], dynamicKmerThresholdValue;
 		size_t seedStartPos = startPos, seedEndPos;
 		float GCratio;
 		for(size_t movePos = startPos; movePos <= readSeq.length() - staticKmerSize; movePos++, isSeed = true)
@@ -396,14 +396,14 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 			}
 			//The order between general seed extentsion and kmer hitchhiking strategy may make difference but need advanced observation. Noted by KuanWeiLee 20171027
 			//Kmer Hitchhike
-			if( maxFixedMerFreqs > 5*initKmerThresholdValue && (float)fixedMerFreqs / (float)maxFixedMerFreqs < 0.6)		//5.hitchhiking kmer (HIGH-->LOW)
+			if( maxFixedMerFreqs > 5*initKmerThresholdValue && (float)fixedMerFreqs / (float)maxFixedMerFreqs < 0.6f)		//5.hitchhiking kmer (HIGH-->LOW)
 			{
 				kmer.erase(--dynamicKmerSize);
 				seedEndPos = seedStartPos + dynamicKmerSize - 1;
 				startPos = seedEndPos + 1;
 				break;
 			}
-			else if( fixedMerFreqs > 5*initKmerThresholdValue && (float)fixedMerFreqs / (float)maxFixedMerFreqs > 1.67)		//6.hitchhiking kmer (LOW-->HIGH)
+			else if( fixedMerFreqs > 5*initKmerThresholdValue && (float)fixedMerFreqs / (float)maxFixedMerFreqs > 1.67f)		//6.hitchhiking kmer (LOW-->HIGH)
 			{
 				isSeed = false;
 				startPos = movePos - 1;
@@ -422,8 +422,8 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 			while(iterPrevSeed != seedVec.rend() && seedStartPos - (*iterPrevSeed).seedEndPos < m_repeat_distance)
 			{
 				if(!isHitchhiked)
-					isHitchhiked = (*iterPrevSeed).isRepeat && (float)(*iterPrevSeed).maxFixedMerFreqs / (float)maxFixedMerFreqs > 1.67;
-				bool prevIsHitchhiked = isRepeat && (float)(*iterPrevSeed).maxFixedMerFreqs / (float)maxFixedMerFreqs < 0.6;
+					isHitchhiked = (*iterPrevSeed).isRepeat && (float)(*iterPrevSeed).maxFixedMerFreqs / (float)maxFixedMerFreqs > 1.67f;
+				bool prevIsHitchhiked = isRepeat && (float)(*iterPrevSeed).maxFixedMerFreqs / (float)maxFixedMerFreqs < 0.6f;
 				size_t index = seedVec.size() -  (iterPrevSeed - seedVec.rbegin() + 1);
 				if(prevIsHitchhiked)
 					hitchhikingSeedSet.insert(index);
@@ -454,13 +454,18 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 		for(std::vector<SeedFeature>::iterator iterSeed = newSeedVec.begin(); iterSeed != newSeedVec.end(); iterSeed++)
 			seedfile << (*iterSeed).seedStr << "\t" << (*iterSeed).maxFixedMerFreqs << "\t" << (*iterSeed).seedStartPos << "\t" << ((*iterSeed).isRepeat ? "Yes" : "No") << "\n";
 		seedfile.close();
-		 
+				
+		std::string dis = m_params.directory + "kmer-dis";
+		std::string stat = m_params.directory + "kmer-stat";
 		
-		std::string freqstatfilename = m_params.directory + "seed/stat/" + m_readid + ".stat";
-		std::ofstream freqstatfile(freqstatfilename);
-		freqStat.write(freqstatfile);
-		freqstatfile.close();
+		std::ofstream file_dis(dis,std::ofstream::app);
+		std::ofstream file_stat(stat,std::ofstream::app);
 		
+		freqStat.write(file_dis,KmerDistribution::TYPE::DATA);
+		freqStat.write(file_stat,KmerDistribution::TYPE::ATTRIBUTE);
+		
+		file_dis.close();
+		file_stat.close();
     }
 	return newSeedVec;
 }

@@ -195,7 +195,7 @@ CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -O3
 CPPFLAGS =  -fopenmp 
-CXX = g++
+CXX = g++ -fpermissive
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
 CXXFLAGS = -O3

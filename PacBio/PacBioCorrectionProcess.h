@@ -166,19 +166,11 @@ public:
 	{
 		switch(m_params.algorithm)
 		{
-		case PBC_SELF:
-			{
-				return PBSelfCorrection(workItem);
-				break;
-			}
-		default:
-			{
+			case PBC_SELF: return PBSelfCorrection(workItem);
+			default:
 				std::cout << "Unsupported algorithm\n";
 				assert(false);
-			}
 		}
-		PacBioCorrectionResult result;
-		return result;
 	}		
 
 private:

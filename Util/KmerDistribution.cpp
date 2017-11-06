@@ -7,14 +7,9 @@
 // KmerDistribution - Histogram of kmer frequencies
 //
 #include "KmerDistribution.h"
-#include <cstdlib>
-#include <stdio.h>
-#include <iostream>
-#include <fstream>
 #include <limits>
-#include <algorithm>
-#include <vector>       // std::vector
-#include <math.h>
+#include <cmath>
+#include <fstream>
 
 double KmerDistribution::getCumulativeProportionLEQ(int n) const
 {    
@@ -51,18 +46,30 @@ size_t KmerDistribution::getCutoffForProportion(double p) const
 	return kmerFreqs;
 }
 //compute median and std
-void KmerDistribution::computeKDAttributes()
+void KmerDistribution::computeKDAttributes(float censor)
 {
 	std::vector<size_t>rawdata;
-	for(iteratorKmerFreqsMap iterElement = m_data.begin(); iterElement !=  m_data.end(); iterElement++)
+	iteratorKmerFreqsMap iterElement = m_data.begin();
+	while(iterElement != m_data.end() && iterElement->first <= censor)
+		iterElement++;
+	for(size_t most = 0; iterElement !=  m_data.end(); iterElement++)
+	{
 		rawdata.resize((rawdata.size() + iterElement->second), iterElement->first);
+		if(iterElement->second > most)
+		{
+			m_mode = iterElement->first;
+			most = iterElement->second;
+		}
+	}
     
 	//compute quartiles
+	if(rawdata.empty())return;
 	m_median = rawdata[rawdata.size()/2];
 	m_first_quartile = rawdata[rawdata.size()/4];
 	m_third_quartile = rawdata[rawdata.size()*3/4];
 	
 	//compute standard deviation
+	if(rawdata.size() <= 1)return;
 	double difference_square = 0;
 	for(std::vector<size_t>::iterator iterFreq = rawdata.begin(); iterFreq != rawdata.end(); iterFreq++)
 		difference_square += pow(((*iterFreq) - m_median), 2);
@@ -76,24 +83,21 @@ void KmerDistribution::computeKDAttributes()
 	// m_repeatKmerCutoff = (double) m_median*(0.39+0.53* (freq95/(double)m_median));
 	
 }
-void KmerDistribution::write(std::ofstream& outfile)
+void KmerDistribution::write(std::ofstream& outfile,TYPE mode) const
 {
-	for(iteratorKmerFreqsMap iterElement = m_data.begin(); iterElement !=  m_data.end(); iterElement++)
-		outfile << iterElement->first << "\t" << iterElement->second << "\n";
-}
-size_t KmerDistribution::getCensoredMode(size_t n) const
-{
-	size_t most = 0,mode = 0;
-    iteratorKmerFreqsMap iterElement = m_data.begin();
-	while(iterElement->first < n)
-		iterElement++;
-	for(; iterElement != m_data.end(); iterElement++)
-		if(iterElement->second > most)
-		{
-			mode = iterElement->first;
-			most = iterElement->second;
-		}
-	return mode;
+	switch(mode)
+	{
+		case DATA:
+			for(iteratorKmerFreqsMap iterElement = m_data.begin(); iterElement !=  m_data.end(); iterElement++)
+				outfile << iterElement->first << "\t" << iterElement->second << "\n";
+			break;
+		case ATTRIBUTE:
+			outfile << m_readid << "\t " << m_first_quartile << "\t" << m_median << "\t" << m_third_quartile << "\t" << m_mode << "\t" << m_std <<"\n";
+			break;
+		default:
+			std::cout << "KmerDistribution-write-mode : DATA , ATTRIBUTE\n";
+			exit(EXIT_FAILURE);
+	}
 }
 
 //Below are legacy codes. Noted by KuanWeiLee 20171027
@@ -172,7 +176,20 @@ int KmerDistribution::findErrorBoundaryByRatio(double ratio) const
     }
     return -1;
 }
-
+size_t KmerDistribution::getCensoredMode(size_t n) const
+{
+	size_t most = 0,mode = 0;
+    iteratorKmerFreqsMap iterElement = m_data.begin();
+	while(iterElement != m_data.end() && iterElement->first < n)
+		iterElement++;
+	for(; iterElement != m_data.end(); iterElement++)
+		if(iterElement->second > most)
+		{
+			mode = iterElement->first;
+			most = iterElement->second;
+		}
+	return mode;
+}
 // 
 std::vector<int> KmerDistribution::toCountVector(int max) const
 {

@@ -26,7 +26,7 @@
 #include "CorrectionThresholds.h"
 #include "BWTIntervalCache.h"
 
-#define FORMULA( x,y,z ) ( (x) ? (0.05776992234 * y - 0.4583043394 * z + 10.19159685) : (0.0710704607 * y - 0.5445663957 * z + 12.26253388) )
+#define FORMULA( x,y,z ) ( (x) ? (0.05776992234f * y - 0.4583043394f * z + 10.19159685f) : (0.0710704607f * y - 0.5445663957f * z + 12.26253388f) )
 //
 // Getopt
 //
@@ -398,7 +398,7 @@ void parsePacBioCorrectionOptions(int argc, char** argv)
 	*/
 	CorrectionThresholds::Instance().setBaseMinSupport(opt::kmerThreshold);
 	
-	std::string outfilename = opt::directory+"threshold-table";
+	std::string outfilename = opt::directory + "threshold-table";
 	std::ofstream outfile(outfilename);
 	for(int i=opt::kmerLength; i<=50; i++)
 	{

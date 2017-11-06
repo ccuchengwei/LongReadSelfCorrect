@@ -4,7 +4,7 @@
 // Released under the GPL
 //-----------------------------------------------
 //
-// PacBioCorrectionProcess.cpp - Self-correction or hybrid correction using FM-index walk for PacBio reads
+// PacBioCorrectionProcess.cpp - Self-correction using FM-index walk for PacBio reads
 //
 
 #ifndef PACBIOCORRECTION_H
