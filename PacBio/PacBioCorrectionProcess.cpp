@@ -146,12 +146,12 @@ void PacBioCorrectionProcess::initCorrect(std::string& readSeq, std::vector<Seed
 			// std::cout << "======= " << result.totalWalkNum << " =======\n";
 			target =  seedVec.at(targetSeed + nextTargetSeed);
 			// extendKmerSize should be large for repeat seeds
-			if((source.isRepeat || target.isRepeat) )
+			/*if((source.isRepeat || target.isRepeat) ) 
 			{
 				extendKmerSize = std::min((int)source.seedLength, (int)target.seedLength);
 				if(int(extendKmerSize) > m_params.kmerLength+2) 
 						extendKmerSize = m_params.kmerLength+2;
-			}
+			}*/
 
 			// Estimate distance between source and target, but this may over-estimate due to more insertion errors
 			// Note that source seed has been updated and no long stands for the original seed, which is seedVec[targetSeed-1]
@@ -306,8 +306,18 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
         BWTIntervalPair bip;
         bip.interval[0] = fwdInterval;
         bip.interval[1] = rvcInterval;
-        
+       
 		size_t kmerFreqs = (fwdInterval.isValid()?fwdInterval.size():0) + (rvcInterval.isValid()?rvcInterval.size():0);
+        //==========================================
+       /* std::cout << i << ": " << kmer << "\t" << kmerFreqs <<":" << fwdInterval.size() << ":" << rvcInterval.size() << "\n"; //debugch
+       
+        kmer = readSeq.substr(i,17);
+		fwdInterval = BWTAlgorithms::findInterval(m_params.indices.pRBWT, reverse(kmer));
+		rvcInterval = BWTAlgorithms::findInterval(m_params.indices.pBWT, reverseComplement(kmer));
+        std::cout << i << ": " << kmer << "\t" << fwdInterval.size()+rvcInterval.size() <<":" << fwdInterval.size() << ":" << rvcInterval.size() << "\n"; //debugch
+         */
+         
+         //===============================
         FixedMerInterval.push_back(bip);
         if(kmerFreqs < freqscount.size())
             freqscount.at(kmerFreqs) += 1;
@@ -466,7 +476,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 			{
                 
                 
-
+/*
                 // PB135123_7431.fa TGTAATCAGGCTGAAAA
                 bool isPrevSeedBetweenRepeat = seedVec.size()>=2 && !seedVec.back().isRepeat // previous seed is not repeat
                                         // but previous previous seed and current seed are both repeats
@@ -500,7 +510,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
                     seedVec.pop_back();
                 }
 										
-				// if(isPrevSeedCloseToRepeat || isPrevSeedBetweenRepeat || isPrevSeedWithinLargeRepeat)	
+		*/		// if(isPrevSeedCloseToRepeat || isPrevSeedBetweenRepeat || isPrevSeedWithinLargeRepeat)	
 					// seedVec.pop_back();
 				
 
@@ -573,8 +583,8 @@ bool PacBioCorrectionProcess::isCloseTorepeat(std::vector<BWTIntervalPair> Fixed
     size_t NearbyMaxFreqs = 0;
     //Curr Seed Freqs
     size_t CurrSeedFreqs  = FixedMerInterval.at(currpos).interval[0].size() + FixedMerInterval.at(currpos).interval[1].size();
-    size_t lowerbound = currpos - m_repeat_distance > 0 ? currpos - m_repeat_distance : 0;
-    
+    size_t lowerbound = (int)(currpos - m_repeat_distance) > 0 ? currpos - m_repeat_distance : 0;
+    size_t maxpos=currpos;
     size_t uperbound = currpos + m_repeat_distance > FixedMerInterval.size()-1 ?  FixedMerInterval.size()-1 : currpos + m_repeat_distance;
     
     //Search Maximum Freqs in this region
@@ -583,11 +593,12 @@ bool PacBioCorrectionProcess::isCloseTorepeat(std::vector<BWTIntervalPair> Fixed
         
          size_t CurrPosFreqs = FixedMerInterval.at(repeatCheckPos).interval[0].size() + FixedMerInterval.at(repeatCheckPos).interval[1].size();
          //std::cout << CurrPosFreqs << "\n";
-         if (CurrPosFreqs > NearbyMaxFreqs) NearbyMaxFreqs = CurrPosFreqs ;
+         if (CurrPosFreqs > NearbyMaxFreqs) {NearbyMaxFreqs = CurrPosFreqs ;maxpos=repeatCheckPos;}
     }
-   
+    size_t diff = abs((int)(maxpos-currpos)) > 0? abs((int)(maxpos-currpos)) : 1;
+    // bool isLargeVariationOfFreqs = (float)CurrSeedFreqs/(float)NearbyMaxFreqs < 0.7*(70-(float)diff)/70;
     bool isLargeVariationOfFreqs = (float)CurrSeedFreqs/(float)NearbyMaxFreqs < 0.6;
-    
+    // std::cout<<    0.7*(70-(float)diff)/70 <<" "<<(float)NearbyMaxFreqs << " " <<  0.7*(70-(float)diff)/70* (float)NearbyMaxFreqs <<"  123\n";
     return isLargeVariationOfFreqs;
 
 

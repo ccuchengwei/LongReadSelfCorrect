@@ -120,7 +120,7 @@ class LongReadSelfCorrectByOverlap
 		// prone the leaves without seeds in proximity
 		bool PrunedBySeedSupport(SONode3PtrList &newLeaves);
         //Check if need reduce kmer size
-        bool isInsufficientFreqs(SONode3PtrList &newLeaves);
+        bool isInsufficientFreqs(SONode3PtrList &newLeaves); 
         // Check if the leaves reach $
         bool isTerminated(SAIntervalNodeResultVector& results);
 		bool isOverlapAcceptable(SAIOverlapNode3* currNode);
@@ -187,6 +187,11 @@ class LongReadSelfCorrectByOverlap
 		std::vector<TreeInterval<size_t> > m_rvcIntervals;
 		IntervalTree<size_t> fwdIntervalTree;
 		IntervalTree<size_t> rvcIntervalTree;
+        
+        std::vector<TreeInterval<size_t> > m_fwdIntervals2;
+		std::vector<TreeInterval<size_t> > m_rvcIntervals2;
+        IntervalTree<size_t> fwdIntervalTree2;
+		IntervalTree<size_t> rvcIntervalTree2;
         
 
         // HashtableSearch *hashIndex;

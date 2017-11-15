@@ -69,7 +69,7 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(
     
     if(m_isDebug)
 	std::cout << "BE: " << beginningkmer << " " << m_targetSeed << " "<< m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size() << "|" << disBetweenSrcTarget <<"\n"; //debugch
-	
+	// if(m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size() > 100)m_seedSize = 5;
     // PacBio reads are longer than real length due to insertions
 	m_maxLength = (1.2*(m_disBetweenSrcTarget+10))+2*m_initkmersize;
 	m_minLength = (0.8*(m_disBetweenSrcTarget-20))+2*m_initkmersize;
@@ -132,7 +132,25 @@ void LongReadSelfCorrectByOverlap::buildOverlapbyFMindex(std::string beginningkm
 	}    
 	fwdIntervalTree = IntervalTree<size_t>(m_fwdIntervals);
 	rvcIntervalTree = IntervalTree<size_t>(m_rvcIntervals); 
+   //=======================================
+    for(int i = 0; i <= (int)m_query.length()-5; i++)//build overlap tree
+	{
+         
+		std::string seedStr = m_query.substr(i, 5);
+        
+		BWTInterval bi;
+		bi = BWTAlgorithms::findInterval( m_pRBWT, reverse(seedStr) );        
+		if(bi.isValid())
+			m_fwdIntervals2.push_back( TreeInterval<size_t>(bi.lower, bi.upper, i) );
+		bi = BWTAlgorithms::findInterval( m_pBWT, reverseComplement(seedStr) );       
+		if(bi.isValid())
+			m_rvcIntervals2.push_back( TreeInterval<size_t>(bi.lower, bi.upper, i) );
+	}    
+	fwdIntervalTree2 = IntervalTree<size_t>(m_fwdIntervals2);
+	rvcIntervalTree2 = IntervalTree<size_t>(m_rvcIntervals2);
     
+    //=======================================
+     
     
     
 }
@@ -816,7 +834,7 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
            float bratio = (float)bvector.at(i-1).first/(float)maxfreqsofleave;
            //size_t bdiff = std::abs((int)bvector.at(i-1).first-(int)maxfreqsofleave);
           
-           char b = BWT_ALPHABET::getChar(i);
+          char b = BWT_ALPHABET::getChar(i);
           bool match = false;
         if (currKmer.substr(currKmer.length()-2,1) == currKmer.substr(currKmer.length()-1,1) && currKmer.substr(currKmer.length()-3,1) ==currKmer.substr(currKmer.length()-2,1))   
         {   
@@ -826,10 +844,10 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
            // if ( totalcount > 100 && bratio >= 0.4 && ismatchedbykmer(bvector.at(i-1).second.interval[0],bvector.at(i-1).second.interval[1])) match = true;
          }
        
-        if ( maxfreqsofleave > 50 && bratio >= 0.1 &&ismatchedbykmer(bvector.at(i-1).second.interval[0],bvector.at(i-1).second.interval[1])) match = true;
-        //bool isPassedhighfreqsThreshold = maxfreqsofleave > 100 && bratio >= 0.5  ? true : false; 
+        if ( maxfreqsofleave > 95 && bratio >= 0.125 &&ismatchedbykmer(bvector.at(i-1).second.interval[0],bvector.at(i-1).second.interval[1])) match = true;
+
         bool isPassedThreshold =  bratio >= 0.25 && (bvector.at(i-1).first >= IntervalSizeCutoff || (bratio >= 0.6 && totalcount >= IntervalSizeCutoff+2 )) ? true: false;
-       if( match|| isPassedThreshold )
+       if( match || isPassedThreshold  )
        // if(((totalcount <= 100 && bratio >= 0.3) ||  (bratio >= 0.4 &&  totalcount > 100))  &&(bvector.at(i-1).first >= IntervalSizeCutoff || (bratio >= 0.6 && totalcount >= IntervalSizeCutoff+2 )))
         {
 			
@@ -854,9 +872,9 @@ bool LongReadSelfCorrectByOverlap::ismatchedbykmer(BWTInterval currFwdInterval,B
 	// Binary search for new seeds using Query interval tree
 	std::vector<TreeInterval<size_t> > resultsFwd, resultsRvc;
 	if(currFwdInterval.isValid())
-		fwdIntervalTree.findOverlapping(currFwdInterval.lower, currFwdInterval.upper, resultsFwd);
+		fwdIntervalTree2.findOverlapping(currFwdInterval.lower, currFwdInterval.upper, resultsFwd);
 	if(currRvcInterval.isValid())
-		rvcIntervalTree.findOverlapping(currRvcInterval.lower, currRvcInterval.upper, resultsRvc);
+		rvcIntervalTree2.findOverlapping(currRvcInterval.lower, currRvcInterval.upper, resultsRvc);
     size_t startSeedIdx = (int)m_currentLength - (int)m_maxIndelSize > 0 ? m_currentLength - m_maxIndelSize:0;
     size_t largeSeedIdx = m_currentLength + m_maxIndelSize;
     // std::cout<<    resultsFwd.size() +  resultsRvc.size()  << " "<<startSeedIdx  << " "<<largeSeedIdx<<"  yoo\n";

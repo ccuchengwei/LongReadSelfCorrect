@@ -214,7 +214,7 @@ private:
 	std::pair<size_t,size_t> alnscore;
 	PacBioCorrectionParameters m_params;
     size_t m_repeat_distance = 70;
-    std::string m_readid;
+    std::string m_readid; 
     double m_total_FMtime;
     double m_total_DPtime;
     bool m_isSplit;
