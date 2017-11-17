@@ -57,7 +57,9 @@ static const char *CORRECT_USAGE_MESSAGE =
 "      -L, --max-leaves=N               Number of maximum leaves in the search tree. (default: 32)\n"
 "      -C, --PBcoverage=N               Coverage of PacBio reads(default: 90)\n"
 "      --debugseed                      Output seeds file for each reads (default: false)\n"
+"      --debugextend                    Show extension information (default: false)\n"
 "      --onlyseed                       Only search seeds file for each reads (default: false)\n"
+"      --nodp                           Don't use dp (default: false)\n"
 "      --split                          Split the uncorrected reads (default: false)\n"
 
 "\nReport bugs to " PACKAGE_BUGREPORT "\n\n";
@@ -90,13 +92,14 @@ namespace opt
     static bool DebugExtend = false;
     static bool DebugSeed = false;
 	static bool OnlySeed = false;
+	static bool NoDp = false;
 	static PacBioCorrectionAlgorithm algorithm = PBC_SELF;
 	static std::string directory;
 }
 
 static const char* shortopts = "p:t:o:a:k:x:L:s:d:c:C:v:e:i";
 
-enum { OPT_HELP = 1, OPT_VERSION, OPT_DISCARD, OPT_SPLIT, OPT_FIRST,OPT_DEBUGEXTEND,OPT_DEBUGSEED,OPT_ONLYSEED };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_DISCARD, OPT_SPLIT, OPT_FIRST,OPT_DEBUGEXTEND,OPT_DEBUGSEED,OPT_ONLYSEED,OPT_NODP };
 
 static const struct option longopts[] = {
 	{ "verbose",       no_argument,       NULL, 'v' },
@@ -118,6 +121,7 @@ static const struct option longopts[] = {
     { "debugextend",       	no_argument,       NULL, OPT_DEBUGEXTEND },
     { "debugseed",       	no_argument,       NULL, OPT_DEBUGSEED },
 	{ "onlyseed",       	no_argument,       NULL, OPT_ONLYSEED },
+	{ "nodp",       	no_argument,       NULL, OPT_NODP },
 	{ "discard",       no_argument,       NULL, OPT_DISCARD },
 	{ "help",          no_argument,       NULL, OPT_HELP },
 	{ "version",       no_argument,       NULL, OPT_VERSION },
@@ -193,6 +197,7 @@ int PacBioCorrectionMain(int argc, char** argv)
     ecParams.DebugExtend = opt::DebugExtend;
     ecParams.DebugSeed = opt::DebugSeed;
 	ecParams.OnlySeed = opt::OnlySeed;
+	ecParams.NoDp = opt::NoDp;
 	ecParams.maxSeedInterval = opt::maxSeedInterval;
 	ecParams.directory = opt::directory;
 	
@@ -299,6 +304,7 @@ void parsePacBioCorrectionOptions(int argc, char** argv)
         case OPT_DEBUGEXTEND: opt::DebugExtend = true; break;
         case OPT_DEBUGSEED: opt::DebugSeed = true; break;
 		case OPT_ONLYSEED: opt::OnlySeed = true; break;
+		case OPT_NODP: opt::NoDp = true; break;
 		case OPT_HELP:
 			std::cout << CORRECT_USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);

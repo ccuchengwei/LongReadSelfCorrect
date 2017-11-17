@@ -316,8 +316,8 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
     std::vector<float> kmerThresholdTable;
 	const int kmerLengthUpperBound = 50;
 	kmerThresholdTable.assign(kmerLengthUpperBound+1,0);
-	//float weight = 1.f;
-	float weight = m_params.PBcoverage / 7.5f * freqStat.getQuartile(1);
+	float weight = 1.f;
+	//float weight = m_params.PBcoverage / 7.5f * freqStat.getQuartile(1);
 	weight = (weight == 0.f ? 1.f : sqrt(weight));
 	for(int k=staticKmerSize; k <= kmerLengthUpperBound; k++)
 	{        
@@ -553,7 +553,10 @@ int PacBioCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature
     
    
    
-    if(FMWalkReturnType <= 0)
+    if	(
+		FMWalkReturnType <= 0
+		&& !m_params.NoDp
+		)
     //v2
     {
         
