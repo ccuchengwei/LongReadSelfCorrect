@@ -83,7 +83,7 @@ void KmerDistribution::computeKDAttributes(float censor)
 	// m_repeatKmerCutoff = (double) m_median*(0.39+0.53* (freq95/(double)m_median));
 	
 }
-void KmerDistribution::write(std::ofstream& outfile,TYPE mode) const
+void KmerDistribution::write(std::ostream& outfile,TYPE mode) const
 {
 	switch(mode)
 	{

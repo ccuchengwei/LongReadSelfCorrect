@@ -51,7 +51,7 @@ class KmerDistribution
 		void computeKDAttributes(float censor = 0.0f);
 		//Write data to file
         enum TYPE {DATA,ATTRIBUTE};
-		void write(std::ofstream& outfile,TYPE = DATA) const;
+		void write(std::ostream& outfile,TYPE mode = DATA) const;
 		
 		
 		//Below are legacy codes. Noted by KuanWeiLee 20171027

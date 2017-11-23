@@ -7,8 +7,8 @@
 // PacBioHybridCorrection - Hybrid correction using FM-index walk for PacBio reads
 //
 
-#ifndef PacBioHybridCorrection_H
-#define PacBioHybridCorrection_H
+#ifndef PACBIOHYBRIDCORRECTION_H
+#define PACBIOHYBRIDCORRECTION_H
 #include <getopt.h>
 #include "config.h"
 #include "BWT.h"

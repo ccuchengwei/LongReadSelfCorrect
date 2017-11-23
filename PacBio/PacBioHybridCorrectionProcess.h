@@ -19,8 +19,8 @@
 #include "SampledSuffixArray.h"
 #include "BWTAlgorithms.h"
 #include "KmerDistribution.h"
-#include "PacBioCorrectionProcess.h"
 #include "SAIPBHybridCTree.h"
+#include "SeedFeature.h"
 
 // Parameter object for the error corrector
 struct PacBioHybridCorrectionParameters
@@ -90,7 +90,6 @@ public:
 class PacBioHybridCorrectionProcess
 {
 public:
-
 	PacBioHybridCorrectionProcess(const PacBioHybridCorrectionParameters params);
 	~PacBioHybridCorrectionProcess();
 

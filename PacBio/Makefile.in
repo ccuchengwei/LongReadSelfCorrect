@@ -108,13 +108,15 @@ libpacbio_a_AR = $(AR) $(ARFLAGS)
 libpacbio_a_LIBADD =
 am_libpacbio_a_OBJECTS = libpacbio_a-SAIPBSelfCTree.$(OBJEXT) \
 	libpacbio_a-SAIPBHybridCTree.$(OBJEXT) \
-	libpacbio_a-PacBioCorrectionProcess.$(OBJEXT) \
+	libpacbio_a-SeedFeature.$(OBJEXT) \
+	libpacbio_a-PacBioSelfCorrectionProcess.$(OBJEXT) \
 	libpacbio_a-PacBioHybridCorrectionProcess.$(OBJEXT) \
 	libpacbio_a-LongReadOverlap.$(OBJEXT) \
 	libpacbio_a-PBOverlapTree.$(OBJEXT) \
 	libpacbio_a-ShortReadOverlapTree.$(OBJEXT) \
 	libpacbio_a-HashtableSearch.$(OBJEXT) \
-	libpacbio_a-LongReadCorrectByOverlap.$(OBJEXT)
+	libpacbio_a-LongReadCorrectByOverlap.$(OBJEXT) \
+	libpacbio_a-KmerFreqProcess.$(OBJEXT)
 libpacbio_a_OBJECTS = $(am_libpacbio_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -274,6 +276,7 @@ pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
+runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -297,13 +300,15 @@ libpacbio_a_CPPFLAGS = \
 libpacbio_a_SOURCES = \
 	SAIPBSelfCTree.h SAIPBSelfCTree.cpp \
 	SAIPBHybridCTree.h SAIPBHybridCTree.cpp \
-	PacBioCorrectionProcess.h PacBioCorrectionProcess.cpp \
+	SeedFeature.h SeedFeature.cpp \
+	PacBioSelfCorrectionProcess.h PacBioSelfCorrectionProcess.cpp \
 	PacBioHybridCorrectionProcess.h PacBioHybridCorrectionProcess.cpp \
         LongReadOverlap.h LongReadOverlap.cpp \
 	PBOverlapTree.h PBOverlapTree.cpp \
 	ShortReadOverlapTree.h ShortReadOverlapTree.cpp \
     HashtableSearch.h HashtableSearch.cpp \
 	LongReadCorrectByOverlap.h LongReadCorrectByOverlap.cpp \
+	KmerFreqProcess.h KmerFreqProcess.cpp \
 	IntervalTree.h 
 
 all: all-am
@@ -355,13 +360,15 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-HashtableSearch.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-KmerFreqProcess.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-LongReadCorrectByOverlap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-LongReadOverlap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-PBOverlapTree.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-PacBioCorrectionProcess.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-PacBioHybridCorrectionProcess.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-PacBioSelfCorrectionProcess.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-SAIPBHybridCTree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-SAIPBSelfCTree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-SeedFeature.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-ShortReadOverlapTree.Po@am__quote@
 
 .cpp.o:
@@ -406,19 +413,33 @@ libpacbio_a-SAIPBHybridCTree.obj: SAIPBHybridCTree.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-SAIPBHybridCTree.obj `if test -f 'SAIPBHybridCTree.cpp'; then $(CYGPATH_W) 'SAIPBHybridCTree.cpp'; else $(CYGPATH_W) '$(srcdir)/SAIPBHybridCTree.cpp'; fi`
 
-libpacbio_a-PacBioCorrectionProcess.o: PacBioCorrectionProcess.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-PacBioCorrectionProcess.o -MD -MP -MF $(DEPDIR)/libpacbio_a-PacBioCorrectionProcess.Tpo -c -o libpacbio_a-PacBioCorrectionProcess.o `test -f 'PacBioCorrectionProcess.cpp' || echo '$(srcdir)/'`PacBioCorrectionProcess.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-PacBioCorrectionProcess.Tpo $(DEPDIR)/libpacbio_a-PacBioCorrectionProcess.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PacBioCorrectionProcess.cpp' object='libpacbio_a-PacBioCorrectionProcess.o' libtool=no @AMDEPBACKSLASH@
+libpacbio_a-SeedFeature.o: SeedFeature.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-SeedFeature.o -MD -MP -MF $(DEPDIR)/libpacbio_a-SeedFeature.Tpo -c -o libpacbio_a-SeedFeature.o `test -f 'SeedFeature.cpp' || echo '$(srcdir)/'`SeedFeature.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-SeedFeature.Tpo $(DEPDIR)/libpacbio_a-SeedFeature.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SeedFeature.cpp' object='libpacbio_a-SeedFeature.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-PacBioCorrectionProcess.o `test -f 'PacBioCorrectionProcess.cpp' || echo '$(srcdir)/'`PacBioCorrectionProcess.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-SeedFeature.o `test -f 'SeedFeature.cpp' || echo '$(srcdir)/'`SeedFeature.cpp
 
-libpacbio_a-PacBioCorrectionProcess.obj: PacBioCorrectionProcess.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-PacBioCorrectionProcess.obj -MD -MP -MF $(DEPDIR)/libpacbio_a-PacBioCorrectionProcess.Tpo -c -o libpacbio_a-PacBioCorrectionProcess.obj `if test -f 'PacBioCorrectionProcess.cpp'; then $(CYGPATH_W) 'PacBioCorrectionProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/PacBioCorrectionProcess.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-PacBioCorrectionProcess.Tpo $(DEPDIR)/libpacbio_a-PacBioCorrectionProcess.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PacBioCorrectionProcess.cpp' object='libpacbio_a-PacBioCorrectionProcess.obj' libtool=no @AMDEPBACKSLASH@
+libpacbio_a-SeedFeature.obj: SeedFeature.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-SeedFeature.obj -MD -MP -MF $(DEPDIR)/libpacbio_a-SeedFeature.Tpo -c -o libpacbio_a-SeedFeature.obj `if test -f 'SeedFeature.cpp'; then $(CYGPATH_W) 'SeedFeature.cpp'; else $(CYGPATH_W) '$(srcdir)/SeedFeature.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-SeedFeature.Tpo $(DEPDIR)/libpacbio_a-SeedFeature.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='SeedFeature.cpp' object='libpacbio_a-SeedFeature.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-PacBioCorrectionProcess.obj `if test -f 'PacBioCorrectionProcess.cpp'; then $(CYGPATH_W) 'PacBioCorrectionProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/PacBioCorrectionProcess.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-SeedFeature.obj `if test -f 'SeedFeature.cpp'; then $(CYGPATH_W) 'SeedFeature.cpp'; else $(CYGPATH_W) '$(srcdir)/SeedFeature.cpp'; fi`
+
+libpacbio_a-PacBioSelfCorrectionProcess.o: PacBioSelfCorrectionProcess.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-PacBioSelfCorrectionProcess.o -MD -MP -MF $(DEPDIR)/libpacbio_a-PacBioSelfCorrectionProcess.Tpo -c -o libpacbio_a-PacBioSelfCorrectionProcess.o `test -f 'PacBioSelfCorrectionProcess.cpp' || echo '$(srcdir)/'`PacBioSelfCorrectionProcess.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-PacBioSelfCorrectionProcess.Tpo $(DEPDIR)/libpacbio_a-PacBioSelfCorrectionProcess.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PacBioSelfCorrectionProcess.cpp' object='libpacbio_a-PacBioSelfCorrectionProcess.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-PacBioSelfCorrectionProcess.o `test -f 'PacBioSelfCorrectionProcess.cpp' || echo '$(srcdir)/'`PacBioSelfCorrectionProcess.cpp
+
+libpacbio_a-PacBioSelfCorrectionProcess.obj: PacBioSelfCorrectionProcess.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-PacBioSelfCorrectionProcess.obj -MD -MP -MF $(DEPDIR)/libpacbio_a-PacBioSelfCorrectionProcess.Tpo -c -o libpacbio_a-PacBioSelfCorrectionProcess.obj `if test -f 'PacBioSelfCorrectionProcess.cpp'; then $(CYGPATH_W) 'PacBioSelfCorrectionProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/PacBioSelfCorrectionProcess.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-PacBioSelfCorrectionProcess.Tpo $(DEPDIR)/libpacbio_a-PacBioSelfCorrectionProcess.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PacBioSelfCorrectionProcess.cpp' object='libpacbio_a-PacBioSelfCorrectionProcess.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-PacBioSelfCorrectionProcess.obj `if test -f 'PacBioSelfCorrectionProcess.cpp'; then $(CYGPATH_W) 'PacBioSelfCorrectionProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/PacBioSelfCorrectionProcess.cpp'; fi`
 
 libpacbio_a-PacBioHybridCorrectionProcess.o: PacBioHybridCorrectionProcess.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-PacBioHybridCorrectionProcess.o -MD -MP -MF $(DEPDIR)/libpacbio_a-PacBioHybridCorrectionProcess.Tpo -c -o libpacbio_a-PacBioHybridCorrectionProcess.o `test -f 'PacBioHybridCorrectionProcess.cpp' || echo '$(srcdir)/'`PacBioHybridCorrectionProcess.cpp
@@ -503,6 +524,20 @@ libpacbio_a-LongReadCorrectByOverlap.obj: LongReadCorrectByOverlap.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='LongReadCorrectByOverlap.cpp' object='libpacbio_a-LongReadCorrectByOverlap.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-LongReadCorrectByOverlap.obj `if test -f 'LongReadCorrectByOverlap.cpp'; then $(CYGPATH_W) 'LongReadCorrectByOverlap.cpp'; else $(CYGPATH_W) '$(srcdir)/LongReadCorrectByOverlap.cpp'; fi`
+
+libpacbio_a-KmerFreqProcess.o: KmerFreqProcess.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-KmerFreqProcess.o -MD -MP -MF $(DEPDIR)/libpacbio_a-KmerFreqProcess.Tpo -c -o libpacbio_a-KmerFreqProcess.o `test -f 'KmerFreqProcess.cpp' || echo '$(srcdir)/'`KmerFreqProcess.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-KmerFreqProcess.Tpo $(DEPDIR)/libpacbio_a-KmerFreqProcess.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='KmerFreqProcess.cpp' object='libpacbio_a-KmerFreqProcess.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-KmerFreqProcess.o `test -f 'KmerFreqProcess.cpp' || echo '$(srcdir)/'`KmerFreqProcess.cpp
+
+libpacbio_a-KmerFreqProcess.obj: KmerFreqProcess.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-KmerFreqProcess.obj -MD -MP -MF $(DEPDIR)/libpacbio_a-KmerFreqProcess.Tpo -c -o libpacbio_a-KmerFreqProcess.obj `if test -f 'KmerFreqProcess.cpp'; then $(CYGPATH_W) 'KmerFreqProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/KmerFreqProcess.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-KmerFreqProcess.Tpo $(DEPDIR)/libpacbio_a-KmerFreqProcess.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='KmerFreqProcess.cpp' object='libpacbio_a-KmerFreqProcess.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-KmerFreqProcess.obj `if test -f 'KmerFreqProcess.cpp'; then $(CYGPATH_W) 'KmerFreqProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/KmerFreqProcess.cpp'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique

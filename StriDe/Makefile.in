@@ -107,7 +107,8 @@ am_stride_OBJECTS = stride-StriDe.$(OBJEXT) stride-strideall.$(OBJEXT) \
 	stride-subgraph.$(OBJEXT) stride-filter.$(OBJEXT) \
 	stride-fm-merge.$(OBJEXT) stride-OverlapCommon.$(OBJEXT) \
 	stride-kmerfreq.$(OBJEXT) stride-grep.$(OBJEXT) \
-	stride-FMIndexWalk.$(OBJEXT) stride-PacBioCorrection.$(OBJEXT) \
+	stride-FMIndexWalk.$(OBJEXT) \
+	stride-PacBioSelfCorrection.$(OBJEXT) \
 	stride-PacBioHybridCorrection.$(OBJEXT) \
 	stride-asmlong.$(OBJEXT)
 stride_OBJECTS = $(am_stride_OBJECTS)
@@ -280,6 +281,7 @@ pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
+runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -328,7 +330,7 @@ stride_SOURCES = StriDe.cpp \
 		kmerfreq.h kmerfreq.cpp \
 		grep.h grep.cpp \
 		FMIndexWalk.h FMIndexWalk.cpp \
-		PacBioCorrection.h PacBioCorrection.cpp \
+		PacBioSelfCorrection.h PacBioSelfCorrection.cpp \
 		PacBioHybridCorrection.h PacBioHybridCorrection.cpp \
 		asmlong.h asmlong.cpp \
               SGACommon.h 
@@ -421,8 +423,8 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stride-FMIndexWalk.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stride-OverlapCommon.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stride-PacBioCorrection.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stride-PacBioHybridCorrection.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stride-PacBioSelfCorrection.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stride-StriDe.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stride-asmlong.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stride-assemble.Po@am__quote@
@@ -662,19 +664,19 @@ stride-FMIndexWalk.obj: FMIndexWalk.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o stride-FMIndexWalk.obj `if test -f 'FMIndexWalk.cpp'; then $(CYGPATH_W) 'FMIndexWalk.cpp'; else $(CYGPATH_W) '$(srcdir)/FMIndexWalk.cpp'; fi`
 
-stride-PacBioCorrection.o: PacBioCorrection.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT stride-PacBioCorrection.o -MD -MP -MF $(DEPDIR)/stride-PacBioCorrection.Tpo -c -o stride-PacBioCorrection.o `test -f 'PacBioCorrection.cpp' || echo '$(srcdir)/'`PacBioCorrection.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stride-PacBioCorrection.Tpo $(DEPDIR)/stride-PacBioCorrection.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PacBioCorrection.cpp' object='stride-PacBioCorrection.o' libtool=no @AMDEPBACKSLASH@
+stride-PacBioSelfCorrection.o: PacBioSelfCorrection.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT stride-PacBioSelfCorrection.o -MD -MP -MF $(DEPDIR)/stride-PacBioSelfCorrection.Tpo -c -o stride-PacBioSelfCorrection.o `test -f 'PacBioSelfCorrection.cpp' || echo '$(srcdir)/'`PacBioSelfCorrection.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stride-PacBioSelfCorrection.Tpo $(DEPDIR)/stride-PacBioSelfCorrection.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PacBioSelfCorrection.cpp' object='stride-PacBioSelfCorrection.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o stride-PacBioCorrection.o `test -f 'PacBioCorrection.cpp' || echo '$(srcdir)/'`PacBioCorrection.cpp
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o stride-PacBioSelfCorrection.o `test -f 'PacBioSelfCorrection.cpp' || echo '$(srcdir)/'`PacBioSelfCorrection.cpp
 
-stride-PacBioCorrection.obj: PacBioCorrection.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT stride-PacBioCorrection.obj -MD -MP -MF $(DEPDIR)/stride-PacBioCorrection.Tpo -c -o stride-PacBioCorrection.obj `if test -f 'PacBioCorrection.cpp'; then $(CYGPATH_W) 'PacBioCorrection.cpp'; else $(CYGPATH_W) '$(srcdir)/PacBioCorrection.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stride-PacBioCorrection.Tpo $(DEPDIR)/stride-PacBioCorrection.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PacBioCorrection.cpp' object='stride-PacBioCorrection.obj' libtool=no @AMDEPBACKSLASH@
+stride-PacBioSelfCorrection.obj: PacBioSelfCorrection.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT stride-PacBioSelfCorrection.obj -MD -MP -MF $(DEPDIR)/stride-PacBioSelfCorrection.Tpo -c -o stride-PacBioSelfCorrection.obj `if test -f 'PacBioSelfCorrection.cpp'; then $(CYGPATH_W) 'PacBioSelfCorrection.cpp'; else $(CYGPATH_W) '$(srcdir)/PacBioSelfCorrection.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/stride-PacBioSelfCorrection.Tpo $(DEPDIR)/stride-PacBioSelfCorrection.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='PacBioSelfCorrection.cpp' object='stride-PacBioSelfCorrection.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o stride-PacBioCorrection.obj `if test -f 'PacBioCorrection.cpp'; then $(CYGPATH_W) 'PacBioCorrection.cpp'; else $(CYGPATH_W) '$(srcdir)/PacBioCorrection.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o stride-PacBioSelfCorrection.obj `if test -f 'PacBioSelfCorrection.cpp'; then $(CYGPATH_W) 'PacBioSelfCorrection.cpp'; else $(CYGPATH_W) '$(srcdir)/PacBioSelfCorrection.cpp'; fi`
 
 stride-PacBioHybridCorrection.o: PacBioHybridCorrection.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT stride-PacBioHybridCorrection.o -MD -MP -MF $(DEPDIR)/stride-PacBioHybridCorrection.Tpo -c -o stride-PacBioHybridCorrection.o `test -f 'PacBioHybridCorrection.cpp' || echo '$(srcdir)/'`PacBioHybridCorrection.cpp

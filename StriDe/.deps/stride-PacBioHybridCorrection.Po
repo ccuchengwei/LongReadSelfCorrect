@@ -217,11 +217,9 @@ stride-PacBioHybridCorrection.o: PacBioHybridCorrection.cpp \
  ../PacBio/PacBioHybridCorrectionProcess.h \
  ../Concurrency/SequenceWorkItem.h ../Util/Metrics.h \
  ../SuffixTools/BWTIndexSet.h ../SuffixTools/SampledSuffixArray.h \
- ../PacBio/PacBioCorrectionProcess.h ../PacBio/LongReadCorrectByOverlap.h \
- ../FMIndexWalk/SAINode.h ../PacBio/IntervalTree.h \
- ../PacBio/HashtableSearch.h ../PacBio/SAIPBHybridCTree.h \
- ../Thirdparty/stdaln.h ../Util/CorrectionThresholds.h \
- ../SuffixTools/BWTIntervalCache.h
+ ../PacBio/SAIPBHybridCTree.h ../FMIndexWalk/SAINode.h \
+ ../Thirdparty/stdaln.h ../PacBio/SeedFeature.h \
+ ../Util/CorrectionThresholds.h ../SuffixTools/BWTIntervalCache.h
 
 /usr/include/stdc-predef.h:
 
@@ -891,19 +889,13 @@ overlap.h:
 
 ../SuffixTools/SampledSuffixArray.h:
 
-../PacBio/PacBioCorrectionProcess.h:
-
-../PacBio/LongReadCorrectByOverlap.h:
+../PacBio/SAIPBHybridCTree.h:
 
 ../FMIndexWalk/SAINode.h:
 
-../PacBio/IntervalTree.h:
-
-../PacBio/HashtableSearch.h:
-
-../PacBio/SAIPBHybridCTree.h:
-
 ../Thirdparty/stdaln.h:
+
+../PacBio/SeedFeature.h:
 
 ../Util/CorrectionThresholds.h:
 

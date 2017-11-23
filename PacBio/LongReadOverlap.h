@@ -14,7 +14,7 @@
 #include "BWTIndexSet.h"
 #include "SampledSuffixArray.h"
 #include "KmerOverlaps.h"
-#include "PacBioCorrectionProcess.h"
+#include "SeedFeature.h"
 
 
 namespace LongReadOverlap

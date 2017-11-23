@@ -41,7 +41,7 @@ stride_SOURCES = StriDe.cpp \
 		kmerfreq.h kmerfreq.cpp \
 		grep.h grep.cpp \
 		FMIndexWalk.h FMIndexWalk.cpp \
-		PacBioCorrection.h PacBioCorrection.cpp \
+		PacBioSelfCorrection.h PacBioSelfCorrection.cpp \
 		PacBioHybridCorrection.h PacBioHybridCorrection.cpp \
 		asmlong.h asmlong.cpp \
               SGACommon.h 

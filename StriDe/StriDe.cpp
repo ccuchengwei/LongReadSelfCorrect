@@ -20,7 +20,7 @@
 #include "kmerfreq.h"
 #include "grep.h"
 #include "FMIndexWalk.h"
-#include "PacBioCorrection.h"
+#include "PacBioSelfCorrection.h"
 #include "PacBioHybridCorrection.h"
 #include "strideall.h"
 #include "asmlong.h"
@@ -52,6 +52,7 @@ static const char *STRIDE_USAGE_MESSAGE =
 "      overlap     compute overlaps between reads\n"
 "      assemble    generate contigs from an assembly graph\n"
 "      asmlong     generate contigs from an assembly graph for long reads\n"
+"      kmerfreq    check kmer distribution and error condition\n"
 "\nOther Commands:\n"
 "      merge	merge multiple BWT/FM-index files into a single index\n"
 "\nReport bugs to " PACKAGE_BUGREPORT "\n\n";
@@ -85,14 +86,14 @@ int main(int argc, char** argv)
             indexMain(argc - 1, argv + 1);
         else if(command == "filter")
             filterMain(argc - 1, argv + 1);
-        else if(command == "fm-merge")
+        else if(command == "merge")
             FMMergeMain(argc - 1, argv + 1);
         else if(command == "overlap")
             overlapMain(argc - 1, argv + 1);
         else if(command == "correct")
             correctMain(argc - 1, argv + 1);
         else if(command == "pbcorrect")
-            PacBioCorrectionMain(argc - 1, argv + 1);
+            PacBioSelfCorrectionMain(argc - 1, argv + 1);
 		else if(command == "pbhc")
             PacBioHybridCorrectionMain(argc - 1, argv + 1);
 		else if(command == "assemble")

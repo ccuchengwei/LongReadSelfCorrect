@@ -218,7 +218,7 @@ libpacbio_a-LongReadCorrectByOverlap.o: LongReadCorrectByOverlap.cpp \
  ../Concurrency/SequenceWorkItem.h ../Util/Metrics.h \
  ../SuffixTools/BWTIndexSet.h ../SuffixTools/SampledSuffixArray.h \
  ../Util/BitVector.h ../Util/BitChar.h ../Algorithm/KmerOverlaps.h \
- PacBioCorrectionProcess.h
+ SeedFeature.h
 
 /usr/include/stdc-predef.h:
 
@@ -886,4 +886,4 @@ LongReadOverlap.h:
 
 ../Algorithm/KmerOverlaps.h:
 
-PacBioCorrectionProcess.h:
+SeedFeature.h:

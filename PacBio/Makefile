@@ -108,13 +108,15 @@ libpacbio_a_AR = $(AR) $(ARFLAGS)
 libpacbio_a_LIBADD =
 am_libpacbio_a_OBJECTS = libpacbio_a-SAIPBSelfCTree.$(OBJEXT) \
 	libpacbio_a-SAIPBHybridCTree.$(OBJEXT) \
-	libpacbio_a-PacBioCorrectionProcess.$(OBJEXT) \
+	libpacbio_a-SeedFeature.$(OBJEXT) \
+	libpacbio_a-PacBioSelfCorrectionProcess.$(OBJEXT) \
 	libpacbio_a-PacBioHybridCorrectionProcess.$(OBJEXT) \
 	libpacbio_a-LongReadOverlap.$(OBJEXT) \
 	libpacbio_a-PBOverlapTree.$(OBJEXT) \
 	libpacbio_a-ShortReadOverlapTree.$(OBJEXT) \
 	libpacbio_a-HashtableSearch.$(OBJEXT) \
-	libpacbio_a-LongReadCorrectByOverlap.$(OBJEXT)
+	libpacbio_a-LongReadCorrectByOverlap.$(OBJEXT) \
+	libpacbio_a-KmerFreqProcess.$(OBJEXT)
 libpacbio_a_OBJECTS = $(am_libpacbio_a_OBJECTS)
 AM_V_P = $(am__v_P_$(V))
 am__v_P_ = $(am__v_P_$(AM_DEFAULT_VERBOSITY))
@@ -189,13 +191,13 @@ ETAGS = etags
 CTAGS = ctags
 am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/kuanwei105/big7.kuanwei105/longreadselfcorrect/missing aclocal-1.15
+ACLOCAL = ${SHELL} /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/missing aclocal-1.15
 AMTAR = $${TAR-tar}
 AM_CXXFLAGS = -std=c++11 -Wall -Wextra -Wno-unknown-pragmas -static
 AM_DEFAULT_VERBOSITY = 1
-AUTOCONF = ${SHELL} /home/kuanwei105/big7.kuanwei105/longreadselfcorrect/missing autoconf
-AUTOHEADER = ${SHELL} /home/kuanwei105/big7.kuanwei105/longreadselfcorrect/missing autoheader
-AUTOMAKE = ${SHELL} /home/kuanwei105/big7.kuanwei105/longreadselfcorrect/missing automake-1.15
+AUTOCONF = ${SHELL} /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/missing autoconf
+AUTOHEADER = ${SHELL} /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/missing autoheader
+AUTOMAKE = ${SHELL} /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/missing automake-1.15
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -211,9 +213,9 @@ DEPDIR = .deps
 ECHO_C = 
 ECHO_N = -n
 ECHO_T = 
-EGREP = /usr/bin/grep -E
+EGREP = /bin/grep -E
 EXEEXT = 
-GREP = /usr/bin/grep
+GREP = /bin/grep
 INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
@@ -223,8 +225,8 @@ LDFLAGS = -fopenmp
 LIBOBJS = 
 LIBS = -lz 
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/kuanwei105/big7.kuanwei105/longreadselfcorrect/missing makeinfo
-MKDIR_P = /usr/bin/mkdir -p
+MAKEINFO = ${SHELL} /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/missing makeinfo
+MKDIR_P = /bin/mkdir -p
 OBJEXT = o
 PACKAGE = stride
 PACKAGE_BUGREPORT = ythuang@cs.ccu.edu.tw
@@ -236,13 +238,13 @@ PACKAGE_VERSION = 0.0.1
 PATH_SEPARATOR = :
 RANLIB = ranlib
 SET_MAKE = 
-SHELL = /bin/sh
+SHELL = /bin/bash
 STRIP = 
 VERSION = 0.0.1
-abs_builddir = /home/kuanwei105/big7.kuanwei105/longreadselfcorrect/PacBio
-abs_srcdir = /home/kuanwei105/big7.kuanwei105/longreadselfcorrect/PacBio
-abs_top_builddir = /home/kuanwei105/big7.kuanwei105/longreadselfcorrect
-abs_top_srcdir = /home/kuanwei105/big7.kuanwei105/longreadselfcorrect
+abs_builddir = /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/PacBio
+abs_srcdir = /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/PacBio
+abs_top_builddir = /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect
+abs_top_srcdir = /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 am__include = include
@@ -262,7 +264,7 @@ host_alias =
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/kuanwei105/big7.kuanwei105/longreadselfcorrect/install-sh
+install_sh = ${SHELL} /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -274,6 +276,7 @@ pdfdir = ${docdir}
 prefix = /usr/local
 program_transform_name = s,x,x,
 psdir = ${docdir}
+runstatedir = ${localstatedir}/run
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
 srcdir = .
@@ -297,13 +300,15 @@ libpacbio_a_CPPFLAGS = \
 libpacbio_a_SOURCES = \
 	SAIPBSelfCTree.h SAIPBSelfCTree.cpp \
 	SAIPBHybridCTree.h SAIPBHybridCTree.cpp \
-	PacBioCorrectionProcess.h PacBioCorrectionProcess.cpp \
+	SeedFeature.h SeedFeature.cpp \
+	PacBioSelfCorrectionProcess.h PacBioSelfCorrectionProcess.cpp \
 	PacBioHybridCorrectionProcess.h PacBioHybridCorrectionProcess.cpp \
         LongReadOverlap.h LongReadOverlap.cpp \
 	PBOverlapTree.h PBOverlapTree.cpp \
 	ShortReadOverlapTree.h ShortReadOverlapTree.cpp \
     HashtableSearch.h HashtableSearch.cpp \
 	LongReadCorrectByOverlap.h LongReadCorrectByOverlap.cpp \
+	KmerFreqProcess.h KmerFreqProcess.cpp \
 	IntervalTree.h 
 
 all: all-am
@@ -355,13 +360,15 @@ distclean-compile:
 	-rm -f *.tab.c
 
 include ./$(DEPDIR)/libpacbio_a-HashtableSearch.Po
+include ./$(DEPDIR)/libpacbio_a-KmerFreqProcess.Po
 include ./$(DEPDIR)/libpacbio_a-LongReadCorrectByOverlap.Po
 include ./$(DEPDIR)/libpacbio_a-LongReadOverlap.Po
 include ./$(DEPDIR)/libpacbio_a-PBOverlapTree.Po
-include ./$(DEPDIR)/libpacbio_a-PacBioCorrectionProcess.Po
 include ./$(DEPDIR)/libpacbio_a-PacBioHybridCorrectionProcess.Po
+include ./$(DEPDIR)/libpacbio_a-PacBioSelfCorrectionProcess.Po
 include ./$(DEPDIR)/libpacbio_a-SAIPBHybridCTree.Po
 include ./$(DEPDIR)/libpacbio_a-SAIPBSelfCTree.Po
+include ./$(DEPDIR)/libpacbio_a-SeedFeature.Po
 include ./$(DEPDIR)/libpacbio_a-ShortReadOverlapTree.Po
 
 .cpp.o:
@@ -406,19 +413,33 @@ libpacbio_a-SAIPBHybridCTree.obj: SAIPBHybridCTree.cpp
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-SAIPBHybridCTree.obj `if test -f 'SAIPBHybridCTree.cpp'; then $(CYGPATH_W) 'SAIPBHybridCTree.cpp'; else $(CYGPATH_W) '$(srcdir)/SAIPBHybridCTree.cpp'; fi`
 
-libpacbio_a-PacBioCorrectionProcess.o: PacBioCorrectionProcess.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-PacBioCorrectionProcess.o -MD -MP -MF $(DEPDIR)/libpacbio_a-PacBioCorrectionProcess.Tpo -c -o libpacbio_a-PacBioCorrectionProcess.o `test -f 'PacBioCorrectionProcess.cpp' || echo '$(srcdir)/'`PacBioCorrectionProcess.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-PacBioCorrectionProcess.Tpo $(DEPDIR)/libpacbio_a-PacBioCorrectionProcess.Po
-#	$(AM_V_CXX)source='PacBioCorrectionProcess.cpp' object='libpacbio_a-PacBioCorrectionProcess.o' libtool=no \
+libpacbio_a-SeedFeature.o: SeedFeature.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-SeedFeature.o -MD -MP -MF $(DEPDIR)/libpacbio_a-SeedFeature.Tpo -c -o libpacbio_a-SeedFeature.o `test -f 'SeedFeature.cpp' || echo '$(srcdir)/'`SeedFeature.cpp
+	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-SeedFeature.Tpo $(DEPDIR)/libpacbio_a-SeedFeature.Po
+#	$(AM_V_CXX)source='SeedFeature.cpp' object='libpacbio_a-SeedFeature.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-PacBioCorrectionProcess.o `test -f 'PacBioCorrectionProcess.cpp' || echo '$(srcdir)/'`PacBioCorrectionProcess.cpp
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-SeedFeature.o `test -f 'SeedFeature.cpp' || echo '$(srcdir)/'`SeedFeature.cpp
 
-libpacbio_a-PacBioCorrectionProcess.obj: PacBioCorrectionProcess.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-PacBioCorrectionProcess.obj -MD -MP -MF $(DEPDIR)/libpacbio_a-PacBioCorrectionProcess.Tpo -c -o libpacbio_a-PacBioCorrectionProcess.obj `if test -f 'PacBioCorrectionProcess.cpp'; then $(CYGPATH_W) 'PacBioCorrectionProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/PacBioCorrectionProcess.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-PacBioCorrectionProcess.Tpo $(DEPDIR)/libpacbio_a-PacBioCorrectionProcess.Po
-#	$(AM_V_CXX)source='PacBioCorrectionProcess.cpp' object='libpacbio_a-PacBioCorrectionProcess.obj' libtool=no \
+libpacbio_a-SeedFeature.obj: SeedFeature.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-SeedFeature.obj -MD -MP -MF $(DEPDIR)/libpacbio_a-SeedFeature.Tpo -c -o libpacbio_a-SeedFeature.obj `if test -f 'SeedFeature.cpp'; then $(CYGPATH_W) 'SeedFeature.cpp'; else $(CYGPATH_W) '$(srcdir)/SeedFeature.cpp'; fi`
+	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-SeedFeature.Tpo $(DEPDIR)/libpacbio_a-SeedFeature.Po
+#	$(AM_V_CXX)source='SeedFeature.cpp' object='libpacbio_a-SeedFeature.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-PacBioCorrectionProcess.obj `if test -f 'PacBioCorrectionProcess.cpp'; then $(CYGPATH_W) 'PacBioCorrectionProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/PacBioCorrectionProcess.cpp'; fi`
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-SeedFeature.obj `if test -f 'SeedFeature.cpp'; then $(CYGPATH_W) 'SeedFeature.cpp'; else $(CYGPATH_W) '$(srcdir)/SeedFeature.cpp'; fi`
+
+libpacbio_a-PacBioSelfCorrectionProcess.o: PacBioSelfCorrectionProcess.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-PacBioSelfCorrectionProcess.o -MD -MP -MF $(DEPDIR)/libpacbio_a-PacBioSelfCorrectionProcess.Tpo -c -o libpacbio_a-PacBioSelfCorrectionProcess.o `test -f 'PacBioSelfCorrectionProcess.cpp' || echo '$(srcdir)/'`PacBioSelfCorrectionProcess.cpp
+	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-PacBioSelfCorrectionProcess.Tpo $(DEPDIR)/libpacbio_a-PacBioSelfCorrectionProcess.Po
+#	$(AM_V_CXX)source='PacBioSelfCorrectionProcess.cpp' object='libpacbio_a-PacBioSelfCorrectionProcess.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-PacBioSelfCorrectionProcess.o `test -f 'PacBioSelfCorrectionProcess.cpp' || echo '$(srcdir)/'`PacBioSelfCorrectionProcess.cpp
+
+libpacbio_a-PacBioSelfCorrectionProcess.obj: PacBioSelfCorrectionProcess.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-PacBioSelfCorrectionProcess.obj -MD -MP -MF $(DEPDIR)/libpacbio_a-PacBioSelfCorrectionProcess.Tpo -c -o libpacbio_a-PacBioSelfCorrectionProcess.obj `if test -f 'PacBioSelfCorrectionProcess.cpp'; then $(CYGPATH_W) 'PacBioSelfCorrectionProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/PacBioSelfCorrectionProcess.cpp'; fi`
+	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-PacBioSelfCorrectionProcess.Tpo $(DEPDIR)/libpacbio_a-PacBioSelfCorrectionProcess.Po
+#	$(AM_V_CXX)source='PacBioSelfCorrectionProcess.cpp' object='libpacbio_a-PacBioSelfCorrectionProcess.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-PacBioSelfCorrectionProcess.obj `if test -f 'PacBioSelfCorrectionProcess.cpp'; then $(CYGPATH_W) 'PacBioSelfCorrectionProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/PacBioSelfCorrectionProcess.cpp'; fi`
 
 libpacbio_a-PacBioHybridCorrectionProcess.o: PacBioHybridCorrectionProcess.cpp
 	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-PacBioHybridCorrectionProcess.o -MD -MP -MF $(DEPDIR)/libpacbio_a-PacBioHybridCorrectionProcess.Tpo -c -o libpacbio_a-PacBioHybridCorrectionProcess.o `test -f 'PacBioHybridCorrectionProcess.cpp' || echo '$(srcdir)/'`PacBioHybridCorrectionProcess.cpp
@@ -503,6 +524,20 @@ libpacbio_a-LongReadCorrectByOverlap.obj: LongReadCorrectByOverlap.cpp
 #	$(AM_V_CXX)source='LongReadCorrectByOverlap.cpp' object='libpacbio_a-LongReadCorrectByOverlap.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-LongReadCorrectByOverlap.obj `if test -f 'LongReadCorrectByOverlap.cpp'; then $(CYGPATH_W) 'LongReadCorrectByOverlap.cpp'; else $(CYGPATH_W) '$(srcdir)/LongReadCorrectByOverlap.cpp'; fi`
+
+libpacbio_a-KmerFreqProcess.o: KmerFreqProcess.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-KmerFreqProcess.o -MD -MP -MF $(DEPDIR)/libpacbio_a-KmerFreqProcess.Tpo -c -o libpacbio_a-KmerFreqProcess.o `test -f 'KmerFreqProcess.cpp' || echo '$(srcdir)/'`KmerFreqProcess.cpp
+	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-KmerFreqProcess.Tpo $(DEPDIR)/libpacbio_a-KmerFreqProcess.Po
+#	$(AM_V_CXX)source='KmerFreqProcess.cpp' object='libpacbio_a-KmerFreqProcess.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-KmerFreqProcess.o `test -f 'KmerFreqProcess.cpp' || echo '$(srcdir)/'`KmerFreqProcess.cpp
+
+libpacbio_a-KmerFreqProcess.obj: KmerFreqProcess.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-KmerFreqProcess.obj -MD -MP -MF $(DEPDIR)/libpacbio_a-KmerFreqProcess.Tpo -c -o libpacbio_a-KmerFreqProcess.obj `if test -f 'KmerFreqProcess.cpp'; then $(CYGPATH_W) 'KmerFreqProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/KmerFreqProcess.cpp'; fi`
+	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-KmerFreqProcess.Tpo $(DEPDIR)/libpacbio_a-KmerFreqProcess.Po
+#	$(AM_V_CXX)source='KmerFreqProcess.cpp' object='libpacbio_a-KmerFreqProcess.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-KmerFreqProcess.obj `if test -f 'KmerFreqProcess.cpp'; then $(CYGPATH_W) 'KmerFreqProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/KmerFreqProcess.cpp'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique

@@ -107,7 +107,8 @@ am_stride_OBJECTS = stride-StriDe.$(OBJEXT) stride-strideall.$(OBJEXT) \
 	stride-subgraph.$(OBJEXT) stride-filter.$(OBJEXT) \
 	stride-fm-merge.$(OBJEXT) stride-OverlapCommon.$(OBJEXT) \
 	stride-kmerfreq.$(OBJEXT) stride-grep.$(OBJEXT) \
-	stride-FMIndexWalk.$(OBJEXT) stride-PacBioCorrection.$(OBJEXT) \
+	stride-FMIndexWalk.$(OBJEXT) \
+	stride-PacBioSelfCorrection.$(OBJEXT) \
 	stride-PacBioHybridCorrection.$(OBJEXT) \
 	stride-asmlong.$(OBJEXT)
 stride_OBJECTS = $(am_stride_OBJECTS)
@@ -195,13 +196,13 @@ ETAGS = etags
 CTAGS = ctags
 am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/kuanwei105/big7.kuanwei105/longreadselfcorrect/missing aclocal-1.15
+ACLOCAL = ${SHELL} /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/missing aclocal-1.15
 AMTAR = $${TAR-tar}
 AM_CXXFLAGS = -std=c++11 -Wall -Wextra -Wno-unknown-pragmas -static
 AM_DEFAULT_VERBOSITY = 1
-AUTOCONF = ${SHELL} /home/kuanwei105/big7.kuanwei105/longreadselfcorrect/missing autoconf
-AUTOHEADER = ${SHELL} /home/kuanwei105/big7.kuanwei105/longreadselfcorrect/missing autoheader
-AUTOMAKE = ${SHELL} /home/kuanwei105/big7.kuanwei105/longreadselfcorrect/missing automake-1.15
+AUTOCONF = ${SHELL} /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/missing autoconf
+AUTOHEADER = ${SHELL} /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/missing autoheader
+AUTOMAKE = ${SHELL} /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/missing automake-1.15
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -217,9 +218,9 @@ DEPDIR = .deps
 ECHO_C = 
 ECHO_N = -n
 ECHO_T = 
-EGREP = /usr/bin/grep -E
+EGREP = /bin/grep -E
 EXEEXT = 
-GREP = /usr/bin/grep
+GREP = /bin/grep
 INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
@@ -229,8 +230,8 @@ LDFLAGS = -fopenmp
 LIBOBJS = 
 LIBS = -lz 
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/kuanwei105/big7.kuanwei105/longreadselfcorrect/missing makeinfo
-MKDIR_P = /usr/bin/mkdir -p
+MAKEINFO = ${SHELL} /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/missing makeinfo
+MKDIR_P = /bin/mkdir -p
 OBJEXT = o
 PACKAGE = stride
 PACKAGE_BUGREPORT = ythuang@cs.ccu.edu.tw
@@ -242,13 +243,13 @@ PACKAGE_VERSION = 0.0.1
 PATH_SEPARATOR = :
 RANLIB = ranlib
 SET_MAKE = 
-SHELL = /bin/sh
+SHELL = /bin/bash
 STRIP = 
 VERSION = 0.0.1
-abs_builddir = /home/kuanwei105/big7.kuanwei105/longreadselfcorrect/StriDe
-abs_srcdir = /home/kuanwei105/big7.kuanwei105/longreadselfcorrect/StriDe
-abs_top_builddir = /home/kuanwei105/big7.kuanwei105/longreadselfcorrect
-abs_top_srcdir = /home/kuanwei105/big7.kuanwei105/longreadselfcorrect
+abs_builddir = /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/StriDe
+abs_srcdir = /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/StriDe
+abs_top_builddir = /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect
+abs_top_srcdir = /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 am__include = include
@@ -268,7 +269,7 @@ host_alias =
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/kuanwei105/big7.kuanwei105/longreadselfcorrect/install-sh
+install_sh = ${SHELL} /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -280,6 +281,7 @@ pdfdir = ${docdir}
 prefix = /usr/local
 program_transform_name = s,x,x,
 psdir = ${docdir}
+runstatedir = ${localstatedir}/run
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
 srcdir = .
@@ -328,7 +330,7 @@ stride_SOURCES = StriDe.cpp \
 		kmerfreq.h kmerfreq.cpp \
 		grep.h grep.cpp \
 		FMIndexWalk.h FMIndexWalk.cpp \
-		PacBioCorrection.h PacBioCorrection.cpp \
+		PacBioSelfCorrection.h PacBioSelfCorrection.cpp \
 		PacBioHybridCorrection.h PacBioHybridCorrection.cpp \
 		asmlong.h asmlong.cpp \
               SGACommon.h 
@@ -421,8 +423,8 @@ distclean-compile:
 
 include ./$(DEPDIR)/stride-FMIndexWalk.Po
 include ./$(DEPDIR)/stride-OverlapCommon.Po
-include ./$(DEPDIR)/stride-PacBioCorrection.Po
 include ./$(DEPDIR)/stride-PacBioHybridCorrection.Po
+include ./$(DEPDIR)/stride-PacBioSelfCorrection.Po
 include ./$(DEPDIR)/stride-StriDe.Po
 include ./$(DEPDIR)/stride-asmlong.Po
 include ./$(DEPDIR)/stride-assemble.Po
@@ -662,19 +664,19 @@ stride-FMIndexWalk.obj: FMIndexWalk.cpp
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o stride-FMIndexWalk.obj `if test -f 'FMIndexWalk.cpp'; then $(CYGPATH_W) 'FMIndexWalk.cpp'; else $(CYGPATH_W) '$(srcdir)/FMIndexWalk.cpp'; fi`
 
-stride-PacBioCorrection.o: PacBioCorrection.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT stride-PacBioCorrection.o -MD -MP -MF $(DEPDIR)/stride-PacBioCorrection.Tpo -c -o stride-PacBioCorrection.o `test -f 'PacBioCorrection.cpp' || echo '$(srcdir)/'`PacBioCorrection.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/stride-PacBioCorrection.Tpo $(DEPDIR)/stride-PacBioCorrection.Po
-#	$(AM_V_CXX)source='PacBioCorrection.cpp' object='stride-PacBioCorrection.o' libtool=no \
+stride-PacBioSelfCorrection.o: PacBioSelfCorrection.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT stride-PacBioSelfCorrection.o -MD -MP -MF $(DEPDIR)/stride-PacBioSelfCorrection.Tpo -c -o stride-PacBioSelfCorrection.o `test -f 'PacBioSelfCorrection.cpp' || echo '$(srcdir)/'`PacBioSelfCorrection.cpp
+	$(AM_V_at)$(am__mv) $(DEPDIR)/stride-PacBioSelfCorrection.Tpo $(DEPDIR)/stride-PacBioSelfCorrection.Po
+#	$(AM_V_CXX)source='PacBioSelfCorrection.cpp' object='stride-PacBioSelfCorrection.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o stride-PacBioCorrection.o `test -f 'PacBioCorrection.cpp' || echo '$(srcdir)/'`PacBioCorrection.cpp
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o stride-PacBioSelfCorrection.o `test -f 'PacBioSelfCorrection.cpp' || echo '$(srcdir)/'`PacBioSelfCorrection.cpp
 
-stride-PacBioCorrection.obj: PacBioCorrection.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT stride-PacBioCorrection.obj -MD -MP -MF $(DEPDIR)/stride-PacBioCorrection.Tpo -c -o stride-PacBioCorrection.obj `if test -f 'PacBioCorrection.cpp'; then $(CYGPATH_W) 'PacBioCorrection.cpp'; else $(CYGPATH_W) '$(srcdir)/PacBioCorrection.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/stride-PacBioCorrection.Tpo $(DEPDIR)/stride-PacBioCorrection.Po
-#	$(AM_V_CXX)source='PacBioCorrection.cpp' object='stride-PacBioCorrection.obj' libtool=no \
+stride-PacBioSelfCorrection.obj: PacBioSelfCorrection.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT stride-PacBioSelfCorrection.obj -MD -MP -MF $(DEPDIR)/stride-PacBioSelfCorrection.Tpo -c -o stride-PacBioSelfCorrection.obj `if test -f 'PacBioSelfCorrection.cpp'; then $(CYGPATH_W) 'PacBioSelfCorrection.cpp'; else $(CYGPATH_W) '$(srcdir)/PacBioSelfCorrection.cpp'; fi`
+	$(AM_V_at)$(am__mv) $(DEPDIR)/stride-PacBioSelfCorrection.Tpo $(DEPDIR)/stride-PacBioSelfCorrection.Po
+#	$(AM_V_CXX)source='PacBioSelfCorrection.cpp' object='stride-PacBioSelfCorrection.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o stride-PacBioCorrection.obj `if test -f 'PacBioCorrection.cpp'; then $(CYGPATH_W) 'PacBioCorrection.cpp'; else $(CYGPATH_W) '$(srcdir)/PacBioCorrection.cpp'; fi`
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o stride-PacBioSelfCorrection.obj `if test -f 'PacBioSelfCorrection.cpp'; then $(CYGPATH_W) 'PacBioSelfCorrection.cpp'; else $(CYGPATH_W) '$(srcdir)/PacBioSelfCorrection.cpp'; fi`
 
 stride-PacBioHybridCorrection.o: PacBioHybridCorrection.cpp
 	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT stride-PacBioHybridCorrection.o -MD -MP -MF $(DEPDIR)/stride-PacBioHybridCorrection.Tpo -c -o stride-PacBioHybridCorrection.o `test -f 'PacBioHybridCorrection.cpp' || echo '$(srcdir)/'`PacBioHybridCorrection.cpp

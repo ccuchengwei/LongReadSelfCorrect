@@ -14,13 +14,13 @@ libpacbio_a_CPPFLAGS = \
 libpacbio_a_SOURCES = \
 	SAIPBSelfCTree.h SAIPBSelfCTree.cpp \
 	SAIPBHybridCTree.h SAIPBHybridCTree.cpp \
-	PacBioCorrectionProcess.h PacBioCorrectionProcess.cpp \
+	SeedFeature.h SeedFeature.cpp \
+	PacBioSelfCorrectionProcess.h PacBioSelfCorrectionProcess.cpp \
 	PacBioHybridCorrectionProcess.h PacBioHybridCorrectionProcess.cpp \
         LongReadOverlap.h LongReadOverlap.cpp \
 	PBOverlapTree.h PBOverlapTree.cpp \
 	ShortReadOverlapTree.h ShortReadOverlapTree.cpp \
     HashtableSearch.h HashtableSearch.cpp \
 	LongReadCorrectByOverlap.h LongReadCorrectByOverlap.cpp \
+	KmerFreqProcess.h KmerFreqProcess.cpp \
 	IntervalTree.h 
-	
-
