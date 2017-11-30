@@ -10,29 +10,24 @@
 #include "BWTIndexSet.h"
 #include "SequenceWorkItem.h"
 #include "KmerDistribution.h"
-//Helpful tydef
+//Helpful typedef
 typedef std::map<int,std::ostream*> pOstreamMap;
 typedef std::map<int,KmerDistribution> kdMap;
 // Parameter object
 struct KmerFreqParameters
 {
 	KmerFreqParameters(std::map<std::string,std::string>& seqMap):refMap(seqMap){};
-	~KmerFreqParameters(){};
 	BWTIndexSet indices;
 	std::string directory;
+	std::string align;
 	std::map<std::string,std::string>& refMap;
 	std::pair<int,int> kmerSize;
 };
 
-
-
-
 struct KmerFreqResult
 {
-	KmerFreqResult(){};
-	~KmerFreqResult(){};
-	kdMap correctKd;
-	kdMap errorKd;
+	kdMap correctKdMap;
+	kdMap errorKdMap;
 
 };
 
@@ -45,7 +40,14 @@ public:
 	KmerFreqResult process(const SequenceWorkItem& workItem);
 	
 private:
-	void scan(int currentKmerSize, const SequenceWorkItem& workItem, KmerFreqResult& result);
+	void scan(int currentKmerSize, const std::string& query, const std::string& target, KmerFreqResult& result);
+	inline size_t validatePos(size_t pos, size_t seqLen)
+	{
+		seqLen--;
+		if(pos < 0) return 0;
+		if(pos>seqLen) return seqLen;
+		return pos;
+	}
 	KmerFreqParameters m_params;
 
 };
@@ -54,19 +56,19 @@ private:
 class KmerFreqPostProcess
 {
 public:
-	KmerFreqPostProcess(KmerFreqParameters params, pOstreamMap& pCorrectWriterMap, pOstreamMap& pErrorWriterMap)
-	:m_params(params), 
-	m_pCorrectWriterMap(pCorrectWriterMap), 
-	m_pErrorWriterMap(pErrorWriterMap)
-	{};
-	~KmerFreqPostProcess(){};
+	KmerFreqPostProcess(KmerFreqParameters params);
+	~KmerFreqPostProcess();
 
 	void process(const SequenceWorkItem& workItem, const KmerFreqResult& result);
 
 private:
 	KmerFreqParameters m_params;
-	pOstreamMap& m_pCorrectWriterMap;
-	pOstreamMap& m_pErrorWriterMap;
+	kdMap m_correctKdMap;
+	kdMap m_errorKdMap;
+	pOstreamMap m_pCorrectWriterMap;
+	pOstreamMap m_pErrorWriterMap;
+	pOstreamMap m_pSplitCorrectWriterMap;
+	pOstreamMap m_pSplitErrorWriterMap;
 
 };
 

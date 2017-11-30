@@ -19,28 +19,21 @@
 //#include "KmerDistribution.h"
 //Formula for calculating kmer threshold value ( x,y,z ) = ( isLowCoverage,m_params.PBcoverage,staticKmerSize )
 #define FORMULA( x,y,z ) ( (x) ? (0.05776992234f * y - 0.4583043394f * z + 10.19159685f) : (0.0710704607f * y - 0.5445663957f * z + 12.26253388f) )
+#define FORMULA2( x,y ) ( 8.641517857 * x - 54.54571078 * y + 1197.001707 )
 //Generic judgment of a kmer ( a,b,c,d ) = ( currentKmerFreqs,dynamicKmerThresholdValue,fwdKmerFreqs,rvcKmerFreqs )
 #define OVERTHRESHOLD( a,b,c,d ) ( (a>=b) && (c>=1) && (d>=1) )
 
 // PacBio Self Correction by Ya and YTH, v20151202.
 // 1. Identify highly-accurate seeds within PacBio reads
 // 2. For each pair of seeds, perform kmer extension using local kmer frequency collected by FM-index extension
-PacBioSelfCorrectionResult PacBioSelfCorrectionProcess::PBSelfCorrection(const SequenceWorkItem& workItem)
+PacBioSelfCorrectionResult PacBioSelfCorrectionProcess::process(const SequenceWorkItem& workItem)
 {	
-	// std::cout << workItem.read.id << "\n";
-    m_readid =  workItem.read.id;
-	PacBioSelfCorrectionResult result;	
-    Timer* seedTimer = new Timer("Seed Time",true);
-	std::vector<SeedFeature> seedVec, pacbioCorrectedStrs;
-	std::string readSeq = workItem.read.seq.toString();
-   
-	//Find seeds using fixed or dynamic kmers depending on 1st round or not
-    seedVec = hybridSeedingFromPB(readSeq);
-       
-	result.Timer_Seed = seedTimer->getElapsedWallTime(); 
-    delete seedTimer;
-	result.totalSeedNum = seedVec.size();
-
+	PacBioSelfCorrectionResult result;
+    result.readid = workItem.read.id;
+	result.kd.setID(result.readid);
+	
+	std::string readSeq = workItem.read.seq.toString();	
+	std::vector<SeedFeature> seedVec = hybridSeedingFromPB(readSeq, result), pacbioCorrectedStrs;
 	//Push the first seed into pacbioCorrectedStrs, which will be popped later as source seed
 	if	(
 		seedVec.size() >= 2
@@ -72,10 +65,6 @@ PacBioSelfCorrectionResult PacBioSelfCorrectionProcess::PBSelfCorrection(const S
 }
 void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, std::vector<SeedFeature>& seedVec, std::vector<SeedFeature>& pacbioCorrectedStrs, PacBioSelfCorrectionResult& result)
 {
-
-
-    m_total_FMtime = 0;
-    m_total_DPtime = 0;
     FMextendParameters FMextendParameter(m_params.indices,m_params.idmerLength,m_params.maxLeaves,m_params.minKmerLength,m_params.PBcoverage,m_params.ErrorRate,m_params.DebugExtend);
     
 	for(size_t targetSeed = 1 ; targetSeed < seedVec.size() ; targetSeed++)
@@ -120,7 +109,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, std::vector<
             
 			// extension using local kmer hashtable collected from overlapping reads
 			std::string mergedseq;
-			FMWalkReturnType = extendBetweenSeeds(source, target, readSeq, mergedseq, extendKmerSize, dis_between_src_target,FMextendParameter);
+			FMWalkReturnType = extendBetweenSeeds(source, target, readSeq, mergedseq, extendKmerSize, dis_between_src_target, FMextendParameter, result);
             if(m_params.DebugExtend)
             std::cout<< targetSeed << " \t" <<FMWalkReturnType<< " result of extension\n"<< mergedseq << "\n"; //debugch
             // outfile << targetSeed << " \t" <<FMWalkReturnType << "\n";
@@ -215,49 +204,46 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, std::vector<
 		
 		
 	}// end of each target seed
-    
-    result.Timer_FM = m_total_FMtime;
-    result.Timer_DP = m_total_DPtime;
+
     // cout<< m_total_FMtime<<endl;
     // outfile.close();
-            
-            // std::cout<< alnscore.first << " | " << alnscore.second << "kk\n";
+	// std::cout<< alnscore.first << " | " << alnscore.second << "kk\n";
     
     
 }
 
 
 // Seeding by fixed and dynamic kmer size. Noted by KuanWeiLee 20171027
-std::vector<SeedFeature> PacBioSelfCorrectionProcess::hybridSeedingFromPB(const std::string& readSeq)
+std::vector<SeedFeature> PacBioSelfCorrectionProcess::hybridSeedingFromPB(const std::string& readSeq, PacBioSelfCorrectionResult& result)
 {
-    std::vector<SeedFeature> seedVec,newSeedVec;
-	std::set<size_t> hitchhikingSeedSet;
+    Timer* seedTimer = new Timer("Seed Time",true);
+    std::vector<SeedFeature> initSeedVec,finalSeedVec;
+	std::set<size_t> hitchhikingSeedSet;				//finalSeedVec == initSeedVec - hitchhikingSeedSet
     const size_t staticKmerSize = m_params.kmerLength;
 	if(readSeq.length() < staticKmerSize) 
-		return seedVec;       
+		return initSeedVec;       
     
 	//Part 1 : Slide with a fixed kmer. Noted by KuanWeiLee
-	std::vector<BWTIntervalPair> FixedMerInterval;
+	std::vector<BistrandBWTInterval> FixedMerInterval;
     std::vector<size_t> freqsCount;
     freqsCount.assign(m_params.PBcoverage*2,0);
-	KmerDistribution freqStat(m_readid);
 	
     for(size_t i = 0 ; i <= readSeq.length() - staticKmerSize ; i++)
 	{
 		//(1) : Collection of fixed kmer interval(s) at every position on the read sequence
 		//(index:i [0~(readSeq.length()-staticKmerSize)]). Noted by KuanWeiLee
         std::string kmer = readSeq.substr(i,staticKmerSize);
-		BWTInterval fwdInterval = BWTAlgorithms::findInterval(m_params.indices.pRBWT, reverse(kmer));
-		BWTInterval rvcInterval = BWTAlgorithms::findInterval(m_params.indices.pBWT, reverseComplement(kmer));
-        BWTIntervalPair bip;
-		bip.interval[0] = fwdInterval;
-        bip.interval[1] = rvcInterval;
-        FixedMerInterval.push_back(bip);
+		BistrandBWTInterval object;
+		object.fwdInterval = BWTAlgorithms::findInterval(m_params.indices.pRBWT, reverse(kmer));
+		object.rvcInterval = BWTAlgorithms::findInterval(m_params.indices.pBWT, reverseComplement(kmer));
+		FixedMerInterval.push_back(object);
+		
 		//(2) : Statistics of freqsCount(index:currentKmerFreqs)		
-		size_t currentKmerFreqs = bip.getFreqs();
+		size_t currentKmerFreqs = object.getFreqs();
+		//size_t currentKmerFreqs = bip.getFreqs();
 		if(currentKmerFreqs < freqsCount.size())
             freqsCount[currentKmerFreqs]++;
-		freqStat.add(currentKmerFreqs);
+		result.kd.add(currentKmerFreqs);
 		//[Debugseed] should be output more dedicately by KuanWeiLee
 		/*
 		if(m_params.DebugSeed)
@@ -272,10 +258,11 @@ std::vector<SeedFeature> PacBioSelfCorrectionProcess::hybridSeedingFromPB(const 
 	//Threshold table mode of low coverage is canceled. Noted by KuanWeiLee 20171028
     bool isLowCoverage = false;
 	{
-		float initKmerThresholdValueWithLowCoverage = FORMULA(true,m_params.PBcoverage,staticKmerSize);
-		float initKmerThresholdValue = FORMULA(false,m_params.PBcoverage,staticKmerSize);
-		//freqStat.computeKDAttributes(1.0f);
-		freqStat.computeKDAttributes(initKmerThresholdValue);
+		//float initKmerThresholdValueWithLowCoverage = FORMULA(true,m_params.PBcoverage,staticKmerSize);
+		//float initKmerThresholdValue = FORMULA(false,m_params.PBcoverage,staticKmerSize);
+		float initKmerThresholdValue = FORMULA2(m_params.PBcoverage, staticKmerSize);
+		//result.kd.computeKDAttributes(1.0f);
+		result.kd.computeKDAttributes(initKmerThresholdValue);
 		//isLowCoverage = freqsCount[(int)initKmerThresholdValueWithLowCoverage] > freqsCount[(int)initKmerThresholdValue];
 	}
 	//Part 2 : Get threshold table (index:k [staticKmerSize~kmerLengthUpperBound]); 
@@ -283,23 +270,23 @@ std::vector<SeedFeature> PacBioSelfCorrectionProcess::hybridSeedingFromPB(const 
     std::vector<float> kmerThresholdTable;
 	const int kmerLengthUpperBound = 50;
 	kmerThresholdTable.assign(kmerLengthUpperBound+1,0);
-	float weight = 1.f;
-	//float weight = m_params.PBcoverage / 7.5f * freqStat.getQuartile(1);
+	//float weight = 1.f;
+	float weight = m_params.PBcoverage / 7.5f * result.kd.getQuartile(1);
 	weight = (weight == 0.f ? 1.f : sqrt(weight));
-	for(int k=staticKmerSize; k <= kmerLengthUpperBound; k++)
+	for(int k = staticKmerSize; k <= kmerLengthUpperBound; k++)
 	{        
-		float kmerThresholdValue = FORMULA(isLowCoverage,m_params.PBcoverage,k) * weight;
+		//float kmerThresholdValue = FORMULA(isLowCoverage,m_params.PBcoverage,k) * weight;
+		float kmerThresholdValue = FORMULA2(m_params.PBcoverage ,k);
 		kmerThresholdTable[k] = kmerThresholdValue  < 5 ? 5 : kmerThresholdValue;
 	}
 	//Part 3 : Search seeds; slide through the read sequence with dynamic kmers. Noted by KuanWeiLee
 	for(size_t startPos = 0; startPos <= readSeq.length() - staticKmerSize; startPos++)
 	{
 		bool isSeed = false;
-		char b,rcb;
 		std::string kmer = readSeq.substr(startPos,staticKmerSize);
 		size_t dynamicKmerSize = staticKmerSize;
-		BWTInterval fwdInterval = FixedMerInterval[startPos].interval[0],
-					rvcInterval = FixedMerInterval[startPos].interval[1];
+		BWTInterval fwdInterval = FixedMerInterval[startPos].fwdInterval,
+					rvcInterval = FixedMerInterval[startPos].rvcInterval;
 		size_t fwdKmerFreqs, rvcKmerFreqs, currentKmerFreqs;
 		size_t fixedMerFreqs, maxFixedMerFreqs = FixedMerInterval[startPos].getFreqs(); 
 		float initKmerThresholdValue = kmerThresholdTable[staticKmerSize], dynamicKmerThresholdValue;
@@ -310,15 +297,9 @@ std::vector<SeedFeature> PacBioSelfCorrectionProcess::hybridSeedingFromPB(const 
 			
 			if(isSeed)
 			{
-				b = readSeq[movePos + staticKmerSize - 1];
-				switch(b)
-				{
-					case 'A' : rcb='T'; break;
-					case 'T' : rcb='A'; break;
-					case 'C' : rcb='G'; break;
-					case 'G' : rcb='C'; break;
-				}
-				kmer = kmer + b;
+				char b = readSeq[movePos + staticKmerSize - 1];
+				char rcb = complement(b);
+				kmer += b;
 				dynamicKmerSize++;
 				BWTAlgorithms::updateInterval(fwdInterval,b,m_params.indices.pRBWT);
 				BWTAlgorithms::updateInterval(rvcInterval,rcb,m_params.indices.pBWT);
@@ -346,10 +327,10 @@ std::vector<SeedFeature> PacBioSelfCorrectionProcess::hybridSeedingFromPB(const 
 			*/
 			//Gerneral seed extension strategy. Noted by KuanWeiLee
 			if  (
-				   dynamicKmerSize > kmerLengthUpperBound																	//1.read length				
-				|| isLowComplexity(kmer,GCratio)																			//2.read complexity
-				|| fixedMerFreqs < initKmerThresholdValue																	//3.fixed kmer frequency
-				|| !OVERTHRESHOLD(currentKmerFreqs,dynamicKmerThresholdValue,fwdKmerFreqs,rvcKmerFreqs)						//4.dynamic kmer frequency
+				   dynamicKmerSize > kmerLengthUpperBound													//1.over length				
+				|| isLowComplexity(kmer,GCratio)															//2.low complexity
+				|| fixedMerFreqs < initKmerThresholdValue													//3.fixed kmer frequency
+				|| !OVERTHRESHOLD(currentKmerFreqs,dynamicKmerThresholdValue,fwdKmerFreqs,rvcKmerFreqs)		//4.dynamic kmer frequency
 				)
 			{
 				if(isSeed)
@@ -360,16 +341,22 @@ std::vector<SeedFeature> PacBioSelfCorrectionProcess::hybridSeedingFromPB(const 
 				}
 				break;
 			}
-			//The order between general seed extentsion and kmer hitchhiking strategy may make difference but need advanced observation. Noted by KuanWeiLee 20171027
-			//Kmer Hitchhike
-			if( maxFixedMerFreqs > 5*initKmerThresholdValue && (float)fixedMerFreqs / (float)maxFixedMerFreqs < 0.6f)		//5.hitchhiking kmer (HIGH-->LOW)
+			//The order between general seed extentsion and kmer hitchhike strategy may make difference but need advanced observation. Noted by KuanWeiLee 20171027
+			//Kmer Hitchhike strategy.
+			if	(
+				maxFixedMerFreqs > 5*initKmerThresholdValue 
+				&& (float)fixedMerFreqs / (float)maxFixedMerFreqs < m_params.hhRatio
+				)																							//5.hitchhiking kmer (HIGH-->LOW)
 			{
 				kmer.erase(--dynamicKmerSize);
 				seedEndPos = seedStartPos + dynamicKmerSize - 1;
 				startPos = seedEndPos + 1;
 				break;
 			}
-			else if( fixedMerFreqs > 5*initKmerThresholdValue && (float)fixedMerFreqs / (float)maxFixedMerFreqs > 1.67f)		//6.hitchhiking kmer (LOW-->HIGH)
+			else if	(
+					fixedMerFreqs > 5*initKmerThresholdValue
+					&& (float)fixedMerFreqs / (float)maxFixedMerFreqs > m_params.r_hhRatio
+					)																						//6.hitchhiking kmer (LOW-->HIGH)
 			{
 				isSeed = false;
 				startPos = movePos - 1;
@@ -383,14 +370,14 @@ std::vector<SeedFeature> PacBioSelfCorrectionProcess::hybridSeedingFromPB(const 
 			bool isRepeat = maxFixedMerFreqs > 5*initKmerThresholdValue;
 			
 			//Seed Hitchhike part 1 : mark hitchhiking seeds
-			std::vector<SeedFeature>::reverse_iterator iterPrevSeed = seedVec.rbegin();
+			std::vector<SeedFeature>::reverse_iterator iterPrevSeed = initSeedVec.rbegin();
 			bool isHitchhiked = false;
-			while(iterPrevSeed != seedVec.rend() && seedStartPos - (*iterPrevSeed).seedEndPos < m_repeat_distance)
+			while(iterPrevSeed != initSeedVec.rend() && seedStartPos - (*iterPrevSeed).seedEndPos < m_params.repaetDistance)
 			{
 				if(!isHitchhiked)
-					isHitchhiked = (*iterPrevSeed).isRepeat && (float)(*iterPrevSeed).maxFixedMerFreqs / (float)maxFixedMerFreqs > 1.67f;
-				bool prevIsHitchhiked = isRepeat && (float)(*iterPrevSeed).maxFixedMerFreqs / (float)maxFixedMerFreqs < 0.6f;
-				size_t index = seedVec.size() -  (iterPrevSeed - seedVec.rbegin() + 1);
+					isHitchhiked = (*iterPrevSeed).isRepeat && (float)(*iterPrevSeed).maxFixedMerFreqs / (float)maxFixedMerFreqs > m_params.r_hhRatio;
+				bool prevIsHitchhiked = isRepeat && (float)(*iterPrevSeed).maxFixedMerFreqs / (float)maxFixedMerFreqs < m_params.hhRatio;
+				size_t index = initSeedVec.size() -  (iterPrevSeed - initSeedVec.rbegin() + 1);
 				if(prevIsHitchhiked)
 					hitchhikingSeedSet.insert(index);
 				iterPrevSeed++;
@@ -401,51 +388,50 @@ std::vector<SeedFeature> PacBioSelfCorrectionProcess::hybridSeedingFromPB(const 
 			SeedFeature newSeed(seedStartPos, kmer, isRepeat, staticKmerSize, m_params.PBcoverage/2);
 			newSeed.estimateBestKmerSize(m_params.indices.pBWT);
 			newSeed.maxFixedMerFreqs = maxFixedMerFreqs;
-			seedVec.push_back(newSeed);
+			initSeedVec.push_back(newSeed);
 		}
 	}
 	//Seed Hitchhike part 2 : delete hitchhiking seeds
-	newSeedVec.reserve(seedVec.size());
+	finalSeedVec.reserve(initSeedVec.size());
 	{
 		size_t index = 0;
-		for(std::vector<SeedFeature>::iterator iterSeed = seedVec.begin(); iterSeed != seedVec.end(); iterSeed++, index++)
+		for(std::vector<SeedFeature>::iterator iterSeed = initSeedVec.begin(); iterSeed != initSeedVec.end(); iterSeed++, index++)
 			if(hitchhikingSeedSet.count(index) == 0)
-				newSeedVec.push_back((*iterSeed));
+				finalSeedVec.push_back((*iterSeed));
 	}
-	//[Debugseed] Output seeds & kmer count distribution for each reads.Noted by KuanWeiLee
+	//[Debugseed] Output seeds & kd statistics for each reads.Noted by KuanWeiLee
     if(m_params.DebugSeed)
     {
-		std::string seedfilename = m_params.directory + "seed/" + m_readid + (isLowCoverage ? ".lc" : "") + ".seed";
-        std::ofstream seedfile(seedfilename);
-		for(std::vector<SeedFeature>::iterator iterSeed = newSeedVec.begin(); iterSeed != newSeedVec.end(); iterSeed++)
-			seedfile << (*iterSeed).seedStr << "\t" << (*iterSeed).maxFixedMerFreqs << "\t" << (*iterSeed).seedStartPos << "\t" << ((*iterSeed).isRepeat ? "Yes" : "No") << "\n";
-		seedfile.close();
+        std::ostream* pSeedWriter = createWriter(m_params.directory + "seed/" + result.readid + ".seed");
+		for(std::vector<SeedFeature>::iterator iterSeed = finalSeedVec.begin(); iterSeed != finalSeedVec.end(); iterSeed++)
+			*pSeedWriter << (*iterSeed).seedStr << "\t" << (*iterSeed).maxFixedMerFreqs << "\t" 
+			<< (*iterSeed).seedStartPos << "\t" << ((*iterSeed).isRepeat ? "Yes" : "No") << "\n";
+		delete pSeedWriter;
 		
-		std::string disfilename = m_params.directory + "kmer-dis";
-		std::string statfilename = m_params.directory + "kmer-stat";		
-		std::ostream* pDisWriter = createWriter(disfilename);
-		std::ostream* pStatWriter = createWriter(statfilename);		
-		freqStat.write(*pDisWriter,KmerDistribution::TYPE::DATA);
-		freqStat.write(*pStatWriter,KmerDistribution::TYPE::ATTRIBUTE);		
-		delete pDisWriter;
-		delete pStatWriter;
-    }
-	return newSeedVec;
+		std::ostream* pKdWriter = createWriter(m_params.directory + "kmer-stat", std::ios_base::app);
+		result.kd.write(*pKdWriter,KmerDistribution::TYPE::ATTRIBUTE);
+		delete pKdWriter;
+	}
+	
+	result.totalSeedNum = finalSeedVec.size();
+	result.Timer_Seed = seedTimer->getElapsedWallTime(); 
+    delete seedTimer;
+	return finalSeedVec;
 }
 
 
 //check if in repeat region and there is high variation 
 //isCloseTorepeat
 /*
-bool PacBioSelfCorrectionProcess::isCloseTorepeat(std::vector<BWTIntervalPair> FixedMerInterval,size_t &currpos,size_t m_repeat_distance)
+bool PacBioSelfCorrectionProcess::isCloseTorepeat(std::vector<BWTIntervalPair> FixedMerInterval,size_t &currpos)
 {
     
     size_t NearbyMaxFreqs = 0;
     //Curr Seed Freqs
     size_t CurrSeedFreqs  = FixedMerInterval[currpos].interval[0].size() + FixedMerInterval[currpos].interval[1].size();
-    size_t lowerbound = currpos - m_repeat_distance > 0 ? currpos - m_repeat_distance : 0;
+    size_t lowerbound = currpos - m_params.repaetDistance > 0 ? currpos - m_params.repaetDistance : 0;
     
-    size_t uperbound = currpos + m_repeat_distance > FixedMerInterval.size()-1 ?  FixedMerInterval.size()-1 : currpos + m_repeat_distance;
+    size_t uperbound = currpos + m_params.repaetDistance > FixedMerInterval.size()-1 ?  FixedMerInterval.size()-1 : currpos + m_params.repaetDistance;
     
     //Search Maximum Freqs in this region
     for(size_t repeatCheckPos = lowerbound; repeatCheckPos <= uperbound ; repeatCheckPos++ )
@@ -464,7 +450,7 @@ bool PacBioSelfCorrectionProcess::isCloseTorepeat(std::vector<BWTIntervalPair> F
 // Return FMWalkReturnType
 
 int PacBioSelfCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFeature& target, std::string& rawSeq, std::string& mergedseq, 
-												size_t extendKmerSize, size_t dis_between_src_target,FMextendParameters FMextendParameter)
+												size_t extendKmerSize, size_t dis_between_src_target,FMextendParameters FMextendParameter, PacBioSelfCorrectionResult& result)
 {
    // size_t srcKmerSize = std::max(source.endBestKmerSize, extendKmerSize);
    std::string srcStr = source.seedStr.substr(source.seedStr.length()-extendKmerSize);
@@ -505,7 +491,7 @@ int PacBioSelfCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFea
           
         }
 
-          m_total_FMtime += FMTimer->getElapsedWallTime() ;
+    result.Timer_FM += FMTimer->getElapsedWallTime() ;
     
      
     delete FMTimer;
@@ -562,7 +548,7 @@ int PacBioSelfCorrectionProcess::extendBetweenSeeds(SeedFeature& source, SeedFea
         if(!mergedseq.empty())
                 mergedseq = mergedseq.substr(extendKmerSize);
         
-        m_total_DPtime += DPTimer->getElapsedWallTime() ;
+        result.Timer_DP += DPTimer->getElapsedWallTime() ;
         delete DPTimer;
         
         FMWalkReturnType = 2;
@@ -761,11 +747,9 @@ bool PacBioSelfCorrectionProcess::isLowComplexity (const std::string& seq, float
 //
 //
 //
-PacBioSelfCorrectionPostProcess::PacBioSelfCorrectionPostProcess(std::ostream* pCorrectedWriter,
-std::ostream* pDiscardWriter,
-const PacBioSelfCorrectionParameters params) :
-m_pCorrectedWriter(pCorrectedWriter),
-m_pDiscardWriter(pDiscardWriter),
+PacBioSelfCorrectionPostProcess::PacBioSelfCorrectionPostProcess(std::string correctFile,
+std::string discardFile,
+const PacBioSelfCorrectionParameters params):
 m_params(params),
 m_totalReadsLen(0),
 m_correctedLen(0),
@@ -781,6 +765,10 @@ m_Timer_Seed(0),
 m_Timer_FM(0),
 m_Timer_DP(0)
 {
+	m_pCorrectWriter = createWriter(correctFile);
+	m_pDiscardWriter = createWriter(discardFile);
+	if(m_params.DebugSeed)
+		m_pKdWriter = createWriter(m_params.directory + "kmer-dist");
 }
 
 //
@@ -803,6 +791,13 @@ PacBioSelfCorrectionPostProcess::~PacBioSelfCorrectionPostProcess()
         std::cout << "Time of searching FM: " << m_Timer_FM  << std::endl;
         std::cout << "Time of searching DP: " << m_Timer_DP  << std::endl;
 	}
+	if(m_params.DebugSeed)
+	{
+		m_kd.write(*m_pKdWriter);
+		delete m_pKdWriter;
+	}
+	delete m_pCorrectWriter;
+	delete m_pDiscardWriter;
 }
 
 
@@ -830,7 +825,7 @@ void PacBioSelfCorrectionPostProcess::process(const SequenceWorkItem& item, cons
 		ss << item.read.id << "_before_len:" << result.correctSequence.toString().length();
 		mergeRecord.id = ss.str();
 		mergeRecord.seq = result.correctSequence;
-		mergeRecord.write(*m_pCorrectedWriter);*/
+		mergeRecord.write(*m_pCorrectWriter);*/
 		
 		for(size_t i = 0 ; i < result.correctedPacbioStrs.size() ; i++)
 		{
@@ -839,7 +834,7 @@ void PacBioSelfCorrectionPostProcess::process(const SequenceWorkItem& item, cons
 			ss2 << item.read.id << "_" << i << "_" << result.correctedPacbioStrs[i].toString().length();
 			mergeRecord2.id = ss2.str();
 			mergeRecord2.seq = result.correctedPacbioStrs[i];
-			mergeRecord2.write(*m_pCorrectedWriter);
+			mergeRecord2.write(*m_pCorrectWriter);
 		}
 	}
 	else
@@ -850,4 +845,5 @@ void PacBioSelfCorrectionPostProcess::process(const SequenceWorkItem& item, cons
 		mergeRecord2.seq = item.read.seq;
 		mergeRecord2.write(*m_pDiscardWriter);
 	}
+	m_kd += result.kd;
 }

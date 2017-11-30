@@ -28,6 +28,7 @@ static const char *KMERFREQ_USAGE_MESSAGE =
 "  -o, --directory=PATH      Put results in the directory\n"
 "  -t, --threads=NUM         Use NUM threads for the computation (default: 1)\n"
 "  -r, --reference=SEQ       The reference file\n"
+"  -a, --align=PATH          Get alignment files in the directory\n"
 "  -v, --verbose             Display verbose output\n"
 "      --help                Display this help and exit\n"
 "      --version             Display version\n";
@@ -42,6 +43,7 @@ namespace opt
 	static std::string directory;
 	static int numThreads = 1;
 	static std::string reference;
+	static std::string align;
 	
 	static int kmerSizeLb = 15;
 	static int kmerSizeUb = 15;	
@@ -49,15 +51,16 @@ namespace opt
     static int sampleRate = BWT::DEFAULT_SAMPLE_RATE_SMALL;
 }
 
-static const char* shortopts = "p:o:t:r:v";
+static const char* shortopts = "p:o:t:r:a:v";
 
-enum { OPT_HELP = 1, OPT_VERSION };
+enum { OPT_ALIGN, OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
 	{ "prefix",      required_argument, NULL, 'p' },
 	{ "directory",   required_argument, NULL, 'o' },
 	{ "threads",     required_argument, NULL, 't' },
 	{ "reference",   required_argument, NULL, 'r' },
+	{ "align",       required_argument, NULL, 'a' },
     { "verbose",     no_argument,       NULL, 'v' },
     { "help",        no_argument,       NULL, OPT_HELP },
     { "version",     no_argument,       NULL, OPT_VERSION },
@@ -69,13 +72,12 @@ int kmerfreqMain(int argc, char** argv)
 	parseKMERFREQOptions(argc, argv);
 	
 	BWT *pBWT, *pRBWT;
-	SampledSuffixArray* pSSA;
 	// Load indices
 	#pragma omp parallel
 	{
 		#pragma omp single nowait
 		{	//Initialization of large BWT takes some time, pass the disk to next job
-			std::cout << std::endl << "Loading BWT: " << opt::prefix + BWT_EXT << "\n";
+			std::cout << "Loading BWT: " << opt::prefix + BWT_EXT << "\n";
 			pBWT = new BWT(opt::prefix + BWT_EXT, opt::sampleRate);
 		}
 		#pragma omp single nowait
@@ -83,56 +85,34 @@ int kmerfreqMain(int argc, char** argv)
 			std::cout << "Loading RBWT: " << opt::prefix + RBWT_EXT << "\n";
 			pRBWT = new BWT(opt::prefix + RBWT_EXT, opt::sampleRate);
 		}
-		#pragma omp single nowait
-		{
-			std::cout << "Loading Sampled Suffix Array: " << opt::prefix + SAI_EXT << "\n";
-			pSSA = new SampledSuffixArray(opt::prefix + SAI_EXT, SSA_FT_SAI);
-		}
 	}
 	BWTIndexSet indexSet;
 	indexSet.pBWT = pBWT;
 	indexSet.pRBWT = pRBWT;
-	indexSet.pSSA = pSSA;
-
+		
+	//Set the kmer freq parameters
+	//Load reference sequences
 	std::map<std::string,std::string>refMap;
 	{
-		SeqReader* reader = new SeqReader(opt::reference);
-		WorkItemGenerator<SequenceWorkItem> refgenerator(reader);
+		SeqReader reader(opt::reference);
+		WorkItemGenerator<SequenceWorkItem> generator(&reader);
 		SequenceWorkItem workItem;
 		std::string id,seq;
-		while(refgenerator.generate(workItem))
+		while(generator.generate(workItem))
 		{
 			id = workItem.read.id;
 			seq = workItem.read.seq.toString();
 			refMap[id] = seq;
 		}
-		delete reader;
 	}
-	/*
-	for(std::map<std::string,std::string>::iterator iter = refMap.begin(); iter != refMap.end(); iter++)
-		std::cout<< iter->first << "\n" << iter->second << "\n";
-	*/
-	
-	// Set the kmer freq parameters
 	KmerFreqParameters kfParams(refMap);
 	kfParams.indices = indexSet;
 	kfParams.directory = opt::directory;
+	kfParams.align = opt::align;
 	kfParams.kmerSize.first = opt::kmerSizeLb;
 	kfParams.kmerSize.second = opt::kmerSizeUb;
-	
-	pOstreamMap pCorrectWriterMap;
-	pOstreamMap pErrorWriterMap;
-	for(int i = opt::kmerSizeLb; i <= opt::kmerSizeUb; i++)
-	{
-		std::string correctfilename = opt::directory + std::to_string(i) + ".correct.kf";
-		std::string errorfilename = opt::directory + std::to_string(i) + ".error.kf";
-		std::ostream* pCorrectWriter = createWriter(correctfilename);
-		std::ostream* pErrorWriter = createWriter(errorfilename);
-		pCorrectWriterMap[i]=pCorrectWriter;
-		pErrorWriterMap[i]=pErrorWriter;
-	}
-	
-	KmerFreqPostProcess* pPostProcessor = new KmerFreqPostProcess(kfParams,pCorrectWriterMap,pErrorWriterMap);
+
+	KmerFreqPostProcess* pPostProcessor = new KmerFreqPostProcess(kfParams);
 
 	
 	Timer* pTimer = new Timer(PROGRAM_IDENT);
@@ -173,19 +153,10 @@ int kmerfreqMain(int argc, char** argv)
 		}
 		
 	}
-
-	for(pOstreamMap::iterator iter = pCorrectWriterMap.begin(); iter != pCorrectWriterMap.end(); iter++)
-		delete iter->second;
-	for(pOstreamMap::iterator iter = pErrorWriterMap.begin(); iter != pErrorWriterMap.end(); iter++)
-		delete iter->second;
 	delete pPostProcessor;
 	
 	delete pBWT;
-	if(pRBWT != NULL)
 	delete pRBWT;
-
-	if(pSSA != NULL)
-	delete pSSA;
 
 	delete pTimer;
 	
@@ -197,6 +168,7 @@ int kmerfreqMain(int argc, char** argv)
 //
 void parseKMERFREQOptions(int argc, char** argv)
 {
+	optind = 1;
     bool die = false;
     for (char c; (c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1;) 
     {
@@ -205,8 +177,9 @@ void parseKMERFREQOptions(int argc, char** argv)
         {
 			case 'p': arg >> opt::prefix; break;
 			case 'o': arg >> opt::directory; break;
-			case 'r': arg >> opt::reference; break;
 			case 't': arg >> opt::numThreads; break;
+			case 'r': arg >> opt::reference; break;
+			case 'a': arg >> opt::align; break;
 			case 'v': opt::verbose++; break;
 			case '?': die = true; break;
             case OPT_HELP:
@@ -217,14 +190,6 @@ void parseKMERFREQOptions(int argc, char** argv)
                 exit(EXIT_SUCCESS);
         }
     }
-	while(true)
-	{
-		std::cout << "Please enter start and end kmer size\n";
-		std::cin >> opt::kmerSizeLb >> opt::kmerSizeUb;
-		if	(opt::kmerSizeLb >= 10 && opt::kmerSizeLb <= opt::kmerSizeUb)
-			break;
-		std::cout << "Illegal values\n";
-	}
 
     if (argc - optind < 1) 
     {
@@ -250,8 +215,8 @@ void parseKMERFREQOptions(int argc, char** argv)
 	}
 	else
 	{		
-		opt::directory = opt::directory + "/";
-		if( system(("mkdir -p " + opt::directory).c_str()) != 0)
+		opt::directory += "/";
+		if( system(("mkdir -p " + opt::directory + "split/").c_str()) != 0)
 		{
 			std::cerr << SUBPROGRAM << ": something wrong in directory: " << opt::directory << "\n";
 			die = true;
@@ -270,11 +235,27 @@ void parseKMERFREQOptions(int argc, char** argv)
 		die = true;
 	}
 	
+	if(opt::align.empty())
+	{
+		std::cerr << SUBPROGRAM << ": no alignments\n";
+		die = true;
+	}
+	else
+		opt::align += "/";
+	
     if (die) 
     {
         std::cout << "\n" << KMERFREQ_USAGE_MESSAGE;
         exit(EXIT_FAILURE);
     }
-
+	//Enter start and end kmersize
+	while(true)
+	{
+		std::cout << "Please enter start and end kmer size\n";
+		std::cin >> opt::kmerSizeLb >> opt::kmerSizeUb;
+		if	(opt::kmerSizeLb >= 10 && opt::kmerSizeLb <= opt::kmerSizeUb)
+			break;
+		std::cout << "Illegal values\n";
+	}
 	opt::readsFile = argv[optind++];
 }

@@ -128,29 +128,19 @@ BWTIntervalPair BWTAlgorithms::findIntervalPairWithCache(const BWT* pBWT,
 // Count the number of occurrences of string w, including the reverse complement
 size_t BWTAlgorithms::countSequenceOccurrences(const std::string& w, const BWT* pBWT)
 {
-    BWTInterval fwd_interval = findInterval(pBWT, w);
-    BWTInterval rc_interval = findInterval(pBWT, reverseComplement(w));
-
-    size_t count = 0;
-    if(fwd_interval.isValid())
-        count += fwd_interval.size();
-    if(rc_interval.isValid())
-        count += rc_interval.size();
-    return count;
+    BistrandBWTInterval object;
+	object.fwdInterval = findInterval(pBWT, w);
+	object.rvcInterval = findInterval(pBWT, reverseComplement(w));
+	return object.getFreqs();
 }
 
 // Count the number of occurrences of string w, including the reverse complement using a BWTInterval cache
 size_t BWTAlgorithms::countSequenceOccurrencesWithCache(const std::string& w, const BWT* pBWT, const BWTIntervalCache* pIntervalCache)
 {
-    BWTInterval fwd_interval = findIntervalWithCache(pBWT, pIntervalCache, w);
-    BWTInterval rc_interval = findIntervalWithCache(pBWT, pIntervalCache, reverseComplement(w));
-
-    size_t count = 0;
-    if(fwd_interval.isValid())
-        count += fwd_interval.size();
-    if(rc_interval.isValid())
-        count += rc_interval.size();
-    return count;
+	BistrandBWTInterval object;
+	object.fwdInterval = findIntervalWithCache(pBWT, pIntervalCache, w);
+	object.rvcInterval = findIntervalWithCache(pBWT, pIntervalCache, reverseComplement(w));
+	return object.getFreqs();
 }
 
 //
@@ -174,14 +164,14 @@ size_t BWTAlgorithms::countSequenceOccurrencesSingleStrand(const std::string& w,
     else
         interval = findInterval(indices.pBWT, w);
 
-    return interval.isValid() ? interval.size() : 0;
+	return interval.getFreqs();
 }
 
 
 size_t BWTAlgorithms::countSequenceOccurrencesSingleStrand(const std::string& w, const BWT* pBWT)
 {
     BWTInterval interval = findInterval(pBWT, w);
-    return interval.isValid() ? interval.size() : 0;
+	return interval.getFreqs();
 }
 
 // Return the count of all the possible one base extensions of the string w.

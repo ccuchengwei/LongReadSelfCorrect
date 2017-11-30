@@ -328,5 +328,8 @@ inline bool isErrorRateAcceptable(double er, double threshold)
         return false;
 }
 
-
+inline bool is_empty(std::istream* pFile)
+{
+    return pFile->peek() == std::istream::traits_type::eof();
+}
 #endif

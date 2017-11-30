@@ -46,8 +46,6 @@ static const char *CORRECT_USAGE_MESSAGE =
 "      -p, --prefix=PREFIX              Use PREFIX for the names of the index files\n"
 "      -o, --directory=PATH             Put results in the directory\n"
 "      -t, --threads=NUM                Use NUM threads for the computation (default: 1)\n"
-"      -a, --algorithm=STR              pacbioH: pacbio hybrid correction (using NGS reads to correct PB reads)\n"
-"                                       pacbioS: pacbio self correction (using PB reads to correct PB reads)(default)\n"
 "\nPacBio correction parameters:\n"
 "      -k, --kmer-size=N                The length of the kmer to use. (default: 19 (PacBioS).)\n"
 "      -s, --min-kmer-size=N            The minimum length of the kmer to use. (default: 13.)\n"
@@ -93,35 +91,33 @@ namespace opt
     static bool DebugSeed = false;
 	static bool OnlySeed = false;
 	static bool NoDp = false;
-	static PacBioSelfCorrectionAlgorithm algorithm = PBC_SELF;
 	static std::string directory;
 }
 
-static const char* shortopts = "p:t:o:a:k:x:L:s:d:c:C:v:e:i";
+static const char* shortopts = "p:t:o:k:x:L:s:d:c:C:e:i:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_DISCARD, OPT_SPLIT, OPT_FIRST,OPT_DEBUGEXTEND,OPT_DEBUGSEED,OPT_ONLYSEED,OPT_NODP };
 
 static const struct option longopts[] = {
-	{ "verbose",       no_argument,       NULL, 'v' },
 	{ "threads",       required_argument, NULL, 't' },
-	{ "directory",       required_argument, NULL, 'o' },
+	{ "directory",     required_argument, NULL, 'o' },
 	{ "prefix",        required_argument, NULL, 'p' },
-	{ "algorithm",     required_argument, NULL, 'a' },
 	{ "kmer-size",     required_argument, NULL, 'k' },
-	{ "kmer-threshold" ,required_argument, NULL, 'x' },
+	{ "kmer-threshold",required_argument, NULL, 'x' },
 	{ "max-leaves",    required_argument, NULL, 'L' },
-	{ "min-kmer-size"  ,required_argument, NULL, 's' },
+	{ "min-kmer-size", required_argument, NULL, 's' },
     { "error-rate",    required_argument, NULL, 'e' },
-    { "idmer-length",    required_argument, NULL, 'i' },
-	{ "downward"       ,required_argument, NULL, 'd' },
-	{ "collect"        ,required_argument, NULL, 'c' },
+    { "idmer-length",  required_argument, NULL, 'i' },
+	{ "downward",      required_argument, NULL, 'd' },
+	{ "collect",       required_argument, NULL, 'c' },
     { "PBcoverage",    required_argument, NULL, 'C' },
-	{ "split",       	no_argument,       NULL, OPT_SPLIT },
-	{ "first",       	no_argument,       NULL, OPT_FIRST },
-    { "debugextend",       	no_argument,       NULL, OPT_DEBUGEXTEND },
-    { "debugseed",       	no_argument,       NULL, OPT_DEBUGSEED },
-	{ "onlyseed",       	no_argument,       NULL, OPT_ONLYSEED },
-	{ "nodp",       	no_argument,       NULL, OPT_NODP },
+	{ "verbose",       no_argument,       NULL, 'v' },
+	{ "split",         no_argument,       NULL, OPT_SPLIT },
+	{ "first",         no_argument,       NULL, OPT_FIRST },
+    { "debugextend",   no_argument,       NULL, OPT_DEBUGEXTEND },
+    { "debugseed",     no_argument,       NULL, OPT_DEBUGSEED },
+	{ "onlyseed",      no_argument,       NULL, OPT_ONLYSEED },
+	{ "nodp",          no_argument,       NULL, OPT_NODP },
 	{ "discard",       no_argument,       NULL, OPT_DISCARD },
 	{ "help",          no_argument,       NULL, OPT_HELP },
 	{ "version",       no_argument,       NULL, OPT_VERSION },
@@ -145,7 +141,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	{
 		#pragma omp single nowait
 		{	//Initialization of large BWT takes some time, pass the disk to next job
-			std::cout << std::endl << "Loading BWT: " << opt::prefix + BWT_EXT << "\n";
+			std::cout << "Loading BWT: " << opt::prefix + BWT_EXT << "\n";
 			pBWT = new BWT(opt::prefix + BWT_EXT, opt::sampleRate);
 		}
 		#pragma omp single nowait
@@ -167,11 +163,8 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 
 	
 	// Open outfiles and start a timer
-	std::ostream* pCorrectWriter = createWriter(opt::correctFile);
-	std::ostream* pDiscardWriter = createWriter(opt::discardFile);
 	Timer* pTimer = new Timer(PROGRAM_IDENT);
 
-	ecParams.algorithm = opt::algorithm;
 	ecParams.kmerLength = opt::kmerLength;
 	ecParams.maxLeaves = opt::maxLeaves;
 	ecParams.minKmerLength = opt::minKmerLength;
@@ -190,22 +183,20 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	ecParams.maxSeedInterval = opt::maxSeedInterval;
 	ecParams.directory = opt::directory;
 	
-	if(ecParams.algorithm == PBC_SELF)
-	{
-		std::cout << std::endl << "Correcting PacBio reads for " << opt::readsFile << " using--" << std::endl
-		<< "number of threads:\t" << opt::numThreads << std::endl
-        << "PB reads coverage:\t" << ecParams.PBcoverage << std::endl
-		<< "large kmer size:\t" << ecParams.kmerLength << std::endl 
 
-		<< "small kmer size:\t" << ecParams.minKmerLength << std::endl
-		<< "small kmer freq. cutoff:\t" << ecParams.FMWKmerThreshold << std::endl
-		<< "max leaves:\t" << ecParams.maxLeaves  << std::endl
-		<< "max depth:\t1.2~0.8* (length between two seeds +- 20)" << std::endl
-		<< "num of next Targets:\t" << ecParams.numOfNextTarget << std::endl;
-	}
+	std::cout << "\nCorrecting PacBio reads for " << opt::readsFile << " using--\n"
+	<< "number of threads:\t" << opt::numThreads << "\n"
+	<< "PB reads coverage:\t" << ecParams.PBcoverage << "\n"
+	<< "large kmer size:\t" << ecParams.kmerLength << "\n" 
+	<< "small kmer size:\t" << ecParams.minKmerLength << "\n"
+	<< "small kmer freq. cutoff:\t" << ecParams.FMWKmerThreshold << "\n"
+	<< "max leaves:\t" << ecParams.maxLeaves  << "\n"
+	<< "max depth:\t1.2~0.8* (length between two seeds +- 20)" << "\n"
+	<< "num of next Targets:\t" << ecParams.numOfNextTarget << "\n";
+
 	
 	// Setup post-processor
-	PacBioSelfCorrectionPostProcess* pPostProcessor = new PacBioSelfCorrectionPostProcess(pCorrectWriter, pDiscardWriter, ecParams);
+	PacBioSelfCorrectionPostProcess* pPostProcessor = new PacBioSelfCorrectionPostProcess(opt::correctFile, opt::discardFile, ecParams);
 
 	if(opt::numThreads <= 1)
 	{
@@ -244,21 +235,13 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 			pProcessorVector.pop_back();
 		}
 	}
-
-	delete pCorrectWriter;
-	if(pDiscardWriter != NULL)
-	delete pDiscardWriter;
 	delete pPostProcessor;
 	
 	delete pBWT;
-	if(pRBWT != NULL)
 	delete pRBWT;
-
-	if(pSSA != NULL)
 	delete pSSA;
 
 	delete pTimer;
-
 
 	return 0;
 }
@@ -269,8 +252,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 //
 void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 {
-	optind=1;	//reset getopt
-	std::string algo_str;
+	optind = 1;	//reset getopt
 	bool die = false;
 	for (char c; (c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1;)
 	{
@@ -280,11 +262,8 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 		case 'p': arg >> opt::prefix; break;
 		case 'o': arg >> opt::directory; break;
 		case 't': arg >> opt::numThreads; break;
-		case 'a': arg >> algo_str; break;
 		case 'k': arg >> opt::kmerLength; break;
 		case 'x': arg >> opt::kmerThreshold; break;
-		case '?': die = true; break;
-		case 'v': opt::verbose++; break;
 		case 'L': arg >> opt::maxLeaves; break;
 		case 's': arg >> opt::minKmerLength; break;
         case 'e': arg >> opt::ErrorRate; break;
@@ -292,6 +271,8 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 		case 'd': arg >> opt::numOfNextTarget; break;
 		case 'c': arg >> opt::collect; break;
         case 'C': arg >> opt::PBcoverage; break;
+		case 'v': opt::verbose++; break;
+		case '?': die = true; break;
 		case OPT_SPLIT: opt::split = true; break;
 		case OPT_FIRST: opt::isFirst = true; break;
         case OPT_DEBUGEXTEND: opt::DebugExtend = true; break;
@@ -337,19 +318,7 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 		die = true;
 	}
 	CorrectionThresholds::Instance().setBaseMinSupport(opt::kmerThreshold);
-	
-	// Determine the correction algorithm to use
-	if(!algo_str.empty())
-	{
-		if(algo_str == "pacbioS")
-		opt::algorithm = PBC_SELF;
-		else
-		{
-			std::cerr << SUBPROGRAM << ": unrecognized -a,--algorithm parameter: " << algo_str << "\n";
-			die = true;
-		}
-	}
-	
+
 	if(opt::prefix.empty())
 	{
 		std::cerr << SUBPROGRAM << ": no prefix\n";
@@ -379,13 +348,8 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 	
 	opt::readsFile = argv[optind++];
 	std::string out_prefix = stripFilename(opt::readsFile);
-	if(opt::algorithm == PBC_SELF)
-	{
-		opt::correctFile = opt::directory + out_prefix + ".correct.fa";
-		opt::discardFile = opt::directory + out_prefix + ".discard.fa";
-	}
-	else
-		assert(false);
+	opt::correctFile = opt::directory + out_prefix + ".correct.fa";
+	opt::discardFile = opt::directory + out_prefix + ".discard.fa";
 	
 	std::string outfilename = opt::directory + "threshold-table";
 	std::ofstream outfile(outfilename);

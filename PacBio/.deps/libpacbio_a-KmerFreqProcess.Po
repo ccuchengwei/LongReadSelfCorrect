@@ -203,8 +203,11 @@ libpacbio_a-KmerFreqProcess.o: KmerFreqProcess.cpp \
  /usr/local/include/sparsehash/dense_hash_set ../Util/QualityTable.h \
  ../Util/QualityCodec.h ../Concurrency/SequenceWorkItem.h \
  ../Util/SeqReader.h ../Util/KmerDistribution.h \
- /usr/include/c++/6/cstddef ../Util/Timer.h \
- /usr/include/x86_64-linux-gnu/sys/time.h
+ /usr/include/c++/6/cstddef ../SuffixTools/BWTAlgorithms.h \
+ ../SuffixTools/BWTIndexSet.h ../Bigraph/GraphCommon.h \
+ /usr/include/c++/6/queue /usr/include/c++/6/deque \
+ /usr/include/c++/6/bits/stl_deque.h /usr/include/c++/6/bits/deque.tcc \
+ /usr/include/c++/6/bits/stl_queue.h
 
 /usr/include/stdc-predef.h:
 
@@ -814,6 +817,18 @@ KmerFreqProcess.h:
 
 /usr/include/c++/6/cstddef:
 
-../Util/Timer.h:
+../SuffixTools/BWTAlgorithms.h:
 
-/usr/include/x86_64-linux-gnu/sys/time.h:
+../SuffixTools/BWTIndexSet.h:
+
+../Bigraph/GraphCommon.h:
+
+/usr/include/c++/6/queue:
+
+/usr/include/c++/6/deque:
+
+/usr/include/c++/6/bits/stl_deque.h:
+
+/usr/include/c++/6/bits/deque.tcc:
+
+/usr/include/c++/6/bits/stl_queue.h:

@@ -10,16 +10,20 @@
 #include <limits>
 #include <cmath>
 #include <fstream>
-
+void KmerDistribution::operator+=(const KmerDistribution& temp)
+{
+	for(iteratorKmerFreqsMap iter = temp.m_data.begin(); iter != temp.m_data.end(); iter++)
+		m_data[iter->first] += iter->second;
+}
 double KmerDistribution::getCumulativeProportionLEQ(int n) const
 {    
 	size_t cumulativeSum = 0;
 	double cumulativeProportion = 0;
-	for(iteratorKmerFreqsMap iterElement = m_data.begin(); iterElement != m_data.end(); iterElement++)
+	for(iteratorKmerFreqsMap iter = m_data.begin(); iter != m_data.end(); iter++)
 	{
-		if(iterElement->first > n)
+		if(iter->first > n)
 			break;
-		cumulativeSum +=  iterElement->second;
+		cumulativeSum +=  iter->second;
 		cumulativeProportion = (double)cumulativeSum/m_total;
 	}
 	return cumulativeProportion;
@@ -35,10 +39,10 @@ size_t KmerDistribution::getCutoffForProportion(double p) const
 	size_t kmerFreqs = 0;
 	size_t cumulativeSum = 0;
 	double cumulativeProportion = 0;
-	for(iteratorKmerFreqsMap iterElement = m_data.begin(); iterElement != m_data.end(); iterElement++)
+	for(iteratorKmerFreqsMap iter = m_data.begin(); iter != m_data.end(); iter++)
 	{
-		kmerFreqs = iterElement->first;
-		cumulativeSum += iterElement->second;
+		kmerFreqs = iter->first;
+		cumulativeSum += iter->second;
 		cumulativeProportion = (double)cumulativeSum/m_total;
 		if(cumulativeProportion > p)
 			break;
@@ -49,16 +53,16 @@ size_t KmerDistribution::getCutoffForProportion(double p) const
 void KmerDistribution::computeKDAttributes(float censor)
 {
 	std::vector<size_t>rawdata;
-	iteratorKmerFreqsMap iterElement = m_data.begin();
-	while(iterElement != m_data.end() && iterElement->first <= censor)
-		iterElement++;
-	for(size_t most = 0; iterElement !=  m_data.end(); iterElement++)
+	iteratorKmerFreqsMap iter = m_data.begin();
+	while(iter != m_data.end() && iter->first <= censor)
+		iter++;
+	for(size_t most = 0; iter !=  m_data.end(); iter++)
 	{
-		rawdata.resize((rawdata.size() + iterElement->second), iterElement->first);
-		if(iterElement->second > most)
+		rawdata.resize((rawdata.size() + iter->second), iter->first);
+		if(iter->second > most)
 		{
-			m_mode = iterElement->first;
-			most = iterElement->second;
+			m_mode = iter->first;
+			most = iter->second;
 		}
 	}
     
@@ -88,11 +92,16 @@ void KmerDistribution::write(std::ostream& outfile,TYPE mode) const
 	switch(mode)
 	{
 		case DATA:
-			for(iteratorKmerFreqsMap iterElement = m_data.begin(); iterElement !=  m_data.end(); iterElement++)
-				outfile << iterElement->first << "\t" << iterElement->second << "\n";
+			for(iteratorKmerFreqsMap iter = m_data.begin(); iter !=  m_data.end(); iter++)
+				outfile << iter->first << "\t" << iter->second << "\n";
 			break;
 		case ATTRIBUTE:
 			outfile << m_readid << "\t " << m_first_quartile << "\t" << m_median << "\t" << m_third_quartile << "\t" << m_mode << "\t" << m_std <<"\n";
+			break;
+		case SPLIT:
+			for(iteratorKmerFreqsMap iter = m_data.begin(); iter != m_data.end(); iter++)
+				for(size_t i = 1; i <= iter->second; i++)
+					outfile << iter->first << "\n";
 			break;
 		default:
 			std::cout << "KmerDistribution-write-mode : DATA , ATTRIBUTE\n";
@@ -179,14 +188,14 @@ int KmerDistribution::findErrorBoundaryByRatio(double ratio) const
 size_t KmerDistribution::getCensoredMode(size_t n) const
 {
 	size_t most = 0,mode = 0;
-    iteratorKmerFreqsMap iterElement = m_data.begin();
-	while(iterElement != m_data.end() && iterElement->first < n)
-		iterElement++;
-	for(; iterElement != m_data.end(); iterElement++)
-		if(iterElement->second > most)
+    iteratorKmerFreqsMap iter = m_data.begin();
+	while(iter != m_data.end() && iter->first < n)
+		iter++;
+	for(; iter != m_data.end(); iter++)
+		if(iter->second > most)
 		{
-			mode = iterElement->first;
-			most = iterElement->second;
+			mode = iter->first;
+			most = iter->second;
 		}
 	return mode;
 }

@@ -22,20 +22,17 @@
 #include "LongReadCorrectByOverlap.h"
 #include "SeedFeature.h"
 
-enum PacBioSelfCorrectionAlgorithm
-{
-	PBC_SELF	// PacBio self correction
-};
-
-
 // Parameter object for the error corrector
 struct PacBioSelfCorrectionParameters
 {
-	PacBioSelfCorrectionAlgorithm algorithm;
+	//PacBioSelfCorrectionAlgorithm algorithm;
 	BWTIndexSet indices;
 
 	int numKmerRounds;
 	int kmerLength;
+	unsigned int repaetDistance = 100;//70-->100. Need further check. Noted by KuanWeiLee 11/25
+	float hhRatio = 0.6f;
+	float r_hhRatio = 1.f/hhRatio;
 
 	// tree search parameters
 	int maxLeaves;
@@ -55,7 +52,6 @@ struct PacBioSelfCorrectionParameters
 	bool isFirst;
 	size_t maxSeedInterval;
 	size_t PBcoverage;
-	//KmerDistribution kd;
     
     bool DebugExtend;
     bool DebugSeed;
@@ -85,7 +81,8 @@ struct PacBioSelfCorrectionResult
     Timer_FM(0),
     Timer_DP(0) {}
 
-	DNAString correctSequence;
+	std::string readid;
+	KmerDistribution kd;
 	
 	bool merge;
 	
@@ -114,79 +111,52 @@ class PacBioSelfCorrectionProcess
 public:
 	PacBioSelfCorrectionProcess(const PacBioSelfCorrectionParameters params):m_params(params){};
 	~PacBioSelfCorrectionProcess(){};
-
-	// PacBio correction by Ya, v20150305.
-	PacBioSelfCorrectionResult PBSelfCorrection(const SequenceWorkItem& workItem);
-	
-	inline PacBioSelfCorrectionResult process(const SequenceWorkItem& workItem)
-	{
-		switch(m_params.algorithm)
-		{
-			case PBC_SELF: return PBSelfCorrection(workItem);
-			default:
-				std::cout << "Unsupported algorithm\n";
-				assert(false);
-		}
-	}		
+	PacBioSelfCorrectionResult process(const SequenceWorkItem& workItem);
 
 private:
     FMextendParameters FMextendParameter();
     
 
-    std::vector<SeedFeature> hybridSeedingFromPB(const std::string& readSeq);
-    
+    std::vector<SeedFeature> hybridSeedingFromPB(const std::string& readSeq, PacBioSelfCorrectionResult &result);
 	void initCorrect(std::string& readSeq, std::vector<SeedFeature>& seeds, std::vector<SeedFeature>& pacbioCorrectedStrs, PacBioSelfCorrectionResult& result);
+	// Perform FMindex extension between source and target seeds
+	// Return FMWalkReturnType
+	int extendBetweenSeeds(SeedFeature& source, SeedFeature& target, std::string& rawSeq, std::string& mergedseq,
+							size_t smallKmerSize, size_t dis_between_src_target,FMextendParameters FMextendParameter, PacBioSelfCorrectionResult& result);	
 	
-	void realCorrect(std::string& readSeq, std::vector<SeedFeature>& seeds, std::vector<SeedFeature>& pacbioCorrectedStrs, PacBioSelfCorrectionResult& result);
-	bool isCloseTorepeat(std::vector<BWTIntervalPair> FixedMerInterval,size_t &currpos,size_t m_repeat_distance);
+	//bool isCloseTorepeat(std::vector<BWTIntervalPair> FixedMerInterval,size_t &currpos);
 	// kmers around repeat seeds are often error seeds, split the repeat regions into high-confident seeds
 	// return kmer freq of beginning and ending kmers
-	std::pair<size_t, size_t> refineRepeatSeed(const std::string readSeq, size_t& seedStartPos, size_t& seedEndPos,size_t normal_freqs);
-
+	//std::pair<size_t, size_t> refineRepeatSeed(const std::string readSeq, size_t& seedStartPos, size_t& seedEndPos,size_t normal_freqs);
 	// return complexity of seq, default: 0.9
 	bool  isLowComplexity (const std::string& seq, float & GCratio, float threshold=0.7);
 
 	// return <0: give up and break
 	// return 0: retry the same target
 	// return >0: continue to next target
-	int  FMWalkFailedActions (size_t& smallKmerSize, size_t& numOfTrials, 
-						SeedFeature& sourceStrLen, SeedFeature& target, int FMWalkReturnType, int prevFMWalkReturnType);
+	//int  FMWalkFailedActions (size_t& smallKmerSize, size_t& numOfTrials, SeedFeature& sourceStrLen, SeedFeature& target, int FMWalkReturnType, int prevFMWalkReturnType);
 
-
-	// Perform FMindex extension between source and target seeds
-	// Return FMWalkReturnType
-	int extendBetweenSeeds(SeedFeature& source, SeedFeature& target, std::string& rawSeq, std::string& mergedseq,
-							size_t smallKmerSize, size_t dis_between_src_target,FMextendParameters FMextendParameter);
                             
-
-	std::pair<size_t,size_t> alnscore;
 	PacBioSelfCorrectionParameters m_params;
-    size_t m_repeat_distance = 100;//70-->100 Noted by KuanWeiLee
-    std::string m_readid;
-    double m_total_FMtime;
-    double m_total_DPtime;
-    bool m_isSplit;
-
+	//std::pair<size_t,size_t> alnscore;
+	
 };
 
-// Write the results from the overlap step to an ASQG file
+//postprocess
 class PacBioSelfCorrectionPostProcess
 {
 public:
-	PacBioSelfCorrectionPostProcess(std::ostream* pCorrectedWriter,
-	std::ostream* pDiscardWriter,
-	const PacBioSelfCorrectionParameters params);
-
+	PacBioSelfCorrectionPostProcess(std::string correctFile, std::string discardFile, const PacBioSelfCorrectionParameters params);
 	~PacBioSelfCorrectionPostProcess();
-
 	void process(const SequenceWorkItem& item, const PacBioSelfCorrectionResult& result);
-	// void process(const SequenceWorkItemPair& itemPair, const PacBioSelfCorrectionResult& result);
-
+	
 private:
 
-	std::ostream* m_pCorrectedWriter;
+	std::ostream* m_pCorrectWriter;
 	std::ostream* m_pDiscardWriter;
+	std::ostream* m_pKdWriter;
 	PacBioSelfCorrectionParameters m_params;
+	KmerDistribution m_kd;
 	
 	int64_t m_totalReadsLen;
 	int64_t m_correctedLen;

@@ -67,14 +67,18 @@ struct BWTInterval
     int64_t lower;
     int64_t upper;
 };
-
+struct BistrandBWTInterval
+{
+	BWTInterval fwdInterval;
+	BWTInterval rvcInterval;
+	inline int64_t getFreqs() const { return fwdInterval.getFreqs() + rvcInterval.getFreqs(); }
+};
 // A pair of intervals, used for bidirectional searching a bwt/revbwt in lockstep
 struct BWTIntervalPair
 {
     // Functions
     BWTInterval& get(unsigned int idx) { return interval[idx]; }
     bool isValid() const { return interval[0].isValid() && interval[1].isValid(); }
-	inline int64_t getFreqs() const { return (interval[0].getFreqs() + interval[1].getFreqs()); }
 	
     friend bool operator==(const BWTIntervalPair& a, const BWTIntervalPair& b)
     {
