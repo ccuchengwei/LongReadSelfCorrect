@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include "BWTIndexSet.h"
-struct SeedFeature
+class SeedFeature
 {
 	public:
 		SeedFeature(size_t startPos, std::string str, bool repeat, size_t kmerSize, size_t repeatCutoff);
@@ -55,4 +55,5 @@ struct SeedFeature
 		void increaseEndKmerSize(const BWT* pBWT);
 		void decreaseEndKmerSize(const BWT* pBWT);
 };
+
 #endif

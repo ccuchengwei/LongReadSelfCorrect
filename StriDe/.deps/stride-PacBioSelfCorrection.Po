@@ -220,7 +220,7 @@ stride-PacBioSelfCorrection.o: PacBioSelfCorrection.cpp \
  ../PacBio/LongReadCorrectByOverlap.h ../FMIndexWalk/SAINode.h \
  ../PacBio/IntervalTree.h ../PacBio/HashtableSearch.h \
  ../PacBio/SeedFeature.h ../Util/CorrectionThresholds.h \
- ../SuffixTools/BWTIntervalCache.h
+ ../SuffixTools/BWTIntervalCache.h ../PacBio/KmerThresholdTable.h
 
 /usr/include/stdc-predef.h:
 
@@ -903,3 +903,5 @@ overlap.h:
 ../Util/CorrectionThresholds.h:
 
 ../SuffixTools/BWTIntervalCache.h:
+
+../PacBio/KmerThresholdTable.h:

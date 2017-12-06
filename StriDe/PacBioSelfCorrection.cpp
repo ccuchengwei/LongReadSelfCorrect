@@ -25,6 +25,7 @@
 #include "PacBioSelfCorrectionProcess.h"
 #include "CorrectionThresholds.h"
 #include "BWTIntervalCache.h"
+#include "KmerThresholdTable.h"
 
 #define FORMULA( x,y,z ) ( (x) ? (0.05776992234f * y - 0.4583043394f * z + 10.19159685f) : (0.0710704607f * y - 0.5445663957f * z + 12.26253388f) )
 //
@@ -82,6 +83,7 @@ namespace opt
 	static int minKmerLength = 13;	
 	static int numOfNextTarget = 1;
 	static int collect = 5;
+	static int kmerLengthUpperBound = 50;
 	
 	static bool split = false;
 	static bool isFirst = false;
@@ -160,12 +162,23 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	indexSet.pRBWT = pRBWT;
 	indexSet.pSSA = pSSA;
 	ecParams.indices = indexSet;
+	
+	KmerThresholdTable::m_startLen = opt::kmerLength;
+	KmerThresholdTable::m_endLen = opt::kmerLengthUpperBound;
+	KmerThresholdTable::m_coverage = opt::PBcoverage;
+	KmerThresholdTable::m_lowcov = new float[opt::kmerLengthUpperBound + 1]{};
+	KmerThresholdTable::m_unique = new float[opt::kmerLengthUpperBound + 1]{};
+	KmerThresholdTable::m_repeat = new float[opt::kmerLengthUpperBound + 1]{};
+	KmerThresholdTable::pTableWriter = createWriter(opt::directory + "threshold-table");	
+	KmerThresholdTable::compute();
+	KmerThresholdTable::write();
 
 	
 	// Open outfiles and start a timer
 	Timer* pTimer = new Timer(PROGRAM_IDENT);
 
 	ecParams.kmerLength = opt::kmerLength;
+	ecParams.kmerLengthUpperBound = opt::kmerLengthUpperBound;
 	ecParams.maxLeaves = opt::maxLeaves;
 	ecParams.minKmerLength = opt::minKmerLength;
     ecParams.idmerLength = opt::idmerLength;
@@ -235,14 +248,13 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 			pProcessorVector.pop_back();
 		}
 	}
+	delete pTimer;
 	delete pPostProcessor;
-	
 	delete pBWT;
 	delete pRBWT;
 	delete pSSA;
-
-	delete pTimer;
-
+	
+	KmerThresholdTable::release();
 	return 0;
 }
 

@@ -15,6 +15,7 @@
 #include "SAIPBHybridCTree.h"
 #include "LongReadOverlap.h"
 #include "Timer.h"
+#include "KmerThresholdTable.h"
 
 //#include "KmerDistribution.h"
 //Formula for calculating kmer threshold value ( x,y,z ) = ( isLowCoverage,m_params.PBcoverage,staticKmerSize )
@@ -92,8 +93,8 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, std::vector<
 			// extendKmerSize should be large for repeat seeds
 			if((source.isRepeat || target.isRepeat) )
 			{
-				extendKmerSize = std::min((int)source.seedLength, (int)target.seedLength);
-				if(int(extendKmerSize) > m_params.kmerLength+2) 
+				extendKmerSize = std::min(source.seedLength, target.seedLength);
+				if(extendKmerSize > m_params.kmerLength+2) 
 						extendKmerSize = m_params.kmerLength+2;
 			}
 
@@ -219,14 +220,12 @@ std::vector<SeedFeature> PacBioSelfCorrectionProcess::hybridSeedingFromPB(const 
     Timer* seedTimer = new Timer("Seed Time",true);
     std::vector<SeedFeature> initSeedVec,finalSeedVec;
 	std::set<size_t> hitchhikingSeedSet;				//finalSeedVec == initSeedVec - hitchhikingSeedSet
-    const size_t staticKmerSize = m_params.kmerLength;
+    const unsigned int staticKmerSize = m_params.kmerLength;
 	if(readSeq.length() < staticKmerSize) 
 		return initSeedVec;       
     
 	//Part 1 : Slide with a fixed kmer. Noted by KuanWeiLee
 	std::vector<BistrandBWTInterval> FixedMerInterval;
-    std::vector<size_t> freqsCount;
-    freqsCount.assign(m_params.PBcoverage*2,0);
 	
     for(size_t i = 0 ; i <= readSeq.length() - staticKmerSize ; i++)
 	{
@@ -238,11 +237,8 @@ std::vector<SeedFeature> PacBioSelfCorrectionProcess::hybridSeedingFromPB(const 
 		object.rvcInterval = BWTAlgorithms::findInterval(m_params.indices.pBWT, reverseComplement(kmer));
 		FixedMerInterval.push_back(object);
 		
-		//(2) : Statistics of freqsCount(index:currentKmerFreqs)		
+		//(2) : Collection of kmer-distribution
 		size_t currentKmerFreqs = object.getFreqs();
-		//size_t currentKmerFreqs = bip.getFreqs();
-		if(currentKmerFreqs < freqsCount.size())
-            freqsCount[currentKmerFreqs]++;
 		result.kd.add(currentKmerFreqs);
 		//[Debugseed] should be output more dedicately by KuanWeiLee
 		/*
@@ -252,44 +248,21 @@ std::vector<SeedFeature> PacBioSelfCorrectionProcess::hybridSeedingFromPB(const 
 			std::cout << fwdInterval.getFreqs() << ":" << rvcInterval.getFreqs() << " <=\n";
 		}
 		*/
-    }       
-    //Determine whether the read is of low coverage;
-	//Thresholds need further inspectation.Noted by KuanWeiLee
-	//Threshold table mode of low coverage is canceled. Noted by KuanWeiLee 20171028
-    bool isLowCoverage = false;
-	{
-		//float initKmerThresholdValueWithLowCoverage = FORMULA(true,m_params.PBcoverage,staticKmerSize);
-		//float initKmerThresholdValue = FORMULA(false,m_params.PBcoverage,staticKmerSize);
-		float initKmerThresholdValue = FORMULA2(m_params.PBcoverage, staticKmerSize);
-		//result.kd.computeKDAttributes(1.0f);
-		result.kd.computeKDAttributes(initKmerThresholdValue);
-		//isLowCoverage = freqsCount[(int)initKmerThresholdValueWithLowCoverage] > freqsCount[(int)initKmerThresholdValue];
-	}
-	//Part 2 : Get threshold table (index:k [staticKmerSize~kmerLengthUpperBound]); 
-	//there are 2 modes in the formula: of low coverage or not, and the lower bound is 5. Noted by KuanWeiLee
-    std::vector<float> kmerThresholdTable;
-	const int kmerLengthUpperBound = 50;
-	kmerThresholdTable.assign(kmerLengthUpperBound+1,0);
-	//float weight = 1.f;
-	float weight = m_params.PBcoverage / 7.5f * result.kd.getQuartile(1);
-	weight = (weight == 0.f ? 1.f : sqrt(weight));
-	for(int k = staticKmerSize; k <= kmerLengthUpperBound; k++)
-	{        
-		//float kmerThresholdValue = FORMULA(isLowCoverage,m_params.PBcoverage,k) * weight;
-		float kmerThresholdValue = FORMULA2(m_params.PBcoverage ,k);
-		kmerThresholdTable[k] = kmerThresholdValue  < 5 ? 5 : kmerThresholdValue;
-	}
-	//Part 3 : Search seeds; slide through the read sequence with dynamic kmers. Noted by KuanWeiLee
+    }
+	result.kd.computeKDAttributes(1);
+    KmerThresholdTable::TYPE mode = KmerThresholdTable::TYPE::UNIQUE;
+	
+	//Part 2 : Search seeds; slide through the read sequence with dynamic kmers. Noted by KuanWeiLee
 	for(size_t startPos = 0; startPos <= readSeq.length() - staticKmerSize; startPos++)
 	{
 		bool isSeed = false;
 		std::string kmer = readSeq.substr(startPos,staticKmerSize);
-		size_t dynamicKmerSize = staticKmerSize;
+		unsigned int dynamicKmerSize = staticKmerSize;
 		BWTInterval fwdInterval = FixedMerInterval[startPos].fwdInterval,
 					rvcInterval = FixedMerInterval[startPos].rvcInterval;
 		size_t fwdKmerFreqs, rvcKmerFreqs, currentKmerFreqs;
 		size_t fixedMerFreqs, maxFixedMerFreqs = FixedMerInterval[startPos].getFreqs(); 
-		float initKmerThresholdValue = kmerThresholdTable[staticKmerSize], dynamicKmerThresholdValue;
+		float initKmerThresholdValue = KmerThresholdTable::get(staticKmerSize,mode), dynamicKmerThresholdValue;
 		size_t seedStartPos = startPos, seedEndPos;
 		float GCratio;
 		for(size_t movePos = startPos; movePos <= readSeq.length() - staticKmerSize; movePos++, isSeed = true)
@@ -304,7 +277,7 @@ std::vector<SeedFeature> PacBioSelfCorrectionProcess::hybridSeedingFromPB(const 
 				BWTAlgorithms::updateInterval(fwdInterval,b,m_params.indices.pRBWT);
 				BWTAlgorithms::updateInterval(rvcInterval,rcb,m_params.indices.pBWT);
 			}
-			dynamicKmerThresholdValue = kmerThresholdTable[dynamicKmerSize];
+			dynamicKmerThresholdValue = KmerThresholdTable::get(dynamicKmerSize,mode);
 			fwdKmerFreqs = fwdInterval.getFreqs();
 			rvcKmerFreqs = rvcInterval.getFreqs();			
 			currentKmerFreqs = fwdKmerFreqs + rvcKmerFreqs;
@@ -327,7 +300,7 @@ std::vector<SeedFeature> PacBioSelfCorrectionProcess::hybridSeedingFromPB(const 
 			*/
 			//Gerneral seed extension strategy. Noted by KuanWeiLee
 			if  (
-				   dynamicKmerSize > kmerLengthUpperBound													//1.over length				
+				   dynamicKmerSize > m_params.kmerLengthUpperBound											//1.over length
 				|| isLowComplexity(kmer,GCratio)															//2.low complexity
 				|| fixedMerFreqs < initKmerThresholdValue													//3.fixed kmer frequency
 				|| !OVERTHRESHOLD(currentKmerFreqs,dynamicKmerThresholdValue,fwdKmerFreqs,rvcKmerFreqs)		//4.dynamic kmer frequency

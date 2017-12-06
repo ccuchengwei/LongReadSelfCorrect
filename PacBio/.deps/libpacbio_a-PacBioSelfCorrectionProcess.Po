@@ -230,7 +230,7 @@ libpacbio_a-PacBioSelfCorrectionProcess.o: \
  SAIPBHybridCTree.h ../Thirdparty/stdaln.h LongReadOverlap.h \
  ../Thirdparty/multiple_alignment.h ../Thirdparty/overlapper.h \
  ../FMIndexWalk/FMIndexWalkProcess.h ../Util/BitVector.h \
- ../Util/BitChar.h ../Algorithm/KmerOverlaps.h
+ ../Util/BitChar.h ../Algorithm/KmerOverlaps.h KmerThresholdTable.h
 
 /usr/include/stdc-predef.h:
 
@@ -933,3 +933,5 @@ LongReadOverlap.h:
 ../Util/BitChar.h:
 
 ../Algorithm/KmerOverlaps.h:
+
+KmerThresholdTable.h:

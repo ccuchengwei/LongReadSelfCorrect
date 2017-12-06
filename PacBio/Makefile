@@ -116,7 +116,8 @@ am_libpacbio_a_OBJECTS = libpacbio_a-SAIPBSelfCTree.$(OBJEXT) \
 	libpacbio_a-ShortReadOverlapTree.$(OBJEXT) \
 	libpacbio_a-HashtableSearch.$(OBJEXT) \
 	libpacbio_a-LongReadCorrectByOverlap.$(OBJEXT) \
-	libpacbio_a-KmerFreqProcess.$(OBJEXT)
+	libpacbio_a-KmerFreqProcess.$(OBJEXT) \
+	libpacbio_a-KmerThresholdTable.$(OBJEXT)
 libpacbio_a_OBJECTS = $(am_libpacbio_a_OBJECTS)
 AM_V_P = $(am__v_P_$(V))
 am__v_P_ = $(am__v_P_$(AM_DEFAULT_VERBOSITY))
@@ -193,7 +194,7 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = ${SHELL} /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/missing aclocal-1.15
 AMTAR = $${TAR-tar}
-AM_CXXFLAGS = -std=c++11 -Wall -Wextra -Wno-unknown-pragmas -static
+AM_CXXFLAGS = -std=c++11 -Wall -Wextra -Wno-unknown-pragmas -static -fpermissive
 AM_DEFAULT_VERBOSITY = 1
 AUTOCONF = ${SHELL} /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/missing autoconf
 AUTOHEADER = ${SHELL} /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/missing autoheader
@@ -203,7 +204,7 @@ CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -O3
 CPPFLAGS =  -fopenmp 
-CXX = g++ -fpermissive
+CXX = g++
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
 CXXFLAGS = -O3
@@ -309,7 +310,8 @@ libpacbio_a_SOURCES = \
     HashtableSearch.h HashtableSearch.cpp \
 	LongReadCorrectByOverlap.h LongReadCorrectByOverlap.cpp \
 	KmerFreqProcess.h KmerFreqProcess.cpp \
-	IntervalTree.h 
+	IntervalTree.h \
+	KmerThresholdTable.h KmerThresholdTable.cpp
 
 all: all-am
 
@@ -361,6 +363,7 @@ distclean-compile:
 
 include ./$(DEPDIR)/libpacbio_a-HashtableSearch.Po
 include ./$(DEPDIR)/libpacbio_a-KmerFreqProcess.Po
+include ./$(DEPDIR)/libpacbio_a-KmerThresholdTable.Po
 include ./$(DEPDIR)/libpacbio_a-LongReadCorrectByOverlap.Po
 include ./$(DEPDIR)/libpacbio_a-LongReadOverlap.Po
 include ./$(DEPDIR)/libpacbio_a-PBOverlapTree.Po
@@ -538,6 +541,20 @@ libpacbio_a-KmerFreqProcess.obj: KmerFreqProcess.cpp
 #	$(AM_V_CXX)source='KmerFreqProcess.cpp' object='libpacbio_a-KmerFreqProcess.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-KmerFreqProcess.obj `if test -f 'KmerFreqProcess.cpp'; then $(CYGPATH_W) 'KmerFreqProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/KmerFreqProcess.cpp'; fi`
+
+libpacbio_a-KmerThresholdTable.o: KmerThresholdTable.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-KmerThresholdTable.o -MD -MP -MF $(DEPDIR)/libpacbio_a-KmerThresholdTable.Tpo -c -o libpacbio_a-KmerThresholdTable.o `test -f 'KmerThresholdTable.cpp' || echo '$(srcdir)/'`KmerThresholdTable.cpp
+	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-KmerThresholdTable.Tpo $(DEPDIR)/libpacbio_a-KmerThresholdTable.Po
+#	$(AM_V_CXX)source='KmerThresholdTable.cpp' object='libpacbio_a-KmerThresholdTable.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-KmerThresholdTable.o `test -f 'KmerThresholdTable.cpp' || echo '$(srcdir)/'`KmerThresholdTable.cpp
+
+libpacbio_a-KmerThresholdTable.obj: KmerThresholdTable.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-KmerThresholdTable.obj -MD -MP -MF $(DEPDIR)/libpacbio_a-KmerThresholdTable.Tpo -c -o libpacbio_a-KmerThresholdTable.obj `if test -f 'KmerThresholdTable.cpp'; then $(CYGPATH_W) 'KmerThresholdTable.cpp'; else $(CYGPATH_W) '$(srcdir)/KmerThresholdTable.cpp'; fi`
+	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-KmerThresholdTable.Tpo $(DEPDIR)/libpacbio_a-KmerThresholdTable.Po
+#	$(AM_V_CXX)source='KmerThresholdTable.cpp' object='libpacbio_a-KmerThresholdTable.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-KmerThresholdTable.obj `if test -f 'KmerThresholdTable.cpp'; then $(CYGPATH_W) 'KmerThresholdTable.cpp'; else $(CYGPATH_W) '$(srcdir)/KmerThresholdTable.cpp'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique

@@ -183,7 +183,7 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = ${SHELL} /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/missing aclocal-1.15
 AMTAR = $${TAR-tar}
-AM_CXXFLAGS = -std=c++11 -Wall -Wextra -Wno-unknown-pragmas -static
+AM_CXXFLAGS = -std=c++11 -Wall -Wextra -Wno-unknown-pragmas -static -fpermissive
 AM_DEFAULT_VERBOSITY = 1
 AUTOCONF = ${SHELL} /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/missing autoconf
 AUTOHEADER = ${SHELL} /home/kuanwei105/bip5.kuanwei105/longreadselfcorrect/missing autoheader
@@ -193,7 +193,7 @@ CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -O3
 CPPFLAGS =  -fopenmp 
-CXX = g++ -fpermissive
+CXX = g++
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
 CXXFLAGS = -O3

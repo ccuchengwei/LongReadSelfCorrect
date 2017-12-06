@@ -29,10 +29,12 @@ struct PacBioSelfCorrectionParameters
 	BWTIndexSet indices;
 
 	int numKmerRounds;
-	int kmerLength;
+	unsigned int kmerLength;
+	unsigned int kmerLengthUpperBound;
 	unsigned int repaetDistance = 100;//70-->100. Need further check. Noted by KuanWeiLee 11/25
 	float hhRatio = 0.6f;
 	float r_hhRatio = 1.f/hhRatio;
+	//KmerThreshold table;
 
 	// tree search parameters
 	int maxLeaves;
@@ -51,7 +53,7 @@ struct PacBioSelfCorrectionParameters
 	bool isSplit;
 	bool isFirst;
 	size_t maxSeedInterval;
-	size_t PBcoverage;
+	int PBcoverage;
     
     bool DebugExtend;
     bool DebugSeed;

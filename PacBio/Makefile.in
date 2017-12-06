@@ -116,7 +116,8 @@ am_libpacbio_a_OBJECTS = libpacbio_a-SAIPBSelfCTree.$(OBJEXT) \
 	libpacbio_a-ShortReadOverlapTree.$(OBJEXT) \
 	libpacbio_a-HashtableSearch.$(OBJEXT) \
 	libpacbio_a-LongReadCorrectByOverlap.$(OBJEXT) \
-	libpacbio_a-KmerFreqProcess.$(OBJEXT)
+	libpacbio_a-KmerFreqProcess.$(OBJEXT) \
+	libpacbio_a-KmerThresholdTable.$(OBJEXT)
 libpacbio_a_OBJECTS = $(am_libpacbio_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -309,7 +310,8 @@ libpacbio_a_SOURCES = \
     HashtableSearch.h HashtableSearch.cpp \
 	LongReadCorrectByOverlap.h LongReadCorrectByOverlap.cpp \
 	KmerFreqProcess.h KmerFreqProcess.cpp \
-	IntervalTree.h 
+	IntervalTree.h \
+	KmerThresholdTable.h KmerThresholdTable.cpp
 
 all: all-am
 
@@ -361,6 +363,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-HashtableSearch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-KmerFreqProcess.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-KmerThresholdTable.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-LongReadCorrectByOverlap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-LongReadOverlap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-PBOverlapTree.Po@am__quote@
@@ -538,6 +541,20 @@ libpacbio_a-KmerFreqProcess.obj: KmerFreqProcess.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='KmerFreqProcess.cpp' object='libpacbio_a-KmerFreqProcess.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-KmerFreqProcess.obj `if test -f 'KmerFreqProcess.cpp'; then $(CYGPATH_W) 'KmerFreqProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/KmerFreqProcess.cpp'; fi`
+
+libpacbio_a-KmerThresholdTable.o: KmerThresholdTable.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-KmerThresholdTable.o -MD -MP -MF $(DEPDIR)/libpacbio_a-KmerThresholdTable.Tpo -c -o libpacbio_a-KmerThresholdTable.o `test -f 'KmerThresholdTable.cpp' || echo '$(srcdir)/'`KmerThresholdTable.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-KmerThresholdTable.Tpo $(DEPDIR)/libpacbio_a-KmerThresholdTable.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='KmerThresholdTable.cpp' object='libpacbio_a-KmerThresholdTable.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-KmerThresholdTable.o `test -f 'KmerThresholdTable.cpp' || echo '$(srcdir)/'`KmerThresholdTable.cpp
+
+libpacbio_a-KmerThresholdTable.obj: KmerThresholdTable.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-KmerThresholdTable.obj -MD -MP -MF $(DEPDIR)/libpacbio_a-KmerThresholdTable.Tpo -c -o libpacbio_a-KmerThresholdTable.obj `if test -f 'KmerThresholdTable.cpp'; then $(CYGPATH_W) 'KmerThresholdTable.cpp'; else $(CYGPATH_W) '$(srcdir)/KmerThresholdTable.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-KmerThresholdTable.Tpo $(DEPDIR)/libpacbio_a-KmerThresholdTable.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='KmerThresholdTable.cpp' object='libpacbio_a-KmerThresholdTable.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-KmerThresholdTable.obj `if test -f 'KmerThresholdTable.cpp'; then $(CYGPATH_W) 'KmerThresholdTable.cpp'; else $(CYGPATH_W) '$(srcdir)/KmerThresholdTable.cpp'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique

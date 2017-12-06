@@ -3,6 +3,7 @@
 /***************************/
 #include "SeedFeature.h"
 #include "BWTAlgorithms.h"
+#include "Util.h"
 SeedFeature::SeedFeature(size_t startPos, std::string str, bool repeat, size_t staticKmerSize, size_t repeatCutoff)
 	:seedStartPos(startPos), seedStr(str), isRepeat(repeat), minKmerSize(staticKmerSize), freqUpperBound(repeatCutoff),
 	freqLowerBound(repeatCutoff/2), stepSize(1)
@@ -105,3 +106,5 @@ void SeedFeature::decreaseEndKmerSize(const BWT* pBWT)
 		endKmerFreq = BWTAlgorithms::countSequenceOccurrences(kmerStr, pBWT);
 	}
 }
+
+
