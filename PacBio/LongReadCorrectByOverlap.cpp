@@ -844,7 +844,7 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
            // if ( totalcount > 100 && bratio >= 0.4 && ismatchedbykmer(bvector.at(i-1).second.interval[0],bvector.at(i-1).second.interval[1])) match = true;
          }
        
-        if ( maxfreqsofleave > 95 && bratio >= 0.125 &&ismatchedbykmer(bvector.at(i-1).second.interval[0],bvector.at(i-1).second.interval[1])) match = true;
+        if ((  (maxfreqsofleave > 150 && bratio >= 0.125) || (maxfreqsofleave > 50 && bratio >= 0.2) ) &&ismatchedbykmer(bvector.at(i-1).second.interval[0],bvector.at(i-1).second.interval[1])) match = true;
 
         bool isPassedThreshold =  bratio >= 0.25 && (bvector.at(i-1).first >= IntervalSizeCutoff || (bratio >= 0.6 && totalcount >= IntervalSizeCutoff+2 )) ? true: false;
        if( match || isPassedThreshold  )

@@ -100,16 +100,29 @@ PacBioCorrectionResult PacBioCorrectionProcess::PBSelfCorrection(const SequenceW
 void PacBioCorrectionProcess::separatebykmer(std::string readid,std::string readSeq,size_t kmerSize)
 {
     std::string outfilename = "k"+readid + "_" + std::to_string(kmerSize) + "mer.sf";
+    // std::cout<<      "0.0\n";
     ofstream outfile (outfilename) ;
-    outfile << ">"<<readid << "\n" ;
+    // outfile << ">"<<readid << "\n" ;
     for(size_t i = 0 ; i+kmerSize <= readSeq.length() ; i++)
 	{
-		std::string kmer = readSeq.substr(i, kmerSize);
-    
-		size_t fwdKmerFreqs = BWTAlgorithms::countSequenceOccurrencesSingleStrand(kmer, m_params.indices);
-		size_t rvcKmerFreqs = BWTAlgorithms::countSequenceOccurrencesSingleStrand(reverseComplement(kmer), m_params.indices);
-		size_t kmerFreqs = fwdKmerFreqs+rvcKmerFreqs;
-        outfile << kmer << "\t" << kmerFreqs << "\n" ;
+		std::string kmer = readSeq.substr(i, kmerSize-1);
+        std::string currkmer = readSeq.substr(i, kmerSize);
+        size_t maxfreqs = 0,currkmerfreqs = 0;
+        
+        for(int i = 1; i < BWT_ALPHABET::size; ++i) //i=A,C,G,T
+        {
+            char b = BWT_ALPHABET::getChar(i);
+            std::string eachkmer = kmer+b;
+            size_t fwdKmerFreqs = BWTAlgorithms::countSequenceOccurrencesSingleStrand(eachkmer, m_params.indices);
+            size_t rvcKmerFreqs = BWTAlgorithms::countSequenceOccurrencesSingleStrand(reverseComplement(eachkmer), m_params.indices);
+            size_t kmerFreqs = fwdKmerFreqs+rvcKmerFreqs;
+            maxfreqs = kmerFreqs > maxfreqs ? kmerFreqs : maxfreqs;
+            if (eachkmer == currkmer )currkmerfreqs = kmerFreqs;
+            
+            
+        }
+        // std::cout<<    currkmerfreqs << " \t"<<  maxfreqs <<"\n";
+          if((float)currkmerfreqs/(float)maxfreqs<0.5)outfile << currkmer <<  "\t"<< currkmerfreqs<<  "\t" << maxfreqs << "\n" ;
     }
     outfile.close();
     
@@ -476,7 +489,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
 			{
                 
                 
-/*
+
                 // PB135123_7431.fa TGTAATCAGGCTGAAAA
                 bool isPrevSeedBetweenRepeat = seedVec.size()>=2 && !seedVec.back().isRepeat // previous seed is not repeat
                                         // but previous previous seed and current seed are both repeats
@@ -510,7 +523,7 @@ std::vector<SeedFeature> PacBioCorrectionProcess::hybridSeedingFromPB(const std:
                     seedVec.pop_back();
                 }
 										
-		*/		// if(isPrevSeedCloseToRepeat || isPrevSeedBetweenRepeat || isPrevSeedWithinLargeRepeat)	
+				// if(isPrevSeedCloseToRepeat || isPrevSeedBetweenRepeat || isPrevSeedWithinLargeRepeat)	
 					// seedVec.pop_back();
 				
 
@@ -595,7 +608,7 @@ bool PacBioCorrectionProcess::isCloseTorepeat(std::vector<BWTIntervalPair> Fixed
          //std::cout << CurrPosFreqs << "\n";
          if (CurrPosFreqs > NearbyMaxFreqs) {NearbyMaxFreqs = CurrPosFreqs ;maxpos=repeatCheckPos;}
     }
-    size_t diff = abs((int)(maxpos-currpos)) > 0? abs((int)(maxpos-currpos)) : 1;
+    // size_t diff = abs((int)(maxpos-currpos)) > 0? abs((int)(maxpos-currpos)) : 1;
     // bool isLargeVariationOfFreqs = (float)CurrSeedFreqs/(float)NearbyMaxFreqs < 0.7*(70-(float)diff)/70;
     bool isLargeVariationOfFreqs = (float)CurrSeedFreqs/(float)NearbyMaxFreqs < 0.6;
     // std::cout<<    0.7*(70-(float)diff)/70 <<" "<<(float)NearbyMaxFreqs << " " <<  0.7*(70-(float)diff)/70* (float)NearbyMaxFreqs <<"  123\n";
