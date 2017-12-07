@@ -103,7 +103,8 @@ libpacbio_a-KmerThresholdTable.o: KmerThresholdTable.cpp \
  /usr/include/c++/6/bits/locale_facets.tcc \
  /usr/include/c++/6/bits/basic_ios.tcc \
  /usr/include/c++/6/bits/ostream.tcc /usr/include/c++/6/istream \
- /usr/include/c++/6/bits/istream.tcc KmerThresholdTable.h
+ /usr/include/c++/6/bits/istream.tcc /usr/include/c++/6/limits \
+ KmerThresholdTable.h
 
 /usr/include/stdc-predef.h:
 
@@ -384,5 +385,7 @@ libpacbio_a-KmerThresholdTable.o: KmerThresholdTable.cpp \
 /usr/include/c++/6/istream:
 
 /usr/include/c++/6/bits/istream.tcc:
+
+/usr/include/c++/6/limits:
 
 KmerThresholdTable.h:

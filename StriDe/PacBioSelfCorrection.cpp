@@ -26,8 +26,6 @@
 #include "CorrectionThresholds.h"
 #include "BWTIntervalCache.h"
 #include "KmerThresholdTable.h"
-
-#define FORMULA( x,y,z ) ( (x) ? (0.05776992234f * y - 0.4583043394f * z + 10.19159685f) : (0.0710704607f * y - 0.5445663957f * z + 12.26253388f) )
 //
 // Getopt
 //
@@ -172,7 +170,9 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	KmerThresholdTable::pTableWriter = createWriter(opt::directory + "threshold-table");	
 	KmerThresholdTable::compute();
 	KmerThresholdTable::write();
-
+	//KmerThresholdTable::release();
+	//exit(EXIT_SUCCESS);
+	
 	
 	// Open outfiles and start a timer
 	Timer* pTimer = new Timer(PROGRAM_IDENT);
@@ -363,15 +363,4 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 	opt::correctFile = opt::directory + out_prefix + ".correct.fa";
 	opt::discardFile = opt::directory + out_prefix + ".discard.fa";
 	
-	std::string outfilename = opt::directory + "threshold-table";
-	std::ofstream outfile(outfilename);
-	for(int i=opt::kmerLength; i<=50; i++)
-	{
-		float kmerThresholdValueWithLowCoverage = FORMULA(true,opt::PBcoverage,i);
-		float kmerThresholdValue = FORMULA(false,opt::PBcoverage,i);
-		outfile << i << "\t";
-		outfile << (kmerThresholdValue < 5 ? 5 : kmerThresholdValue) << "\t";
-		outfile << (kmerThresholdValueWithLowCoverage < 5 ? 5 : kmerThresholdValueWithLowCoverage) << "\n";
-	}
-	outfile.close();
 }
