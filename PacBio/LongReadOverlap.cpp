@@ -39,7 +39,7 @@ MultipleAlignment LongReadOverlap::buildMultipleAlignment(const std::string& que
 	
     for(size_t i = srcSize; i < overlap_vector.size(); ++i)
         multiple_alignment.addOverlap("Tar", overlap_vector[i].sequence[1], "", overlap_vector[i].overlap);
-	// std::cout<< query << "|" <<srcSize << "||" <<overlap_vector.size()- srcSize << "kkkkkk\n";
+	// std::cout<< query << "|" <<srcSize << "||" <<overlap_vector.size()- srcSize << "kkkkk k\n";
 	// filter low-quality overlap
 	// if(!overlap_vector.empty())
 	// {
