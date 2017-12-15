@@ -51,6 +51,7 @@ static const char *CORRECT_USAGE_MESSAGE =
 "      -x, --kmer-threshold=N           Attempt to correct kmers that are seen less than N times. (default: 3)\n"
 "      -e, --error-rate=N               The error rate of PacBio reads.(default:0.15)\n"
 "      -i, --idmer-length=N             The length of the kmer to identify similar reads.(default: 9)\n"
+"      -d, --num-of-next-target         The number of next FMWalk seed target when previous one failed (default: 1)\n"
 "      -L, --max-leaves=N               Number of maximum leaves in the search tree. (default: 32)\n"
 "      -C, --PBcoverage=N               Coverage of PacBio reads(default: 90)\n"
 "      --debugseed                      Output seeds file for each reads (default: false)\n"
@@ -99,28 +100,28 @@ static const char* shortopts = "p:t:o:k:x:L:s:d:c:C:e:i:v";
 enum { OPT_HELP = 1, OPT_VERSION, OPT_DISCARD, OPT_SPLIT, OPT_FIRST,OPT_DEBUGEXTEND,OPT_DEBUGSEED,OPT_ONLYSEED,OPT_NODP };
 
 static const struct option longopts[] = {
-	{ "threads",       required_argument, NULL, 't' },
-	{ "directory",     required_argument, NULL, 'o' },
-	{ "prefix",        required_argument, NULL, 'p' },
-	{ "kmer-size",     required_argument, NULL, 'k' },
-	{ "kmer-threshold",required_argument, NULL, 'x' },
-	{ "max-leaves",    required_argument, NULL, 'L' },
-	{ "min-kmer-size", required_argument, NULL, 's' },
-    { "error-rate",    required_argument, NULL, 'e' },
-    { "idmer-length",  required_argument, NULL, 'i' },
-	{ "downward",      required_argument, NULL, 'd' },
-	{ "collect",       required_argument, NULL, 'c' },
-    { "PBcoverage",    required_argument, NULL, 'C' },
-	{ "verbose",       no_argument,       NULL, 'v' },
-	{ "split",         no_argument,       NULL, OPT_SPLIT },
-	{ "first",         no_argument,       NULL, OPT_FIRST },
-    { "debugextend",   no_argument,       NULL, OPT_DEBUGEXTEND },
-    { "debugseed",     no_argument,       NULL, OPT_DEBUGSEED },
-	{ "onlyseed",      no_argument,       NULL, OPT_ONLYSEED },
-	{ "nodp",          no_argument,       NULL, OPT_NODP },
-	{ "discard",       no_argument,       NULL, OPT_DISCARD },
-	{ "help",          no_argument,       NULL, OPT_HELP },
-	{ "version",       no_argument,       NULL, OPT_VERSION },
+	{ "threads",            required_argument, NULL, 't' },
+	{ "directory",          required_argument, NULL, 'o' },
+	{ "prefix",             required_argument, NULL, 'p' },
+	{ "kmer-size",          required_argument, NULL, 'k' },
+	{ "kmer-threshold",     required_argument, NULL, 'x' },
+	{ "max-leaves",         required_argument, NULL, 'L' },
+	{ "min-kmer-size",      required_argument, NULL, 's' },
+    { "error-rate",         required_argument, NULL, 'e' },
+    { "idmer-length",       required_argument, NULL, 'i' },
+	{ "num-of-next-target", required_argument, NULL, 'd' },
+	{ "collect",            required_argument, NULL, 'c' },
+    { "PBcoverage",         required_argument, NULL, 'C' },
+	{ "verbose",            no_argument,       NULL, 'v' },
+	{ "split",              no_argument,       NULL, OPT_SPLIT },
+	{ "first",              no_argument,       NULL, OPT_FIRST },
+    { "debugextend",        no_argument,       NULL, OPT_DEBUGEXTEND },
+    { "debugseed",          no_argument,       NULL, OPT_DEBUGSEED },
+	{ "onlyseed",           no_argument,       NULL, OPT_ONLYSEED },
+	{ "nodp",               no_argument,       NULL, OPT_NODP },
+	{ "discard",            no_argument,       NULL, OPT_DISCARD },
+	{ "help",               no_argument,       NULL, OPT_HELP },
+	{ "version",            no_argument,       NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -196,13 +197,17 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	ecParams.maxSeedInterval = opt::maxSeedInterval;
 	ecParams.directory = opt::directory;
 	
+	FMextendParameters FM_params
+	(indexSet,opt::idmerLength,opt::maxLeaves,opt::minKmerLength,opt::PBcoverage,opt::ErrorRate,opt::DebugExtend);
+	ecParams.FM_params = FM_params;
+	
 
 	std::cout << "\nCorrecting PacBio reads for " << opt::readsFile << " using--\n"
 	<< "number of threads:\t" << opt::numThreads << "\n"
 	<< "PB reads coverage:\t" << ecParams.PBcoverage << "\n"
 	<< "large kmer size:\t" << ecParams.kmerLength << "\n" 
 	<< "small kmer size:\t" << ecParams.minKmerLength << "\n"
-	<< "small kmer freq. cutoff:\t" << ecParams.FMWKmerThreshold << "\n"
+	<< "small kmer freq(cutoff):\t" << ecParams.FMWKmerThreshold << "\n"
 	<< "max leaves:\t" << ecParams.maxLeaves  << "\n"
 	<< "max depth:\t1.2~0.8* (length between two seeds +- 20)" << "\n"
 	<< "num of next Targets:\t" << ecParams.numOfNextTarget << "\n";
@@ -337,6 +342,12 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 		die = true;
 	}
 	
+	if(opt::numOfNextTarget <=0)
+	{
+		std::cerr << SUBPROGRAM ": invalid number of next target: " << opt::kmerThreshold << ", must be greater than zero\n";
+		die = true;
+	}
+	
 	if(opt::directory.empty())
 	{
 		std::cerr << SUBPROGRAM << ": no directory\n";
@@ -345,7 +356,7 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 	else
 	{		
 		opt::directory = opt::directory + "/";
-		std::string workingDir = opt::directory + (opt::DebugSeed ? "seed/stat/" : "");
+		std::string workingDir = opt::directory + (opt::DebugSeed ? "seed/shh/" : "");
 		if( system(("mkdir -p " + workingDir).c_str()) != 0)
 		{
 			std::cerr << SUBPROGRAM << ": something wrong in directory: " << opt::directory << "\n";
@@ -359,8 +370,10 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 	}
 	
 	opt::readsFile = argv[optind++];
-	std::string out_prefix = stripFilename(opt::readsFile);
-	opt::correctFile = opt::directory + out_prefix + ".correct.fa";
-	opt::discardFile = opt::directory + out_prefix + ".discard.fa";
+	//std::string out_prefix = stripFilename(opt::readsFile);
+	//opt::correctFile = opt::directory + out_prefix + ".correct.fa";
+	//opt::discardFile = opt::directory + out_prefix + ".discard.fa";
+	opt::correctFile = opt::directory + "correct.fa";
+	opt::discardFile = opt::directory + "discard.fa";
 	
 }

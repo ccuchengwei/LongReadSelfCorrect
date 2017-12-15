@@ -27,13 +27,18 @@ struct PacBioSelfCorrectionParameters
 {
 	//PacBioSelfCorrectionAlgorithm algorithm;
 	BWTIndexSet indices;
+	FMextendParameters FM_params;
 
 	int numKmerRounds;
 	unsigned int kmerLength;
 	unsigned int kmerLengthUpperBound;
-	unsigned int repaetDistance = 100;//70-->100. Need further check. Noted by KuanWeiLee 11/25
-	float hhRatio = 0.6f;
-	float r_hhRatio = 1.f/hhRatio;
+	unsigned int repaetDistance = 50;//70-->100. Need further check. Noted by KuanWeiLee 20171125
+	//The hhRatio for seed or kmer hitchhike may be different; 
+	//in repeat mode, one for seed seems lower but the other for kmer still remains unknown.Noted by KuanWeiLee 20171213
+	float shhRatio = 0.4f;
+	float r_shhRatio = 1.f/shhRatio;
+	float khhRatio = 0.4f;
+	float r_khhRatio = 1.f/khhRatio;
 	//KmerThreshold table;
 
 	// tree search parameters
@@ -73,10 +78,10 @@ struct PacBioSelfCorrectionResult
 	correctedLen(0),
 	totalSeedNum(0),
 	totalWalkNum(0),
-	correctedNum(0),
 	highErrorNum(0),
 	exceedDepthNum(0),
 	exceedLeaveNum(0),
+	FMNum(0),
     DPNum(0),
 	seedDis(0),
     Timer_Seed(0),
@@ -91,15 +96,15 @@ struct PacBioSelfCorrectionResult
 	size_t kmerLength;
 
 	// PacBio reads correction by Ya, v20151001.
-	std::vector<DNAString> correctedPacbioStrs;
+	std::vector<DNAString> correctedStrs;
 	int64_t totalReadsLen;
 	int64_t correctedLen;
 	int64_t totalSeedNum;
 	int64_t totalWalkNum;
-	int64_t correctedNum;
 	int64_t highErrorNum;
 	int64_t exceedDepthNum;
 	int64_t exceedLeaveNum;
+	int64_t FMNum;
     int64_t DPNum;
 	int64_t seedDis;
     double Timer_Seed;
@@ -111,36 +116,28 @@ struct PacBioSelfCorrectionResult
 class PacBioSelfCorrectionProcess
 {
 public:
+
 	PacBioSelfCorrectionProcess(const PacBioSelfCorrectionParameters params):m_params(params){};
 	~PacBioSelfCorrectionProcess(){};
 	PacBioSelfCorrectionResult process(const SequenceWorkItem& workItem);
 
 private:
-    FMextendParameters FMextendParameter();
-    
-
-    std::vector<SeedFeature> hybridSeedingFromPB(const std::string& readSeq, PacBioSelfCorrectionResult &result);
-	void initCorrect(std::string& readSeq, std::vector<SeedFeature>& seeds, std::vector<SeedFeature>& pacbioCorrectedStrs, PacBioSelfCorrectionResult& result);
-	// Perform FMindex extension between source and target seeds
-	// Return FMWalkReturnType
-	int extendBetweenSeeds(SeedFeature& source, SeedFeature& target, std::string& rawSeq, std::string& mergedseq,
-							size_t smallKmerSize, size_t dis_between_src_target,FMextendParameters FMextendParameter, PacBioSelfCorrectionResult& result);	
-	
-	//bool isCloseTorepeat(std::vector<BWTIntervalPair> FixedMerInterval,size_t &currpos);
-	// kmers around repeat seeds are often error seeds, split the repeat regions into high-confident seeds
-	// return kmer freq of beginning and ending kmers
-	//std::pair<size_t, size_t> refineRepeatSeed(const std::string readSeq, size_t& seedStartPos, size_t& seedEndPos,size_t normal_freqs);
-	// return complexity of seq, default: 0.9
-	bool  isLowComplexity (const std::string& seq, float & GCratio, float threshold=0.7);
-
-	// return <0: give up and break
-	// return 0: retry the same target
-	// return >0: continue to next target
-	//int  FMWalkFailedActions (size_t& smallKmerSize, size_t& numOfTrials, SeedFeature& sourceStrLen, SeedFeature& target, int FMWalkReturnType, int prevFMWalkReturnType);
-
-                            
+	typedef std::vector<SeedFeature> SeedVector;
 	PacBioSelfCorrectionParameters m_params;
-	//std::pair<size_t,size_t> alnscore;
+	
+    void searchSeedsWithHybridKmers(const std::string& readSeq, SeedVector& seedVec, PacBioSelfCorrectionResult &result);
+	SeedVector removeHitchhikingSeeds(SeedVector initSeedVec, PacBioSelfCorrectionResult& result);
+	bool isLowComplexity (const std::string& seq, float & GCratio, float threshold=0.7);
+	void write(std::ostream& outfile, const SeedVector& seedVec) const;
+	void initCorrect(std::string& readSeq, const SeedVector& seeds, SeedVector& pacbioCorrectedStrs, PacBioSelfCorrectionResult& result);
+	// Perform FMindex extension between source and target seeds; return FMWalkReturnType
+	//int extendBetweenSeeds(const SeedFeature& source, const SeedFeature& target, std::string& rawSeq, std::string& mergedseq,
+	//						size_t extendKmerSize, size_t dis_between_src_target, PacBioSelfCorrectionResult& result);
+	
+	int correctByFMExtension
+	(const SeedFeature& source, const SeedFeature& target, const std::string& in, std::string& out, PacBioSelfCorrectionResult& result);
+	bool correctByMSAlignment
+	(const SeedFeature& source, const SeedFeature& target, const std::string& in, std::string& out, PacBioSelfCorrectionResult& result);
 	
 };
 
@@ -164,11 +161,12 @@ private:
 	int64_t m_correctedLen;
 	int64_t m_totalSeedNum;
 	int64_t m_totalWalkNum;
-	int64_t m_correctedNum;
 	int64_t m_highErrorNum;
 	int64_t m_exceedDepthNum;
 	int64_t m_exceedLeaveNum;
+	int64_t m_FMNum;
     int64_t m_DPNum;
+	int64_t m_OutcastNum;
 	int64_t m_seedDis;
     double m_Timer_Seed;
     double m_Timer_FM;

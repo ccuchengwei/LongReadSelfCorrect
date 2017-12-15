@@ -618,7 +618,7 @@ std::vector<SeedFeature> PacBioHybridCorrectionProcess::seedingByDynamicKmer_v3(
 		// super repeat seeds with frequency > 2000 are troublesome, often lead to -3 but no good solution so far, mark first
 		bool isSuperRepeat=maxKmerFreq>m_params.coverage*15?true:false;
 		SeedFeature newSeed(seedStartPos, readSeq.substr(seedStartPos, seedEndPos-seedStartPos+1), isSuperRepeat, dynamicKmerSize, m_params.PBcoverage/2);
-		newSeed.estimateBestKmerSize(m_params.PBindices.pBWT);
+		newSeed.estimateBestKmerSize(m_params.PBindices);
 
 		// Some high-GC error seeds have unexpected large freq
 		// size_t PBkmerFreq = BWTAlgorithms::countSequenceOccurrences(newSeed.seedStr, m_params.PBindices);
@@ -814,7 +814,7 @@ bool PacBioHybridCorrectionProcess::seedingByPacBio_v2(const string& readSeq, st
 		// super repeat seeds with frequency > 2000 are troublesome, often lead to -3 but no good solution so far, mark first
 		bool isSuperRepeat = maxKmerFreq >= m_params.PBcoverage?true:false;
 		SeedFeature newSeed(seedStartPos, readSeq.substr(seedStartPos, seedEndPos-seedStartPos+1), isSuperRepeat, dynamicKmerSize, m_params.PBcoverage/2);
-		newSeed.estimateBestKmerSize(m_params.PBindices.pBWT);
+		newSeed.estimateBestKmerSize(m_params.PBindices);
 
 		// skip low-complexity sequencing errors of PacBio
 		// bool isShortAndHighFreq = i-seedStartPos <= 2 && maxKmerFreq > 80;
