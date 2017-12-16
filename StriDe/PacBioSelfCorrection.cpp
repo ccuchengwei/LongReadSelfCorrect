@@ -198,7 +198,8 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	ecParams.directory = opt::directory;
 	
 	FMextendParameters FM_params
-	(indexSet,opt::idmerLength,opt::maxLeaves,opt::minKmerLength,opt::PBcoverage,opt::ErrorRate,opt::DebugExtend);
+	(indexSet,opt::idmerLength,opt::maxLeaves,opt::minKmerLength,opt::PBcoverage,opt::ErrorRate,false);
+	//(indexSet,opt::idmerLength,opt::maxLeaves,opt::minKmerLength,opt::PBcoverage,opt::ErrorRate,opt::DebugExtend);
 	ecParams.FM_params = FM_params;
 	
 
@@ -357,6 +358,12 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 	{		
 		opt::directory = opt::directory + "/";
 		std::string workingDir = opt::directory + (opt::DebugSeed ? "seed/shh/" : "");
+		if( system(("mkdir -p " + workingDir).c_str()) != 0)
+		{
+			std::cerr << SUBPROGRAM << ": something wrong in directory: " << opt::directory << "\n";
+			die = true;
+		}
+		workingDir = opt::directory + (opt::DebugExtend ? "extend/" : "");
 		if( system(("mkdir -p " + workingDir).c_str()) != 0)
 		{
 			std::cerr << SUBPROGRAM << ": something wrong in directory: " << opt::directory << "\n";

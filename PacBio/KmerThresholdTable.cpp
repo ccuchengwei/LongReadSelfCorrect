@@ -64,9 +64,9 @@ namespace KmerThresholdTable
 			int y = k;
 			float lowcov = 0.05776992234f*x - 0.4583043394f*y + 10.19159685f;
 			lowcov = lowcov < 5 ? 5 : lowcov;
-			//float unique = 0.000234375f*x*x - 0.009113445378f*x*y + 0.04496381886*y*y + 0.2529766282*x - 1.98467437*y + 22.10684816;
-			float unique = 0.0710704607f*x - 0.5445663957f*y + 12.26253388f;
-			unique = unique < 5 ? 5 : unique;
+			float unique = 0.000234375f*x*x - 0.009113445378f*x*y + 0.04496381886*y*y + 0.2529766282*x - 1.98467437*y + 22.10684816;
+			//float unique = 0.0710704607f*x - 0.5445663957f*y + 12.26253388f;
+			//unique = unique < 5 ? 5 : unique;
 			float repeat = 0.007533482143f*x*x - 0.2664117647f*x*y + 1.200805322f*y*y + 7.283483456f*x - 59.01653361*y + 763.5592525;
 			unique = MIN(unique,min_unique);
 			repeat = MIN(repeat,min_repeat);

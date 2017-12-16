@@ -32,15 +32,17 @@ struct PacBioSelfCorrectionParameters
 	int numKmerRounds;
 	unsigned int kmerLength;
 	unsigned int kmerLengthUpperBound;
-	unsigned int repaetDistance = 50;//70-->100. Need further check. Noted by KuanWeiLee 20171125
+	//unsigned int repaetDistance = 50;//70-->100. Need further check. Noted by KuanWeiLee 20171125
+	unsigned int repaetDistance = 100;
+	//float shhRatio = 0.4f;
+	float shhRatio = 0.6f;
+	float r_shhRatio = 1.f/shhRatio;
+	//float khhRatio = 0.4f;
+	float khhRatio = 0.6f;
+	float r_khhRatio = 1.f/khhRatio;
 	//The hhRatio for seed or kmer hitchhike may be different; 
 	//in repeat mode, one for seed seems lower but the other for kmer still remains unknown.Noted by KuanWeiLee 20171213
-	float shhRatio = 0.4f;
-	float r_shhRatio = 1.f/shhRatio;
-	float khhRatio = 0.4f;
-	float r_khhRatio = 1.f/khhRatio;
-	//KmerThreshold table;
-
+	
 	// tree search parameters
 	int maxLeaves;
 	int minOverlap;
@@ -125,15 +127,13 @@ private:
 	typedef std::vector<SeedFeature> SeedVector;
 	PacBioSelfCorrectionParameters m_params;
 	
+	//search seeds
     void searchSeedsWithHybridKmers(const std::string& readSeq, SeedVector& seedVec, PacBioSelfCorrectionResult &result);
 	SeedVector removeHitchhikingSeeds(SeedVector initSeedVec, PacBioSelfCorrectionResult& result);
-	bool isLowComplexity (const std::string& seq, float & GCratio, float threshold=0.7);
+	bool isLowComplexity (const std::string& seq, float & GCratio, float threshold = 0.7f);
 	void write(std::ostream& outfile, const SeedVector& seedVec) const;
+	//correct sequence
 	void initCorrect(std::string& readSeq, const SeedVector& seeds, SeedVector& pacbioCorrectedStrs, PacBioSelfCorrectionResult& result);
-	// Perform FMindex extension between source and target seeds; return FMWalkReturnType
-	//int extendBetweenSeeds(const SeedFeature& source, const SeedFeature& target, std::string& rawSeq, std::string& mergedseq,
-	//						size_t extendKmerSize, size_t dis_between_src_target, PacBioSelfCorrectionResult& result);
-	
 	int correctByFMExtension
 	(const SeedFeature& source, const SeedFeature& target, const std::string& in, std::string& out, PacBioSelfCorrectionResult& result);
 	bool correctByMSAlignment
