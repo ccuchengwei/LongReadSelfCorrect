@@ -83,7 +83,8 @@ void PacBioSelfCorrectionProcess::searchSeedsWithHybridKmers(const std::string& 
 	//KmerThresholdTable::TYPE mode = KmerThresholdTable::TYPE::REPEAT;
 	
 	float staticKmerThresholdValue, repeatKmerThresholdValue;
-	staticKmerThresholdValue = KmerThresholdTable::get(staticKmerSize,mode);
+	float const *table = KmerThresholdTable::get(mode);
+	staticKmerThresholdValue = table[staticKmerSize];
 	repeatKmerThresholdValue = mode == 3 ? staticKmerThresholdValue : staticKmerThresholdValue * 5;
 	
 	//Part 2 : Search seeds; slide through the read sequence with dynamic kmers. Noted by KuanWeiLee
@@ -112,7 +113,7 @@ void PacBioSelfCorrectionProcess::searchSeedsWithHybridKmers(const std::string& 
 				BWTAlgorithms::updateInterval(rvcInterval,rcs,m_params.indices.pBWT);
 			}
 			isRepeat = isRepeat || (maxFixedMerFreqs >= repeatKmerThresholdValue);
-			dynamicKmerThresholdValue = KmerThresholdTable::get(dynamicKmerSize,mode);
+			dynamicKmerThresholdValue = table[dynamicKmerSize];
 			fwdKmerFreqs = fwdInterval.getFreqs();
 			rvcKmerFreqs = rvcInterval.getFreqs();			
 			currentKmerFreqs = fwdKmerFreqs + rvcKmerFreqs;

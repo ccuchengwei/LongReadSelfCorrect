@@ -10,19 +10,7 @@ struct KmerThresholdTable
 	static std::ostream* pTableWriter;
 	static int m_startLen, m_endLen, m_coverage;
 	
-	static inline float get(int size, TYPE mode)
-	{
-		switch(mode)
-		{
-			case(LOWCOV):return m_lowcov[size];
-			case(UNIQUE):return m_unique[size];
-			case(REPEAT):return m_repeat[size];
-			default:
-				std::cout << "Wrong table type\n";
-				exit(EXIT_FAILURE);
-		}
-	};
-	
+	static float* get(TYPE mode);
 	static void compute();
 	static void write();
 	static void release();
@@ -37,19 +25,7 @@ namespace KmerThresholdTable
 	extern std::ostream* pTableWriter;
 	extern int m_startLen, m_endLen, m_coverage;
 	
-	inline float get(int size, TYPE mode)
-	{
-		switch(mode)
-		{
-			case(LOWCOV):return m_lowcov[size];
-			case(UNIQUE):return m_unique[size];
-			case(REPEAT):return m_repeat[size];
-			default:
-				std::cout << "Wrong table type\n";
-				exit(EXIT_FAILURE);
-		}
-	};
-	
+	float* get(TYPE mode);
 	void compute();
 	void write();
 	void release();

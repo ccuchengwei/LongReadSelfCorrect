@@ -11,6 +11,18 @@ float* KmerThresholdTable::m_unique = NULL;
 float* KmerThresholdTable::m_repeat = NULL;
 std::ostream* KmerThresholdTable::pTableWriter = NULL;
 
+float* KmerThresholdTable::get(TYPE mode)
+{
+	switch(mode)
+	{
+		case LOWCOV: return m_lowcov;
+		case UNIQUE: return m_unique;
+		case REPEAT: return m_repeat;
+		default:
+			std::cout << "Wrong table type\n";
+			exit(EXIT_FAILURE);
+	}
+}
 void KmerThresholdTable::compute()
 {
 	int x = m_coverage;
@@ -54,6 +66,19 @@ namespace KmerThresholdTable
 	FloatPointer m_unique = NULL;
 	FloatPointer m_repeat = NULL;
 	std::ostream* pTableWriter = NULL;
+	
+	float* get(TYPE mode)
+	{
+		switch(mode)
+		{
+			case LOWCOV: return m_lowcov;
+			case UNIQUE: return m_unique;
+			case REPEAT: return m_repeat;
+			default:
+				std::cout << "Wrong table type\n";
+				exit(EXIT_FAILURE);
+		}
+	}
 	void compute()
 	{
 		float min_unique, min_repeat;
