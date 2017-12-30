@@ -26,19 +26,24 @@ struct FMWalkResult2
 };
 struct FMextendParameters
 {
-    
-    public:
-    FMextendParameters(BWTIndexSet indices, int idmerLength, int maxLeaves,int minKmerLength,size_t PBcoverage, double ErrorRate,bool Debug):
-    indices(indices),
-    idmerLength(idmerLength),
-    maxLeaves(maxLeaves),
-    minKmerLength(minKmerLength),
-    PBcoverage(PBcoverage),
-    ErrorRate(ErrorRate),
-    Debug(Debug)
-    {};
-
-    FMextendParameters(){};
+public:
+    FMextendParameters(){ }
+	FMextendParameters(
+			BWTIndexSet indices,
+			int idmerLength,
+			int maxLeaves,
+			int minKmerLength,
+			size_t PBcoverage,
+			double ErrorRate,
+			bool Debug)
+	:	indices(indices),
+		idmerLength(idmerLength),
+		maxLeaves(maxLeaves),
+		minKmerLength(minKmerLength),
+		PBcoverage(PBcoverage),
+		ErrorRate(ErrorRate),
+		Debug(Debug){ }
+	
     BWTIndexSet indices;
     int idmerLength;
     int maxLeaves;
@@ -51,109 +56,109 @@ struct FMextendParameters
 
 class LongReadSelfCorrectByOverlap
 {
-    public:
-    LongReadSelfCorrectByOverlap();
-         LongReadSelfCorrectByOverlap(
-                const std::string& sourceSeed,
-				const std::string& strBetweenSrcTarget,
-				const std::string& targetSeed,
-				int m_disBetweenSrcTarget,
-                size_t initkmersize,
-                size_t maxOverlap,
-                const FMextendParameters params,
-				size_t m_min_SA_threshold = 3,
-				double errorRate = 0.25,	
-				size_t repeatFreq = 256,
-                size_t localSimilarlykmerSize = 100
-               );
+public:
+    LongReadSelfCorrectByOverlap(){ }
+	LongReadSelfCorrectByOverlap(
+			const std::string& sourceSeed,
+			const std::string& strBetweenSrcTarget,
+			const std::string& targetSeed,
+			int m_disBetweenSrcTarget,
+			size_t initkmersize,
+			size_t maxOverlap,
+			const FMextendParameters params,
+			size_t m_min_SA_threshold = 3,
+			double errorRate = 0.25,	
+			size_t repeatFreq = 256,
+			size_t localSimilarlykmerSize = 100);
 		
-        ~LongReadSelfCorrectByOverlap();
+	~LongReadSelfCorrectByOverlap();
 
-        // extend all leaves one base pair during overlap computation
-        int extendOverlap(FMWalkResult2 &FMWResult);
+	// extend all leaves one base pair during overlap computation
+	int extendOverlap(FMWalkResult2 &FMWResult);
 		
-		// return emptiness of leaves
-		inline bool isEmpty(){return m_leaves.empty();};
+	// return emptiness of leaves
+	inline bool isEmpty(){return m_leaves.empty();};
 		
-		// return size of leaves
-		inline size_t size(){return m_leaves.size();};
+	// return size of leaves
+	inline size_t size(){return m_leaves.size();};
 		
-		// return size of seed
-		inline size_t getSeedSize(){return m_seedSize;};
+	// return size of seed
+	inline size_t getSeedSize(){return m_seedSize;};
 
-		// return size of seed
-		inline size_t getCurrentLength(){return m_currentLength;};
+	// return size of seed
+	inline size_t getCurrentLength(){return m_currentLength;};
 		
 
         
 
-        size_t SelectFreqsOfrange(size_t LowerBound,size_t UpBound,SONode3PtrList &newLeaves);
+	size_t SelectFreqsOfrange(size_t LowerBound,size_t UpBound,SONode3PtrList &newLeaves);
         
 
-        std::pair<size_t,size_t> alnscore;
-    private:
+	std::pair<size_t,size_t> alnscore;
+private:
 
-        //
-        // Functions
-        //
+	//
+	// Functions
+	//
         
-         void initialRootNode(std::string beginningkmer);
-        void buildOverlapbyFMindex(std::string beginningkmer);
+	void initialRootNode(std::string beginningkmer);
+	void buildOverlapbyFMindex(std::string beginningkmer);
         
         
 
-        SONode3PtrList extendLeaves();
+	SONode3PtrList extendLeaves();
 
-        char transToRvc(char b);
+	char transToRvc(char b);
 
-		void attempToExtend(SONode3PtrList &newLeaves);
-        void updateLeaves(SONode3PtrList &newLeaves,std::vector< std::pair<std::string, BWTIntervalPair> > &extensions,SAIOverlapNode3* pNode);
+	void attempToExtend(SONode3PtrList &newLeaves);
+	void updateLeaves(SONode3PtrList &newLeaves,std::vector< std::pair<std::string, BWTIntervalPair> > &extensions,SAIOverlapNode3* pNode);
         
-		void refineSAInterval(size_t newKmer);
+	void refineSAInterval(size_t newKmer);
         
-		int findTheBestPath(SAIntervalNodeResultVector results, FMWalkResult2 &FMWResult);
+	int findTheBestPath(SAIntervalNodeResultVector results, FMWalkResult2 &FMWResult);
 
 		
-        std::vector<std::pair<std::string, BWTIntervalPair> > getFMIndexExtensions(SAIOverlapNode3* pNode);
+	std::vector<std::pair<std::string, BWTIntervalPair> > getFMIndexExtensions(SAIOverlapNode3* pNode);
      
 
-		// prone the leaves without seeds in proximity
-		bool PrunedBySeedSupport(SONode3PtrList &newLeaves);
-        //Check if need reduce kmer size
-        bool isInsufficientFreqs(SONode3PtrList &newLeaves); 
-        // Check if the leaves reach $
-        bool isTerminated(SAIntervalNodeResultVector& results);
-		bool isOverlapAcceptable(SAIOverlapNode3* currNode);
-		bool isSupportedByNewSeed(SAIOverlapNode3* currNode, size_t smallSeedIdx, size_t largeSeedIdx);
-        bool ismatchedbykmer(BWTInterval currFwdInterval,BWTInterval currRvcInterval);
-		double computeErrorRate(SAIOverlapNode3* currNode);
+	// prone the leaves without seeds in proximity
+	bool PrunedBySeedSupport(SONode3PtrList &newLeaves);
+	//Check if need reduce kmer size
+	bool isInsufficientFreqs(SONode3PtrList &newLeaves); 
+	// Check if the leaves reach $
+	bool isTerminated(SAIntervalNodeResultVector& results);
+	bool isOverlapAcceptable(SAIOverlapNode3* currNode);
+	bool isSupportedByNewSeed(SAIOverlapNode3* currNode, size_t smallSeedIdx, size_t largeSeedIdx);
+	bool ismatchedbykmer(BWTInterval currFwdInterval,BWTInterval currRvcInterval);
+	double computeErrorRate(SAIOverlapNode3* currNode);
 	
-        //
-        // Data
-        //
-		const std::string m_sourceSeed;        
-		const std::string m_strBetweenSrcTarget;
-		const std::string m_targetSeed;
-        int m_disBetweenSrcTarget;        	
-        size_t m_initkmersize;
-        size_t m_minOverlap;
-		size_t m_maxOverlap;
-        BWTIndexSet m_BWTindices;
-        const BWT* m_pBWT;
-		const BWT* m_pRBWT;
-        const size_t m_PBcoverage;
-        size_t m_min_SA_threshold;
-        double m_errorRate;
-        size_t m_maxLeaves;
-        size_t m_seedSize;
-        size_t m_repeatFreq;
-        size_t m_localSimilarlykmerSize;
-        double m_PacBioErrorRate;
-        const bool m_isDebug;
+	//
+	// Data
+	//
+	const std::string m_sourceSeed;        
+	const std::string m_strBetweenSrcTarget;
+	const std::string m_targetSeed;
+	int m_disBetweenSrcTarget;        	
+	size_t m_initkmersize;
+	size_t m_minOverlap;
+	size_t m_maxOverlap;
+	//BWTIndexSet m_BWTindices;
+	const BWT *m_pBWT;
+	const BWT *m_pRBWT;
+	size_t m_PBcoverage;
+	size_t m_min_SA_threshold;
+	double m_errorRate;
+	size_t m_maxLeaves;
+	size_t m_seedSize;
+	size_t m_repeatFreq;
+	size_t m_localSimilarlykmerSize;
+	double m_PacBioErrorRate;
+	bool m_isDebug;
         
-		size_t m_maxIndelSize;
-        std::vector<double> freqsOfKmerSize;
-		// Optional parameters
+	size_t m_maxIndelSize;
+	//std::vector<double> freqsOfKmerSize;
+	double* freqsOfKmerSize;
+	// Optional parameters
         
 
 		
@@ -162,41 +167,41 @@ class LongReadSelfCorrectByOverlap
 		
 		
         
-        size_t m_maxfreqs;
+	size_t m_maxfreqs;
         
 
         
-		std::string m_query;
+	std::string m_query;
 		
-        size_t m_maxLength;
-		size_t m_minLength;
-        std::vector<BWTInterval> m_fwdTerminatedInterval;   //in rBWT
-        std::vector<BWTInterval> m_rvcTerminatedInterval;   //in BWT
+	size_t m_maxLength;
+	size_t m_minLength;
+	std::vector<BWTInterval> m_fwdTerminatedInterval;   //in rBWT
+	std::vector<BWTInterval> m_rvcTerminatedInterval;   //in BWT
 		
-        SONode3PtrList m_leaves;
+	SONode3PtrList m_leaves;
 
-        SAIOverlapNode3* m_pRootNode;
-        SONode3PtrList m_RootNodes;
+	SAIOverlapNode3* m_pRootNode;
+	SONode3PtrList m_RootNodes;
         
-        
-
-        size_t m_currentLength;
-		size_t m_currentKmerSize;
-        
-        std::vector<TreeInterval<size_t> > m_fwdIntervals;
-		std::vector<TreeInterval<size_t> > m_rvcIntervals;
-		IntervalTree<size_t> fwdIntervalTree;
-		IntervalTree<size_t> rvcIntervalTree;
-        
-        std::vector<TreeInterval<size_t> > m_fwdIntervals2;
-		std::vector<TreeInterval<size_t> > m_rvcIntervals2;
-        IntervalTree<size_t> fwdIntervalTree2;
-		IntervalTree<size_t> rvcIntervalTree2;
         
 
-        // HashtableSearch *hashIndex;
+	size_t m_currentLength;
+	size_t m_currentKmerSize;
+        
+	std::vector<TreeInterval<size_t> > m_fwdIntervals;
+	std::vector<TreeInterval<size_t> > m_rvcIntervals;
+	IntervalTree<size_t> fwdIntervalTree;
+	IntervalTree<size_t> rvcIntervalTree;
+        
+	std::vector<TreeInterval<size_t> > m_fwdIntervals2;
+	std::vector<TreeInterval<size_t> > m_rvcIntervals2;
+	IntervalTree<size_t> fwdIntervalTree2;
+	IntervalTree<size_t> rvcIntervalTree2;
+        
 
-        size_t RemainedMaxLength;
+	// HashtableSearch *hashIndex;
+
+	size_t RemainedMaxLength;
         
 };
 

@@ -117,6 +117,8 @@ am_libpacbio_a_OBJECTS = libpacbio_a-SAIPBSelfCTree.$(OBJEXT) \
 	libpacbio_a-HashtableSearch.$(OBJEXT) \
 	libpacbio_a-LongReadCorrectByOverlap.$(OBJEXT) \
 	libpacbio_a-KmerFreqProcess.$(OBJEXT) \
+	libpacbio_a-IntervalTree.$(OBJEXT) \
+	libpacbio_a-IntervalTreeInstantiation.$(OBJEXT) \
 	libpacbio_a-KmerThresholdTable.$(OBJEXT)
 libpacbio_a_OBJECTS = $(am_libpacbio_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -310,7 +312,7 @@ libpacbio_a_SOURCES = \
     HashtableSearch.h HashtableSearch.cpp \
 	LongReadCorrectByOverlap.h LongReadCorrectByOverlap.cpp \
 	KmerFreqProcess.h KmerFreqProcess.cpp \
-	IntervalTree.h \
+	IntervalTree.h IntervalTree.cpp IntervalTreeInstantiation.cpp \
 	KmerThresholdTable.h KmerThresholdTable.cpp
 
 all: all-am
@@ -362,6 +364,8 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-HashtableSearch.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-IntervalTree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-IntervalTreeInstantiation.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-KmerFreqProcess.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-KmerThresholdTable.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpacbio_a-LongReadCorrectByOverlap.Po@am__quote@
@@ -541,6 +545,34 @@ libpacbio_a-KmerFreqProcess.obj: KmerFreqProcess.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='KmerFreqProcess.cpp' object='libpacbio_a-KmerFreqProcess.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-KmerFreqProcess.obj `if test -f 'KmerFreqProcess.cpp'; then $(CYGPATH_W) 'KmerFreqProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/KmerFreqProcess.cpp'; fi`
+
+libpacbio_a-IntervalTree.o: IntervalTree.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-IntervalTree.o -MD -MP -MF $(DEPDIR)/libpacbio_a-IntervalTree.Tpo -c -o libpacbio_a-IntervalTree.o `test -f 'IntervalTree.cpp' || echo '$(srcdir)/'`IntervalTree.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-IntervalTree.Tpo $(DEPDIR)/libpacbio_a-IntervalTree.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='IntervalTree.cpp' object='libpacbio_a-IntervalTree.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-IntervalTree.o `test -f 'IntervalTree.cpp' || echo '$(srcdir)/'`IntervalTree.cpp
+
+libpacbio_a-IntervalTree.obj: IntervalTree.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-IntervalTree.obj -MD -MP -MF $(DEPDIR)/libpacbio_a-IntervalTree.Tpo -c -o libpacbio_a-IntervalTree.obj `if test -f 'IntervalTree.cpp'; then $(CYGPATH_W) 'IntervalTree.cpp'; else $(CYGPATH_W) '$(srcdir)/IntervalTree.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-IntervalTree.Tpo $(DEPDIR)/libpacbio_a-IntervalTree.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='IntervalTree.cpp' object='libpacbio_a-IntervalTree.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-IntervalTree.obj `if test -f 'IntervalTree.cpp'; then $(CYGPATH_W) 'IntervalTree.cpp'; else $(CYGPATH_W) '$(srcdir)/IntervalTree.cpp'; fi`
+
+libpacbio_a-IntervalTreeInstantiation.o: IntervalTreeInstantiation.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-IntervalTreeInstantiation.o -MD -MP -MF $(DEPDIR)/libpacbio_a-IntervalTreeInstantiation.Tpo -c -o libpacbio_a-IntervalTreeInstantiation.o `test -f 'IntervalTreeInstantiation.cpp' || echo '$(srcdir)/'`IntervalTreeInstantiation.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-IntervalTreeInstantiation.Tpo $(DEPDIR)/libpacbio_a-IntervalTreeInstantiation.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='IntervalTreeInstantiation.cpp' object='libpacbio_a-IntervalTreeInstantiation.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-IntervalTreeInstantiation.o `test -f 'IntervalTreeInstantiation.cpp' || echo '$(srcdir)/'`IntervalTreeInstantiation.cpp
+
+libpacbio_a-IntervalTreeInstantiation.obj: IntervalTreeInstantiation.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-IntervalTreeInstantiation.obj -MD -MP -MF $(DEPDIR)/libpacbio_a-IntervalTreeInstantiation.Tpo -c -o libpacbio_a-IntervalTreeInstantiation.obj `if test -f 'IntervalTreeInstantiation.cpp'; then $(CYGPATH_W) 'IntervalTreeInstantiation.cpp'; else $(CYGPATH_W) '$(srcdir)/IntervalTreeInstantiation.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-IntervalTreeInstantiation.Tpo $(DEPDIR)/libpacbio_a-IntervalTreeInstantiation.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='IntervalTreeInstantiation.cpp' object='libpacbio_a-IntervalTreeInstantiation.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-IntervalTreeInstantiation.obj `if test -f 'IntervalTreeInstantiation.cpp'; then $(CYGPATH_W) 'IntervalTreeInstantiation.cpp'; else $(CYGPATH_W) '$(srcdir)/IntervalTreeInstantiation.cpp'; fi`
 
 libpacbio_a-KmerThresholdTable.o: KmerThresholdTable.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-KmerThresholdTable.o -MD -MP -MF $(DEPDIR)/libpacbio_a-KmerThresholdTable.Tpo -c -o libpacbio_a-KmerThresholdTable.o `test -f 'KmerThresholdTable.cpp' || echo '$(srcdir)/'`KmerThresholdTable.cpp

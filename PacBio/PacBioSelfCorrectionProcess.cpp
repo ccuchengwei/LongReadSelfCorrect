@@ -156,7 +156,8 @@ void PacBioSelfCorrectionProcess::searchSeedsWithHybridKmers(const std::string& 
 		}
 		if(isSeed)
 		{
-			SeedFeature newSeed(seedStartPos, kmer, isRepeat, staticKmerSize, m_params.PBcoverage>>1, maxFixedMerFreqs);
+			//SeedFeature newSeed(seedStartPos, kmer, isRepeat, staticKmerSize, m_params.PBcoverage>>1, maxFixedMerFreqs);
+			SeedFeature newSeed(kmer, seedStartPos, maxFixedMerFreqs, isRepeat, staticKmerSize, m_params.PBcoverage);
 			newSeed.estimateBestKmerSize(m_params.indices);
 			seedVec.push_back(newSeed);
 		}

@@ -6,8 +6,32 @@
 class SeedFeature
 {
 	public:
+		/*************************/
+		//Legacy code
 		SeedFeature(size_t startPos, std::string str, bool repeat, size_t kmerSize, size_t repeatCutoff, size_t maxFixedMerFreqs=0);
-		~SeedFeature(){};
+		/*************************/
+		SeedFeature(
+				std::string str,
+				size_t startPos,
+				size_t frequency,
+				bool repeat,
+				size_t kmerSize,
+				size_t PBcoverage)
+		:	seedStr(str),
+			seedLength(seedStr.length()),
+			seedStartPos(startPos),
+			seedEndPos(startPos + seedLength - 1),
+			maxFixedMerFreqs(frequency),
+			isRepeat(repeat),
+			isHitchhiked(false),
+			startBestKmerSize(kmerSize),
+			endBestKmerSize(kmerSize),
+			sizeUpperBound(seedLength),
+			sizeLowerBound(kmerSize),
+			freqUpperBound(PBcoverage >> 1),
+			freqLowerBound(PBcoverage >> 2){ }
+				
+		~SeedFeature(){ }
 		
 		// append current seed string with extendedStr
 		inline void append(std::string extendedStr, const SeedFeature& target)
@@ -36,11 +60,11 @@ class SeedFeature
 		};
 		void estimateBestKmerSize(const BWTIndexSet& indices);
 		
+		std::string seedStr;
+		size_t seedLength;
 		size_t seedStartPos;
 		size_t seedEndPos;
-		size_t seedLength;
         size_t maxFixedMerFreqs;
-		std::string seedStr;
 		bool isRepeat;
 		bool isHitchhiked;
 		/*************************/
@@ -57,10 +81,13 @@ class SeedFeature
 		
 	private:
 		size_t minKmerSize;
+		size_t sizeUpperBound;
+		size_t sizeLowerBound;
 		size_t freqUpperBound;
 		size_t freqLowerBound;
 		//size_t stepSize;
 		void modifyKmerSize(const BWTIndexSet& indices, bool which);
+		/*
 		//estimate kmer size
 		void increaseStartKmerSize(const BWT* pBWT);
 		void decreaseStartKmerSize(const BWT* pBWT);
@@ -68,6 +95,7 @@ class SeedFeature
 		//estimate kmer size
 		void increaseEndKmerSize(const BWT* pBWT);
 		void decreaseEndKmerSize(const BWT* pBWT);
+		*/
 };
 
 #endif

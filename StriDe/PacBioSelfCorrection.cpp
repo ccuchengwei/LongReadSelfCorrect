@@ -131,6 +131,8 @@ static const struct option longopts[] = {
 int PacBioSelfCorrectionMain(int argc, char** argv)
 {
 	parsePacBioSelfCorrectionOptions(argc, argv);
+	if(opt::DebugSeed)
+		assert(system(("cat /dev/null > " + opt::directory + "kmer-stat").c_str()) == 0);
 
 	// Set the error correction parameters
 	PacBioSelfCorrectionParameters ecParams;

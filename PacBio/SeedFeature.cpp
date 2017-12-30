@@ -4,48 +4,51 @@
 #include "SeedFeature.h"
 #include "BWTAlgorithms.h"
 #include "Util.h"
+/*************************/
+//Legacy code
 SeedFeature::SeedFeature(size_t startPos, std::string str, bool repeat, size_t staticKmerSize, size_t repeatCutoff, size_t maxFixedMerFreqs)
-	:seedStartPos(startPos), maxFixedMerFreqs(maxFixedMerFreqs), seedStr(str), isRepeat(repeat), isHitchhiked(false), 
+	:seedStr(str), seedStartPos(startPos), maxFixedMerFreqs(maxFixedMerFreqs), isRepeat(repeat), isHitchhiked(false), 
 	minKmerSize(staticKmerSize), freqUpperBound(repeatCutoff),freqLowerBound(repeatCutoff>>1)
 {
 	seedLength = seedStr.length();
 	seedEndPos = seedStartPos + seedLength -1;
 	startBestKmerSize = endBestKmerSize = staticKmerSize;
 }
-
+/*************************/
 void SeedFeature::estimateBestKmerSize(const BWTIndexSet& indices)
 {
 	modifyKmerSize(indices, true);
 	modifyKmerSize(indices, false);
 }
-//which(true/false) ? start : end
-//type(1/-1) > 0 ? increase : decrease
-void SeedFeature::modifyKmerSize(const BWTIndexSet& indices, bool which)
+//pole(true/false) ? start : end
+//bit(1/-1) > 0 ? increase : decrease
+void SeedFeature::modifyKmerSize(const BWTIndexSet& indices, bool pole)
 {
-	size_t& kmerFreq = which ? startKmerFreq : endKmerFreq;
-	size_t& kmerSize = which ? startBestKmerSize : endBestKmerSize;
-	const BWT* pSelBWT = which ? indices.pRBWT : indices.pBWT;
-	std::string seed = which ?  reverse(seedStr) : seedStr;
+	size_t& kmerFreq = pole ? startKmerFreq : endKmerFreq;
+	size_t& kmerSize = pole ? startBestKmerSize : endBestKmerSize;
+	const BWT* pSelBWT = pole ? indices.pRBWT : indices.pBWT;
+	std::string seed = pole ?  reverse(seedStr) : seedStr;
 	kmerFreq = BWTAlgorithms::countSequenceOccurrences(seed.substr(seedLength - kmerSize), pSelBWT);
-	int type;
+	int bit;
 	if(kmerFreq > freqUpperBound)
-		type = 1;
+		bit = 1;
 	else if (kmerFreq < freqLowerBound)
-		type = -1;
+		bit = -1;
 	else
 		return;
-	size_t freqBound = type > 0 ? freqUpperBound : freqLowerBound;
-	size_t compFreqBound = type > 0 ? freqLowerBound : freqUpperBound;
-	size_t sizeBound = type > 0 ? seedLength : minKmerSize;
+	size_t freqBound = bit > 0 ? freqUpperBound : freqLowerBound;
+	size_t compFreqBound = bit > 0 ? freqLowerBound : freqUpperBound;
+	//size_t sizeBound = bit > 0 ? seedLength : minKmerSize;
+	size_t sizeBound = bit > 0 ? sizeUpperBound : sizeLowerBound;
 	
-	while((type^kmerFreq) > (type^freqBound) && (type^kmerSize) < (type^sizeBound))
+	while((bit^kmerFreq) > (bit^freqBound) && (bit^kmerSize) < (bit^sizeBound))
 	{
-		kmerSize += type;
+		kmerSize += bit;
 		kmerFreq = BWTAlgorithms::countSequenceOccurrences(seed.substr(seedLength - kmerSize), pSelBWT);
 	}
-	if(type*kmerFreq < type*compFreqBound)
+	if(bit*kmerFreq < bit*compFreqBound)
 	{
-		kmerSize -= type;
+		kmerSize -= bit;
 		kmerFreq = BWTAlgorithms::countSequenceOccurrences(seed.substr(seedLength - kmerSize), pSelBWT);
 	}
 }

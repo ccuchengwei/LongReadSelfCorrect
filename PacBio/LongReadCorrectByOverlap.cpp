@@ -15,37 +15,36 @@
 //
 // Class: SAIOverlapTree
 LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(
-                const std::string& sourceSeed,
-				const std::string& strBetweenSrcTarget,
-				const std::string& targetSeed,				
-				int disBetweenSrcTarget,
-                size_t initkmersize,
-                size_t maxOverlap,
-                const FMextendParameters params,
-                size_t min_SA_threshold, 				
-				double errorRate, 
-				size_t repeatFreq,
-                size_t localSimilarlykmerSize
-                ):
-				m_sourceSeed(sourceSeed), 
-				m_strBetweenSrcTarget(strBetweenSrcTarget),
-				m_targetSeed(targetSeed),				
-				m_disBetweenSrcTarget(disBetweenSrcTarget),
-                m_initkmersize(initkmersize),
-				m_minOverlap(params.minKmerLength),
-                m_maxOverlap(maxOverlap),
-                m_BWTindices(params.indices),
-				m_pBWT(params.indices.pBWT), 
-				m_pRBWT(params.indices.pRBWT),
-                m_PBcoverage(params.PBcoverage),
-				m_min_SA_threshold(min_SA_threshold),
-				m_errorRate(errorRate),
-				m_maxLeaves(params.maxLeaves), 
-				m_seedSize(params.idmerLength), 
-				m_repeatFreq(repeatFreq),
-                m_localSimilarlykmerSize(localSimilarlykmerSize),
-                m_PacBioErrorRate(params.ErrorRate),
-                m_isDebug(params.Debug)
+		const std::string& sourceSeed,
+		const std::string& strBetweenSrcTarget,
+		const std::string& targetSeed,				
+		int disBetweenSrcTarget,
+		size_t initkmersize,
+		size_t maxOverlap,
+		const FMextendParameters params,
+		size_t min_SA_threshold, 				
+		double errorRate, 
+		size_t repeatFreq,
+		size_t localSimilarlykmerSize)
+:	m_sourceSeed(sourceSeed), 
+	m_strBetweenSrcTarget(strBetweenSrcTarget),
+	m_targetSeed(targetSeed),				
+	m_disBetweenSrcTarget(disBetweenSrcTarget),
+	m_initkmersize(initkmersize),
+	m_minOverlap(params.minKmerLength),
+	m_maxOverlap(maxOverlap),
+	//m_BWTindices(params.indices),
+	m_pBWT(params.indices.pBWT), 
+	m_pRBWT(params.indices.pRBWT),
+	m_PBcoverage(params.PBcoverage),
+	m_min_SA_threshold(min_SA_threshold),
+	m_errorRate(errorRate),
+	m_maxLeaves(params.maxLeaves), 
+	m_seedSize(params.idmerLength), 
+	m_repeatFreq(repeatFreq),
+	m_localSimilarlykmerSize(localSimilarlykmerSize),
+	m_PacBioErrorRate(params.ErrorRate),
+	m_isDebug(params.Debug)
 {	
 	std::string beginningkmer = m_sourceSeed.substr(m_sourceSeed.length()-m_initkmersize);
     
@@ -62,8 +61,10 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(
 
     
     //frequencies of correspond k
-    for(double i = m_minOverlap ; i <= 100 ; i++)
-        freqsOfKmerSize.push_back(pow(1-m_PacBioErrorRate,i)*m_PBcoverage);
+	freqsOfKmerSize = new double[100 + 1]{0};
+    for(int i = m_minOverlap ; i <= 100 ; i++)
+        //freqsOfKmerSize.push_back(pow(1-m_PacBioErrorRate,i)*m_PBcoverage);
+        freqsOfKmerSize[i] = pow(1 - m_PacBioErrorRate, i) * m_PBcoverage;
 
     
     
@@ -88,7 +89,15 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(
     buildOverlapbyFMindex(beginningkmer);
 
 }
-
+LongReadSelfCorrectByOverlap::~LongReadSelfCorrectByOverlap()
+{
+	for (std::list<SAIOverlapNode3*>::iterator it = m_RootNodes.begin(); it != m_RootNodes.end(); ++it)
+		delete *it;
+	
+	m_RootNodes.clear();
+    // delete hashIndex;
+	delete[] freqsOfKmerSize;
+}
  void LongReadSelfCorrectByOverlap::initialRootNode(std::string beginningkmer)
 {	
     // create one root node
@@ -155,16 +164,7 @@ void LongReadSelfCorrectByOverlap::buildOverlapbyFMindex(std::string beginningkm
     
 }
 //
-LongReadSelfCorrectByOverlap::~LongReadSelfCorrectByOverlap()
-{
-    
 
-	for (std::list<SAIOverlapNode3*>::iterator it = m_RootNodes.begin(); it != m_RootNodes.end(); ++it)
-		delete *it;
-	
-	m_RootNodes.clear();
-    // delete hashIndex;
-}
 /*
 // comparison, not case sensitive.
 static bool SeedComparator(const SAIOverlapNode3* first, const SAIOverlapNode3* second)
@@ -338,7 +338,8 @@ size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(size_t LowerBound,size_t
     
     
     // std::cout<<   (int)tempmaxfmfreqs - (int)freqsOfKmerSize.at(LowerBound - m_minOverlap)    <<" mm\n";
-    if( (int)tempmaxfmfreqs - (int)freqsOfKmerSize.at(LowerBound - m_minOverlap) < 5 ) return LowerBound;
+    //if( (int)tempmaxfmfreqs - (int)freqsOfKmerSize.at(LowerBound - m_minOverlap) < 5 ) return LowerBound;
+    if( (int)tempmaxfmfreqs - (int)freqsOfKmerSize[LowerBound] < 5 ) return LowerBound;
  
     for(size_t i=1 ; i <= UpperBound - LowerBound; i++ )
     {
@@ -349,14 +350,16 @@ size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(size_t LowerBound,size_t
             BWTInterval Fwdinterval = pkmers.at(j).second.interval[0];
             BWTInterval Rvcinterval = pkmers.at(j).second.interval[1];
             
-            char b = startkmer[0];
-            char rcb;
-            if(b == 'A' ) rcb = 'T' ;
-            else if(b == 'C' ) rcb = 'G' ;
-            else if(b == 'G' ) rcb = 'C' ;
-            else if(b == 'T' ) rcb = 'A' ;
-            BWTAlgorithms::updateInterval(Fwdinterval,b,m_pBWT);
-            BWTAlgorithms::updateInterval(Rvcinterval,rcb,m_pRBWT);
+            char s = startkmer[0];//s:step
+            char rcs = complement(s);
+			/*
+            if(s == 'A' ) rcs = 'T' ;
+            else if(s == 'C' ) rcs = 'G' ;
+            else if(s == 'G' ) rcs = 'C' ;
+            else if(s == 'T' ) rcs = 'A' ;
+			*/
+            BWTAlgorithms::updateInterval(Fwdinterval,s,m_pBWT);
+            BWTAlgorithms::updateInterval(Rvcinterval,rcs,m_pRBWT);
             pkmers.at(j).second.interval[0] = Fwdinterval;
             pkmers.at(j).second.interval[1] = Rvcinterval;
 
@@ -369,7 +372,8 @@ size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(size_t LowerBound,size_t
     
    
    
-        if( (int)tempmaxfmfreqs - (int)freqsOfKmerSize.at(LowerBound - m_minOverlap + i) < 5 ) return LowerBound +i ;
+        //if( (int)tempmaxfmfreqs - (int)freqsOfKmerSize.at(LowerBound - m_minOverlap + i) < 5 ) return LowerBound +i ;
+        if( (int)tempmaxfmfreqs - (int)freqsOfKmerSize[LowerBound + i] < 5 ) return LowerBound + i ;
              
 
     }
@@ -791,11 +795,11 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
         if(fwdProbe.isValid())
             BWTAlgorithms::updateInterval(fwdProbe,b,m_pRBWT);
 
-        //update reverse complement Interval using extension rcb
+        //update reverse complement Interval using extension rcs
         BWTInterval rvcProbe=pNode->rvcInterval;
-		char rcb=BWT_ALPHABET::getChar(5-i);
+		char rcs=BWT_ALPHABET::getChar(5-i);
         if(rvcProbe.isValid())
-            BWTAlgorithms::updateInterval(rvcProbe,rcb,m_pBWT);
+            BWTAlgorithms::updateInterval(rvcProbe,rcs,m_pBWT);
         BWTIntervalPair bip;
         bip.interval[0]=fwdProbe;
         bip.interval[1]=rvcProbe;
