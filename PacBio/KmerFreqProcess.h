@@ -16,11 +16,11 @@ typedef std::map<int,KmerDistribution> kdMap;
 // Parameter object
 struct KmerFreqParameters
 {
-	KmerFreqParameters(std::map<std::string,std::string>& seqMap):refMap(seqMap){};
+	KmerFreqParameters(const std::map<std::string,std::string>& seqMap):refMap(seqMap){};
 	BWTIndexSet indices;
 	std::string directory;
 	std::string align;
-	std::map<std::string,std::string>& refMap;
+	const std::map<std::string,std::string>& refMap;
 	std::pair<int,int> kmerSize;
 };
 
@@ -41,15 +41,16 @@ public:
 	
 private:
 	void scan(int currentKmerSize, const std::string& query, const std::string& target, KmerFreqResult& result);
-	inline size_t validatePos(size_t pos, size_t seqLen)
+	//inline size_t validatePos(size_t pos, size_t seqLen)
+	inline int validatePos(int pos, size_t seqLen)
 	{
 		seqLen--;
 		if(pos < 0) return 0;
-		if(pos>seqLen) return seqLen;
+		if(pos > seqLen - 1) return seqLen - 1;
 		return pos;
 	}
+	
 	KmerFreqParameters m_params;
-
 };
 
 //

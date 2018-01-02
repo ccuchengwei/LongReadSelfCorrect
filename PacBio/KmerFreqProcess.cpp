@@ -9,22 +9,23 @@ KmerFreqResult KmerFreqProcess::process(const SequenceWorkItem& workItem)
 	std::string id = workItem.read.id, query = workItem.read.seq.toString();
 	std::istream* pAlignReader = createReader(m_params.align + id + ".align");
 	
-	if(!is_empty(pAlignReader))
+	if(is_empty(pAlignReader))
 	{
 		delete pAlignReader;
 		return result;
 	}
 	
 	std::string key, garbage;
-	size_t qStart, qEnd, tStart, tEnd;
+	int qStart, qEnd, tStart, tEnd;
 	*pAlignReader
 	>>	garbage	>>	key		>>	garbage
 	>>	garbage	>>	garbage	>>	garbage
 	>>	qStart	>>	qEnd	>>	tStart
 	>>	tEnd	>>	garbage	>>	garbage;
+	delete pAlignReader;
 	std::string target = m_params.refMap[key];
-	size_t	loffset = (size_t)((qStart - 1) * 1.3f + 0.5f) + 10,
-			roffset = (size_t)((query.length() - qEnd) * 1.3f + 0.5f) + 10;
+	int	loffset = (int)((qStart - 1) * 1.3f + 0.5f) + 10,
+		roffset = (int)((query.length() - qEnd) * 1.3f + 0.5f) + 10;
 	bool rvc = tStart > tEnd;
 	if(rvc)
 	{
@@ -35,8 +36,9 @@ KmerFreqResult KmerFreqProcess::process(const SequenceWorkItem& workItem)
 	tEnd += roffset;
 	tStart--;
 	tEnd--;
-	tStart = validatePos(tStart,target.length());
-	tEnd = validatePos(tEnd,target.length());
+	tStart = validatePos(tStart, target.length());
+	tEnd = validatePos(tEnd, target.length());
+	//std::cout << id << "\t" << key << "\t" << qStart << "\t" << qEnd << "\t" << tStart << "\t" << tEnd << "\n";
 	target = target.substr(tStart, tEnd - tStart + 1);
 	if(rvc)
 		target = reverseComplement(target);
@@ -47,21 +49,20 @@ KmerFreqResult KmerFreqProcess::process(const SequenceWorkItem& workItem)
 	//std::cout << id << "\t" << key << "\t" << qStart << "\t" << qEnd << "\t" << tStart << "\t" << tEnd << "\n";
 	for(int i = m_params.kmerSize.first; i <= m_params.kmerSize.second; i++)
 		scan(i, query, target, result);
-	delete pAlignReader;
 	return result;
 }
 void KmerFreqProcess::scan(const int staticKmerSize, const std::string& query, const std::string& target, KmerFreqResult& result)
 {
-	size_t anchor = 0, range = staticKmerSize * 2, section = (int)(staticKmerSize/3.f);
-	for(size_t i = 0; i <= query.length() - staticKmerSize; i++)
+	int anchor = 0, range = staticKmerSize * 2, section = (int)(staticKmerSize/3.f);
+	for(int i = 0; i <= query.length() - staticKmerSize; i++)
 	{
-		std::string kmer = query.substr(i,staticKmerSize), partition;
+		std::string kmer = query.substr(i, staticKmerSize), partition;
 		int kmerFreq = BWTAlgorithms::countSequenceOccurrences(kmer, m_params.indices);
 		//anchor -= 10;
 		anchor -= 5;
 		anchor = validatePos(anchor, target.length());
 		partition = target.substr(anchor, range);
-		size_t fpos = partition.find(kmer);
+		int fpos = partition.find(kmer);
 		if(fpos != std::string::npos)
 		{
 			result.correctKdMap[staticKmerSize].add(kmerFreq);
@@ -98,6 +99,7 @@ KmerFreqPostProcess::~KmerFreqPostProcess()
 		m_correctKdMap[i].write(*(m_pSplitCorrectWriterMap[i]), KmerDistribution::TYPE::SPLIT);
 		m_errorKdMap[i].write(*(m_pSplitErrorWriterMap[i]), KmerDistribution::TYPE::SPLIT);
 	}
+	/*
 	#pragma omp parallel
 	{
 		#pragma omp single nowait
@@ -121,6 +123,15 @@ KmerFreqPostProcess::~KmerFreqPostProcess()
 			delete iter->second;
 		}
 	}
+	*/
+	for(const auto& iter : m_pCorrectWriterMap)
+		delete iter.second;
+	for(const auto& iter : m_pErrorWriterMap)
+		delete iter.second;
+	for(const auto& iter : m_pSplitCorrectWriterMap)
+		delete iter.second;
+	for(const auto& iter : m_pSplitErrorWriterMap)
+		delete iter.second;
 }
 void KmerFreqPostProcess::process(const SequenceWorkItem& workItem, const KmerFreqResult& result)
 {
