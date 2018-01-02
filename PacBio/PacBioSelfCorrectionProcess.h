@@ -75,20 +75,20 @@ struct PacBioSelfCorrectionParameters
 struct PacBioSelfCorrectionResult
 {
 	PacBioSelfCorrectionResult()
-	: merge(false),
-	totalReadsLen(0),
-	correctedLen(0),
-	totalSeedNum(0),
-	totalWalkNum(0),
-	highErrorNum(0),
-	exceedDepthNum(0),
-	exceedLeaveNum(0),
-	FMNum(0),
-    DPNum(0),
-	seedDis(0),
-    Timer_Seed(0),
-    Timer_FM(0),
-    Timer_DP(0) {}
+	:	merge(false),
+		totalReadsLen(0),
+		correctedLen(0),
+		totalSeedNum(0),
+		totalWalkNum(0),
+		highErrorNum(0),
+		exceedDepthNum(0),
+		exceedLeaveNum(0),
+		FMNum(0),
+		DPNum(0),
+		seedDis(0),
+		Timer_Seed(0),
+		Timer_FM(0),
+		Timer_DP(0){ }
 
 	std::string readid;
 	KmerDistribution kd;
@@ -119,8 +119,8 @@ class PacBioSelfCorrectionProcess
 {
 public:
 
-	PacBioSelfCorrectionProcess(const PacBioSelfCorrectionParameters params):m_params(params){};
-	~PacBioSelfCorrectionProcess(){};
+	PacBioSelfCorrectionProcess(const PacBioSelfCorrectionParameters params):m_params(params){ };
+	~PacBioSelfCorrectionProcess(){ };
 	PacBioSelfCorrectionResult process(const SequenceWorkItem& workItem);
 
 private:

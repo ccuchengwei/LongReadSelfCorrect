@@ -12,8 +12,10 @@
 #include <fstream>
 void KmerDistribution::operator+=(const KmerDistribution& temp)
 {
-	for(iteratorKmerFreqsMap iter = temp.m_data.begin(); iter != temp.m_data.end(); iter++)
-		m_data[iter->first] += iter->second;
+	for(const auto& iter : temp.m_data)
+		this->m_data[iter.first] += iter.second;
+	//for(iteratorKmerFreqsMap iter = temp.m_data.begin(); iter != temp.m_data.end(); iter++)
+	//	m_data[iter->first] += iter->second;
 }
 double KmerDistribution::getCumulativeProportionLEQ(int n) const
 {    

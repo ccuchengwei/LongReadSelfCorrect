@@ -57,14 +57,16 @@ void KmerFreqProcess::scan(const int staticKmerSize, const std::string& query, c
 	{
 		std::string kmer = query.substr(i,staticKmerSize), partition;
 		int kmerFreq = BWTAlgorithms::countSequenceOccurrences(kmer, m_params.indices);
-		anchor -= 10;
+		//anchor -= 10;
+		anchor -= 5;
 		anchor = validatePos(anchor, target.length());
 		partition = target.substr(anchor, range);
 		size_t fpos = partition.find(kmer);
 		if(fpos != std::string::npos)
 		{
 			result.correctKdMap[staticKmerSize].add(kmerFreq);
-			anchor += (fpos + staticKmerSize);
+			//anchor += (fpos + staticKmerSize);
+			anchor += (fpos + 1);
 			range = staticKmerSize * 2;
 		}
 		else
