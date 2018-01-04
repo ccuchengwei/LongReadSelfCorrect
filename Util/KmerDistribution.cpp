@@ -100,11 +100,11 @@ void KmerDistribution::write(std::ostream& outfile,TYPE mode) const
 		case ATTRIBUTE:
 			outfile << m_readid << "\t " << m_first_quartile << "\t" << m_median << "\t" << m_third_quartile << "\t" << m_mode << "\t" << m_std <<"\n";
 			break;
-		case SPLIT:
-			for(iteratorKmerFreqsMap iter = m_data.begin(); iter != m_data.end(); iter++)
-				for(size_t i = 1; i <= iter->second; i++)
-					outfile << iter->first << "\n";
-			break;
+	//	case SPLIT:
+	//		for(iteratorKmerFreqsMap iter = m_data.begin(); iter != m_data.end(); iter++)
+	//			for(size_t i = 1; i <= iter->second; i++)
+	//				outfile << iter->first << "\n";
+	//		break;
 		default:
 			std::cout << "KmerDistribution-write-mode : DATA , ATTRIBUTE\n";
 			exit(EXIT_FAILURE);

@@ -42,7 +42,7 @@ public:
 private:
 	void scan(int currentKmerSize, const std::string& query, const std::string& target, KmerFreqResult& result);
 	//inline size_t validatePos(size_t pos, size_t seqLen)
-	inline int validatePos(int pos, size_t seqLen)
+	inline int validatePos(int pos, int seqLen)
 	{
 		seqLen--;
 		if(pos < 0) return 0;
@@ -68,8 +68,8 @@ private:
 	kdMap m_errorKdMap;
 	pOstreamMap m_pCorrectWriterMap;
 	pOstreamMap m_pErrorWriterMap;
-	pOstreamMap m_pSplitCorrectWriterMap;
-	pOstreamMap m_pSplitErrorWriterMap;
+	//pOstreamMap m_pSplitCorrectWriterMap;
+	//pOstreamMap m_pSplitErrorWriterMap;
 
 };
 
