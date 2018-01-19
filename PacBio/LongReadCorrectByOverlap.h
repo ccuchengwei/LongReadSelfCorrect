@@ -129,7 +129,8 @@ private:
 	bool isTerminated(SAIntervalNodeResultVector& results);
 	bool isOverlapAcceptable(SAIOverlapNode3* currNode);
 	bool isSupportedByNewSeed(SAIOverlapNode3* currNode, size_t smallSeedIdx, size_t largeSeedIdx);
-	bool ismatchedbykmer(BWTInterval currFwdInterval,BWTInterval currRvcInterval);
+	//bool ismatchedbykmer(BWTInterval currFwdInterval,BWTInterval currRvcInterval);
+	bool ismatchedbykmer(BWTInterval interval, bool strand);
 	double computeErrorRate(SAIOverlapNode3* currNode);
 	
 	//

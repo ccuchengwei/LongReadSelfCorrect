@@ -29,19 +29,15 @@ struct PacBioSelfCorrectionParameters
 	BWTIndexSet indices;
 	FMextendParameters FM_params;
 
-	int numKmerRounds;
+	//int numKmerRounds;
 	unsigned int kmerLength;
 	unsigned int kmerLengthUpperBound;
-	//unsigned int repaetDistance = 50;//70-->100. Need further check. Noted by KuanWeiLee 20171125
 	unsigned int repaetDistance = 100;
-	//float shhRatio = 0.4f;
 	float shhRatio = 0.6f;
-	float r_shhRatio = 1.f/shhRatio;
-	//float khhRatio = 0.4f;
 	float khhRatio = 0.6f;
-	float r_khhRatio = 1.f/khhRatio;
 	//The hhRatio for seed or kmer hitchhike may be different; 
-	//in repeat mode, one for seed seems lower but the other for kmer still remains unknown.Noted by KuanWeiLee 20171213
+	//in repeat mode, one for seed seems lower than the other for kmer.Noted by KuanWeiLee 20171213
+	int scanningKmerLength = 19;
 	
 	// tree search parameters
 	int maxLeaves;
@@ -119,8 +115,8 @@ class PacBioSelfCorrectionProcess
 {
 public:
 
-	PacBioSelfCorrectionProcess(const PacBioSelfCorrectionParameters params):m_params(params){ };
-	~PacBioSelfCorrectionProcess(){ };
+	PacBioSelfCorrectionProcess(const PacBioSelfCorrectionParameters params):m_params(params){ }
+	~PacBioSelfCorrectionProcess(){ }
 	PacBioSelfCorrectionResult process(const SequenceWorkItem& workItem);
 
 private:
@@ -129,7 +125,8 @@ private:
 	
 	//search seeds
     void searchSeedsWithHybridKmers(const std::string& readSeq, SeedVector& seedVec, PacBioSelfCorrectionResult &result);
-	SeedVector removeHitchhikingSeeds(SeedVector initSeedVec, PacBioSelfCorrectionResult& result);
+	unsigned int determineTableType(const std::string& seq, int* const type, const PacBioSelfCorrectionResult& result);
+	SeedVector removeHitchhikingSeeds(SeedVector initSeedVec, int const *type, PacBioSelfCorrectionResult& result);
 	bool isLowComplexity (const std::string& seq, float & GCratio, float threshold = 0.7f);
 	void write(std::ostream& outfile, const SeedVector& seedVec) const;
 	//correct sequence

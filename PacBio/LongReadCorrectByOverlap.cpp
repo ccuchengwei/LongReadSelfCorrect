@@ -11,7 +11,8 @@
 #include "BWTAlgorithms.h"
 #include "stdaln.h"
 #include "LongReadOverlap.h"
-
+#define MAX(a,b) (a > b ? a : b)
+#define MIN(a,b) (a < b ? a : b)
 //
 // Class: SAIOverlapTree
 LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(
@@ -446,24 +447,23 @@ void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList &newLeaves)
     {
         if(iter->LocalErrorRateRecord.back() < minimumErrorRate)
             minimumErrorRate = iter->LocalErrorRateRecord.back();
-
-        
     }
     
     
    // size_t leavesSize = m_leaves.size();
     // std::cout<<  leavesSize    <<"   123\n";
+	/*
     for(SONode3PtrList::iterator iter = m_leaves.begin(); iter != m_leaves.end(); ++iter)
     {
 
-      /*  if( leavesSize > 10 && (double)(*iter)->LocalErrorRateRecord.back() - (double)minimumErrorRate > 0.04)
+        if( leavesSize > 10 && (double)(*iter)->LocalErrorRateRecord.back() - (double)minimumErrorRate > 0.04)
          {
             
            iter = m_leaves.erase(iter);
             --iter;
            continue;
         } 
-       else */ if((double)(*iter)->LocalErrorRateRecord.back() - (double)minimumErrorRate > 0.05 && m_currentLength > m_localSimilarlykmerSize/2 )
+       else  if((double)(*iter)->LocalErrorRateRecord.back() - (double)minimumErrorRate > 0.05 && m_currentLength > m_localSimilarlykmerSize/2 )
         {
             
            iter = m_leaves.erase(iter);
@@ -481,7 +481,23 @@ void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList &newLeaves)
         
 
     }
-
+	*/
+	SONode3PtrList::iterator leaf = m_leaves.begin();
+	while(leaf != m_leaves.end())
+	{
+		double diff = (*leaf)->LocalErrorRateRecord.back() - minimumErrorRate;
+		if	(
+				(diff > 0.05 && m_currentLength > (m_localSimilarlykmerSize >> 1))
+			||	(diff > 0.10 && m_currentLength > 15)
+		//	||	(diff > 0.04 && leavesSize > 10)
+			)
+		{
+			leaf = m_leaves.erase(leaf);
+			continue;
+		}
+		leaf++;
+	}
+	/*
     for(SONode3PtrList::iterator iter = m_leaves.begin(); iter != m_leaves.end(); ++iter)
     {
         
@@ -511,9 +527,30 @@ void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList &newLeaves)
                 
             }
         }
-       
-
     }
+	*/
+	for(auto& iter : m_leaves)
+	{
+		std::vector<std::pair<std::string, BWTIntervalPair> > extensions;
+		int count = 0;
+		while(count < 2)
+		{
+			if	(
+				count == 1 
+				&& !(iter->LocalErrorRateRecord.back() == minimumErrorRate && m_leaves.size() > 1)
+				)
+				break;
+			extensions = getFMIndexExtensions(iter);
+			if(extensions.size() > 0)
+			{
+				updateLeaves(newLeaves, extensions, iter);
+				break;
+			}
+			m_min_SA_threshold--;
+			count++;
+		}
+		m_min_SA_threshold += count;
+	}
 }
 
 void LongReadSelfCorrectByOverlap::updateLeaves(SONode3PtrList &newLeaves,std::vector< std::pair<std::string, BWTIntervalPair> > &extensions,SAIOverlapNode3* pNode)
@@ -773,7 +810,8 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
     std::vector<std::pair<std::string, BWTIntervalPair> > out;
     size_t IntervalSizeCutoff = m_min_SA_threshold;    //min freq at fwd and rvc bwt, >=3 is equal to >=2 kmer freq
     
-    std::vector<std::pair<size_t,BWTIntervalPair>> bvector;
+    //std::vector<std::pair<size_t,BWTIntervalPair>> bvector;
+	std::pair<size_t, BistrandBWTInterval> bvector[4 + 1];
      
     size_t totalcount = 0;
     size_t maxfreqsofleave = 0;
@@ -800,15 +838,18 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
 		char rcs=BWT_ALPHABET::getChar(5-i);
         if(rvcProbe.isValid())
             BWTAlgorithms::updateInterval(rvcProbe,rcs,m_pBWT);
-        BWTIntervalPair bip;
-        bip.interval[0]=fwdProbe;
-        bip.interval[1]=rvcProbe;
-        size_t bcount = 0;
-        
-        if(fwdProbe.isValid())
-            bcount += fwdProbe.size();
-        if(rvcProbe.isValid())
-            bcount += rvcProbe.size();
+        //BWTIntervalPair bip;
+        //bip.interval[0]=fwdProbe;
+        //bip.interval[1]=rvcProbe;
+        //size_t bcount = 0;
+        BistrandBWTInterval object;
+		object.fwdInterval = fwdProbe;
+		object.rvcInterval = rvcProbe;
+		size_t bcount = object.getFreq();
+        //if(fwdProbe.isValid())
+        //    bcount += fwdProbe.size();
+        //if(rvcProbe.isValid())
+        //    bcount += rvcProbe.size();
         
 
         
@@ -817,7 +858,8 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
         if(m_isDebug)
             std::cout << "bcount:" << bcount << "||" << b << "\n";//testcw
         
-        bvector.push_back(std::make_pair(bcount, bip));
+        //bvector.push_back(std::make_pair(bcount, bip));
+        bvector[i] = std::make_pair(bcount, object);
         if(bcount >  maxfreqsofleave)
             maxfreqsofleave = bcount;
         
@@ -826,8 +868,8 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
       // std::cout << "totalcount: " << totalcount << std::endl;//testcw
      
      
-    if(totalcount > 1024)  // fillter low complex repeat e.g. AAAAAAAAAAAA
-        return out;
+    //if(totalcount > 1024)  // fillter low complex repeat e.g. AAAAAAAAAAAA
+    //    return out;
      
      m_maxfreqs = m_maxfreqs < totalcount ? totalcount :m_maxfreqs;
 
@@ -835,7 +877,8 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
         
        for(int i = 1; i < BWT_ALPHABET::size; ++i)
        {
-           float bratio = (float)bvector.at(i-1).first/(float)maxfreqsofleave;
+           //float bratio = (float)bvector.at(i-1).first/(float)maxfreqsofleave;
+           float bratio = (float)bvector[i].first/(float)maxfreqsofleave;
            //size_t bdiff = std::abs((int)bvector.at(i-1).first-(int)maxfreqsofleave);
           
           char b = BWT_ALPHABET::getChar(i);
@@ -848,26 +891,35 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
            // if ( totalcount > 100 && bratio >= 0.4 && ismatchedbykmer(bvector.at(i-1).second.interval[0],bvector.at(i-1).second.interval[1])) match = true;
          }
        
-        if ((  (maxfreqsofleave > 150 && bratio >= 0.125) || (maxfreqsofleave > 50 && bratio >= 0.2) ) &&ismatchedbykmer(bvector.at(i-1).second.interval[0],bvector.at(i-1).second.interval[1])) match = true;
+        //if ((  (maxfreqsofleave > 150 && bratio >= 0.125) || (maxfreqsofleave > 50 && bratio >= 0.2) ) &&ismatchedbykmer(bvector.at(i-1).second.interval[0],bvector.at(i-1).second.interval[1])) match = true;
+        if	(
+			((maxfreqsofleave > 150 && bratio >= 0.125) || (maxfreqsofleave > 50 && bratio >= 0.2))
+			&& (ismatchedbykmer(bvector[i].second.fwdInterval, true) || ismatchedbykmer(bvector[i].second.rvcInterval, false))
+			)
+			match = true;
 
-        bool isPassedThreshold =  bratio >= 0.25 && (bvector.at(i-1).first >= IntervalSizeCutoff || (bratio >= 0.6 && totalcount >= IntervalSizeCutoff+2 )) ? true: false;
+        //bool isPassedThreshold =  bratio >= 0.25 && (bvector.at(i-1).first >= IntervalSizeCutoff || (bratio >= 0.6 && totalcount >= IntervalSizeCutoff+2 )) ? true: false;
+        bool isPassedThreshold =  bratio >= 0.25 && (bvector[i].first >= IntervalSizeCutoff || (bratio >= 0.6 && totalcount >= IntervalSizeCutoff+2 ));
        if( match || isPassedThreshold  )
        // if(((totalcount <= 100 && bratio >= 0.3) ||  (bratio >= 0.4 &&  totalcount > 100))  &&(bvector.at(i-1).first >= IntervalSizeCutoff || (bratio >= 0.6 && totalcount >= IntervalSizeCutoff+2 )))
         {
 			
             // extend to b
             
-            std::string tmp;
-            tmp.append(1,b);
+            std::string tmp = std::string(1, b);
+            //tmp.append(1,b);
             BWTIntervalPair bip;
-            bip.interval[0] = bvector.at(i-1).second.interval[0];
-            bip.interval[1] = bvector.at(i-1).second.interval[1];
+            //bip.interval[0] = bvector.at(i-1).second.interval[0];
+            bip.interval[0] = bvector[i].second.fwdInterval;
+            //bip.interval[1] = bvector.at(i-1).second.interval[1];
+            bip.interval[1] = bvector[i].second.rvcInterval;
             out.push_back(std::make_pair(tmp, bip));
         }
        }
 
     return out;
 }
+/*
 bool LongReadSelfCorrectByOverlap::ismatchedbykmer(BWTInterval currFwdInterval,BWTInterval currRvcInterval)
 {	
     bool match = false;
@@ -908,8 +960,25 @@ bool LongReadSelfCorrectByOverlap::ismatchedbykmer(BWTInterval currFwdInterval,B
     return match;
     
 }
-
-
+*/
+bool LongReadSelfCorrectByOverlap::ismatchedbykmer(BWTInterval interval, bool strand)
+{
+	if(!interval.isValid()) return false;
+	const IntervalTree<size_t>& tree = strand ? fwdIntervalTree2 : rvcIntervalTree2;
+	typename IntervalTree<size_t>::intervalVector result;
+	tree.findOverlapping(interval.lower, interval.upper, result);
+	size_t startSeedIdx, endSeedIdx;
+	startSeedIdx = m_currentLength - m_maxIndelSize;
+	startSeedIdx = MAX(startSeedIdx, 0);
+	endSeedIdx = m_currentLength + m_maxIndelSize;
+	for(auto& iter : result)
+	{
+		size_t pos = iter.value;
+		if(pos >= startSeedIdx && pos <= endSeedIdx)
+			return true;
+	}
+	return false;
+}
 
 // Check for leaves whose extension has terminated. If the leaf has
 // terminated, the walked string and coverage is pushed to the result vector

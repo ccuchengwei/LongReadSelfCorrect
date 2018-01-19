@@ -24,7 +24,7 @@ struct BWTInterval
 
     inline bool isValid() const { return lower <= upper; }
     inline int64_t size() const { return upper - lower + 1; }
-	inline int64_t getFreqs() const { return (isValid() ? size() : 0); }
+	inline int64_t getFreq() const { return (isValid() ? size() : 0); }
 
     static inline bool compare(const BWTInterval& a, const BWTInterval& b)
     {
@@ -71,7 +71,7 @@ struct BistrandBWTInterval
 {
 	BWTInterval fwdInterval;
 	BWTInterval rvcInterval;
-	inline int64_t getFreqs() const { return fwdInterval.getFreqs() + rvcInterval.getFreqs(); }
+	inline int64_t getFreq() const { return fwdInterval.getFreq() + rvcInterval.getFreq(); }
 };
 // A pair of intervals, used for bidirectional searching a bwt/revbwt in lockstep
 struct BWTIntervalPair

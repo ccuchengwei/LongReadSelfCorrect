@@ -8,7 +8,7 @@ class SeedFeature
 	public:
 		/*************************/
 		//Legacy code
-		SeedFeature(size_t startPos, std::string str, bool repeat, size_t kmerSize, size_t repeatCutoff, size_t maxFixedMerFreqs=0);
+		SeedFeature(size_t startPos, std::string str, bool repeat, size_t kmerSize, size_t repeatCutoff, size_t maxFixedMerFreq=0);
 		/*************************/
 		SeedFeature(
 				std::string str,
@@ -21,7 +21,7 @@ class SeedFeature
 			seedLength(seedStr.length()),
 			seedStartPos(startPos),
 			seedEndPos(startPos + seedLength - 1),
-			maxFixedMerFreqs(frequency),
+			maxFixedMerFreq(frequency),
 			isRepeat(repeat),
 			isHitchhiked(false),
 			startBestKmerSize(kmerSize),
@@ -42,7 +42,7 @@ class SeedFeature
 			startBestKmerSize = target.startBestKmerSize;
 			endBestKmerSize = target.endBestKmerSize;
 			isRepeat = target.isRepeat;
-			maxFixedMerFreqs = target.maxFixedMerFreqs;
+			maxFixedMerFreq = target.maxFixedMerFreq;
 			seedStartPos = target.seedStartPos;
 			seedEndPos = target.seedEndPos;
 		};
@@ -64,7 +64,7 @@ class SeedFeature
 		size_t seedLength;
 		size_t seedStartPos;
 		size_t seedEndPos;
-        size_t maxFixedMerFreqs;
+        size_t maxFixedMerFreq;
 		bool isRepeat;
 		bool isHitchhiked;
 		/*************************/
@@ -74,17 +74,17 @@ class SeedFeature
         bool isLargeVar = false;
 		/*************************/
 		// estimated by calling estimateBestKmerSize
-		size_t startBestKmerSize;
-		size_t endBestKmerSize;
-		size_t startKmerFreq;
-		size_t endKmerFreq;
+		int startBestKmerSize;
+		int endBestKmerSize;
+		int startKmerFreq;
+		int endKmerFreq;
 		
 	private:
 		size_t minKmerSize;
-		size_t sizeUpperBound;
-		size_t sizeLowerBound;
-		size_t freqUpperBound;
-		size_t freqLowerBound;
+		int sizeUpperBound;
+		int sizeLowerBound;
+		int freqUpperBound;
+		int freqLowerBound;
 		//size_t stepSize;
 		void modifyKmerSize(const BWTIndexSet& indices, bool which);
 		/*

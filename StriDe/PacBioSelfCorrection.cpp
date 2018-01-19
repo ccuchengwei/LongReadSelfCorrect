@@ -164,17 +164,15 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	indexSet.pSSA = pSSA;
 	ecParams.indices = indexSet;
 	
+	//Initialize KmerThresholdTable
 	KmerThresholdTable::m_startLen = opt::kmerLength;
 	KmerThresholdTable::m_endLen = opt::kmerLengthUpperBound;
 	KmerThresholdTable::m_coverage = opt::PBcoverage;
-	KmerThresholdTable::m_lowcov = new float[opt::kmerLengthUpperBound + 1]{};
-	KmerThresholdTable::m_unique = new float[opt::kmerLengthUpperBound + 1]{};
-	KmerThresholdTable::m_repeat = new float[opt::kmerLengthUpperBound + 1]{};
+	for(auto& iter : KmerThresholdTable::m_table)
+		iter = new float[opt::kmerLengthUpperBound + 1]{0};
 	KmerThresholdTable::pTableWriter = createWriter(opt::directory + "threshold-table");	
 	KmerThresholdTable::compute();
 	KmerThresholdTable::write();
-	//KmerThresholdTable::release();
-	//exit(EXIT_SUCCESS);
 	
 	
 	// Open outfiles and start a timer

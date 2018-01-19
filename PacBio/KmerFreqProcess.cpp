@@ -48,7 +48,7 @@ KmerFreqResult KmerFreqProcess::process(const SequenceWorkItem& workItem)
 void KmerFreqProcess::scan(const int staticKmerSize, const std::string& query, const std::string& target, KmerFreqResult& result)
 {
 	int anchor = 0, range = (int)(staticKmerSize * 2.5f + 0.5f), section = (int)(staticKmerSize/3.f);
-	for(int i = 0; i <= query.length() - staticKmerSize; i++)
+	for(int i = 0; i <= (query.length() - staticKmerSize); i++)
 	{
 		std::string kmer = query.substr(i, staticKmerSize), partition;
 		int kmerFreq = BWTAlgorithms::countSequenceOccurrences(kmer, m_params.indices);

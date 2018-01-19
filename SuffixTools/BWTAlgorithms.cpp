@@ -131,7 +131,7 @@ size_t BWTAlgorithms::countSequenceOccurrences(const std::string& w, const BWT* 
     BistrandBWTInterval object;
 	object.fwdInterval = findInterval(pBWT, w);
 	object.rvcInterval = findInterval(pBWT, reverseComplement(w));
-	return object.getFreqs();
+	return object.getFreq();
 }
 
 // Count the number of occurrences of string w, including the reverse complement using a BWTInterval cache
@@ -140,7 +140,7 @@ size_t BWTAlgorithms::countSequenceOccurrencesWithCache(const std::string& w, co
 	BistrandBWTInterval object;
 	object.fwdInterval = findIntervalWithCache(pBWT, pIntervalCache, w);
 	object.rvcInterval = findIntervalWithCache(pBWT, pIntervalCache, reverseComplement(w));
-	return object.getFreqs();
+	return object.getFreq();
 }
 
 //
@@ -164,14 +164,14 @@ size_t BWTAlgorithms::countSequenceOccurrencesSingleStrand(const std::string& w,
     else
         interval = findInterval(indices.pBWT, w);
 
-	return interval.getFreqs();
+	return interval.getFreq();
 }
 
 
 size_t BWTAlgorithms::countSequenceOccurrencesSingleStrand(const std::string& w, const BWT* pBWT)
 {
     BWTInterval interval = findInterval(pBWT, w);
-	return interval.getFreqs();
+	return interval.getFreq();
 }
 
 // Return the count of all the possible one base extensions of the string w.
