@@ -63,7 +63,7 @@ void KmerThresholdTable::release()
 //Noted by KuanWeiLee 20180115
 namespace KmerThresholdTable
 {
-	int m_startLen = 0;
+	int m_startLen = 9;
 	int m_endLen = 0;
 	int m_coverage = 0;
 	float* m_table[3] = {nullptr, nullptr, nullptr};
@@ -119,7 +119,6 @@ namespace KmerThresholdTable
 		float const *repeat = m_table[2] + m_startLen;
 		for(int k = m_startLen; k <= m_endLen; k++, lowcov++, unique++, repeat++)
 			*pTableWriter << k << "\t" << *lowcov << "\t" << *unique << "\t" << *repeat << "\n";
-		
 	}
 	void release()
 	{

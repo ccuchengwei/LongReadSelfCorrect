@@ -53,7 +53,7 @@ static const char *CORRECT_USAGE_MESSAGE =
 "      -i, --idmer-length=N             The length of the kmer to identify similar reads.(default: 9)\n"
 "      -d, --num-of-next-target         The number of next FMWalk seed target when previous one failed (default: 1)\n"
 "      -L, --max-leaves=N               Number of maximum leaves in the search tree. (default: 32)\n"
-"      -C, --PBcoverage=N               Coverage of PacBio reads(default: 90)\n"
+"      -c, --PBcoverage=N               Coverage of PacBio reads(default: 90)\n"
 "      --debugseed                      Output seeds file for each reads (default: false)\n"
 "      --debugextend                    Show extension information (default: false)\n"
 "      --onlyseed                       Only search seeds file for each reads (default: false)\n"
@@ -81,7 +81,6 @@ namespace opt
     static double ErrorRate=0.15;	
 	static int minKmerLength = 13;	
 	static int numOfNextTarget = 1;
-	static int collect = 5;
 	static int kmerLengthUpperBound = 50;
 	
 	static bool split = false;
@@ -95,7 +94,7 @@ namespace opt
 	static std::string directory;
 }
 
-static const char* shortopts = "p:t:o:k:x:L:s:d:c:C:e:i:v";
+static const char* shortopts = "p:t:o:k:x:L:s:d:c:e:i:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_DISCARD, OPT_SPLIT, OPT_FIRST,OPT_DEBUGEXTEND,OPT_DEBUGSEED,OPT_ONLYSEED,OPT_NODP };
 
@@ -110,8 +109,7 @@ static const struct option longopts[] = {
     { "error-rate",         required_argument, NULL, 'e' },
     { "idmer-length",       required_argument, NULL, 'i' },
 	{ "num-of-next-target", required_argument, NULL, 'd' },
-	{ "collect",            required_argument, NULL, 'c' },
-    { "PBcoverage",         required_argument, NULL, 'C' },
+    { "PBcoverage",         required_argument, NULL, 'c' },
 	{ "verbose",            no_argument,       NULL, 'v' },
 	{ "split",              no_argument,       NULL, OPT_SPLIT },
 	{ "first",              no_argument,       NULL, OPT_FIRST },
@@ -144,17 +142,17 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	{
 		#pragma omp single nowait
 		{	//Initialization of large BWT takes some time, pass the disk to next job
-			std::cout << "Loading BWT: " << opt::prefix + BWT_EXT << "\n";
+			std::cerr << "Loading BWT: " << opt::prefix + BWT_EXT << "\n";
 			pBWT = new BWT(opt::prefix + BWT_EXT, opt::sampleRate);
 		}
 		#pragma omp single nowait
 		{
-			std::cout << "Loading RBWT: " << opt::prefix + RBWT_EXT << "\n";
+			std::cerr << "Loading RBWT: " << opt::prefix + RBWT_EXT << "\n";
 			pRBWT = new BWT(opt::prefix + RBWT_EXT, opt::sampleRate);
 		}
 		#pragma omp single nowait
 		{
-			std::cout << "Loading Sampled Suffix Array: " << opt::prefix + SAI_EXT << "\n";
+			std::cerr << "Loading Sampled Suffix Array: " << opt::prefix + SAI_EXT << "\n";
 			pSSA = new SampledSuffixArray(opt::prefix + SAI_EXT, SSA_FT_SAI);
 		}
 	}
@@ -165,7 +163,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	ecParams.indices = indexSet;
 	
 	//Initialize KmerThresholdTable
-	KmerThresholdTable::m_startLen = opt::kmerLength;
+	//KmerThresholdTable::m_startLen = opt::kmerLength;
 	KmerThresholdTable::m_endLen = opt::kmerLengthUpperBound;
 	KmerThresholdTable::m_coverage = opt::PBcoverage;
 	for(auto& iter : KmerThresholdTable::m_table)
@@ -173,7 +171,6 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	KmerThresholdTable::pTableWriter = createWriter(opt::directory + "threshold-table");	
 	KmerThresholdTable::compute();
 	KmerThresholdTable::write();
-	
 	
 	// Open outfiles and start a timer
 	Timer* pTimer = new Timer(PROGRAM_IDENT);
@@ -186,7 +183,6 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
     ecParams.ErrorRate = opt::ErrorRate;
 	ecParams.FMWKmerThreshold = opt::kmerThreshold;
 	ecParams.numOfNextTarget = opt::numOfNextTarget;
-	ecParams.collectedSeeds = opt::collect;
     ecParams.PBcoverage = opt::PBcoverage;
 	ecParams.isSplit = opt::split;
 	ecParams.isFirst = opt::isFirst;
@@ -203,7 +199,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	ecParams.FM_params = FM_params;
 	
 
-	std::cout << "\nCorrecting PacBio reads for " << opt::readsFile << " using--\n"
+	std::cerr << "\nCorrecting PacBio reads for " << opt::readsFile << " using--\n"
 	<< "number of threads:\t" << opt::numThreads << "\n"
 	<< "PB reads coverage:\t" << ecParams.PBcoverage << "\n"
 	<< "large kmer size:\t" << ecParams.kmerLength << "\n" 
@@ -287,8 +283,7 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
         case 'e': arg >> opt::ErrorRate; break;
         case 'i': arg >> opt::idmerLength; break;
 		case 'd': arg >> opt::numOfNextTarget; break;
-		case 'c': arg >> opt::collect; break;
-        case 'C': arg >> opt::PBcoverage; break;
+        case 'c': arg >> opt::PBcoverage; break;
 		case 'v': opt::verbose++; break;
 		case '?': die = true; break;
 		case OPT_SPLIT: opt::split = true; break;
@@ -298,10 +293,10 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 		case OPT_ONLYSEED: opt::OnlySeed = true; break;
 		case OPT_NODP: opt::NoDp = true; break;
 		case OPT_HELP:
-			std::cout << CORRECT_USAGE_MESSAGE;
+			std::cerr << CORRECT_USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
 		case OPT_VERSION:
-			std::cout << CORRECT_VERSION_MESSAGE;
+			std::cerr << CORRECT_VERSION_MESSAGE;
 			exit(EXIT_SUCCESS);
 		}
 	}
@@ -357,7 +352,7 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 	else
 	{		
 		opt::directory = opt::directory + "/";
-		std::string workingDir = opt::directory + (opt::DebugSeed ? "seed/shh/" : "");
+		std::string workingDir = opt::directory + (opt::DebugSeed ? "seed/error/" : "");
 		if( system(("mkdir -p " + workingDir).c_str()) != 0)
 		{
 			std::cerr << SUBPROGRAM << ": something wrong in directory: " << opt::directory << "\n";
@@ -372,7 +367,7 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 	}
 	if(die)
 	{
-		std::cout << "\n" << CORRECT_USAGE_MESSAGE;
+		std::cerr << "\n" << CORRECT_USAGE_MESSAGE;
 		exit(EXIT_FAILURE);
 	}
 	

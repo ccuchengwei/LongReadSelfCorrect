@@ -38,6 +38,7 @@ struct PacBioSelfCorrectionParameters
 	//The hhRatio for seed or kmer hitchhike may be different; 
 	//in repeat mode, one for seed seems lower than the other for kmer.Noted by KuanWeiLee 20171213
 	int scanningKmerLength = 19;
+	unsigned int kmerSizeOffset[3] = {0, 0, 4};
 	
 	// tree search parameters
 	int maxLeaves;
@@ -51,7 +52,7 @@ struct PacBioSelfCorrectionParameters
 	int FMWKmerThreshold;
 	int seedKmerThreshold;
 	int numOfNextTarget;
-	int collectedSeeds;
+	//int collectedSeeds;
     double ErrorRate;
 	bool isSplit;
 	bool isFirst;
@@ -125,9 +126,9 @@ private:
 	
 	//search seeds
     void searchSeedsWithHybridKmers(const std::string& readSeq, SeedVector& seedVec, PacBioSelfCorrectionResult &result);
-	unsigned int determineTableType(const std::string& seq, int* const type, const PacBioSelfCorrectionResult& result);
-	SeedVector removeHitchhikingSeeds(SeedVector initSeedVec, int const *type, PacBioSelfCorrectionResult& result);
+	void getSeqAttribute(const std::string& seq, int* const type, const PacBioSelfCorrectionResult& result);
 	bool isLowComplexity (const std::string& seq, float & GCratio, float threshold = 0.7f);
+	SeedVector removeErrorSeeds(SeedVector initSeedVec, int const *type, PacBioSelfCorrectionResult& result);
 	void write(std::ostream& outfile, const SeedVector& seedVec) const;
 	//correct sequence
 	void initCorrect(std::string& readSeq, const SeedVector& seeds, SeedVector& pacbioCorrectedStrs, PacBioSelfCorrectionResult& result);

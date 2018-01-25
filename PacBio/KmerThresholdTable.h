@@ -19,7 +19,6 @@ struct KmerThresholdTable
 
 namespace KmerThresholdTable
 {
-	enum TYPE{ LOWCOV = 0, UNIQUE, REPEAT };
 	extern float* m_table[3];
 	extern float m_formula[3][6];
 	extern std::ostream* pTableWriter;

@@ -14,6 +14,7 @@
 #include "BWTInterval.h"
 #include "GraphCommon.h"
 #include "KmerDistribution.h"
+#include "Util.h"
 
 #include <queue>
 #include <list>
@@ -67,7 +68,11 @@ inline void updateInterval(BWTInterval& interval, char b, const BWT* pBWT)
     interval.lower = pb + pBWT->getOcc(b, interval.lower - 1);
     interval.upper = pb + pBWT->getOcc(b, interval.upper) - 1;
 }
-
+inline void updateBiInterval(BiBWTInterval& object, char b, const BWTIndexSet& indices)
+{
+	updateInterval(object.fwdInterval, b, indices.pRBWT);
+	updateInterval(object.rvcInterval, complement(b), indices.pBWT);
+}
 // Update the interval pair for the right extension to symbol b.
 // In this version the AlphaCounts for the upper and lower intervals
 // have been calculated

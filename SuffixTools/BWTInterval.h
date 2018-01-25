@@ -67,10 +67,11 @@ struct BWTInterval
     int64_t lower;
     int64_t upper;
 };
-struct BistrandBWTInterval
+struct BiBWTInterval
 {
 	BWTInterval fwdInterval;
 	BWTInterval rvcInterval;
+	inline bool isValid() const { return fwdInterval.isValid() && rvcInterval.isValid(); }
 	inline int64_t getFreq() const { return fwdInterval.getFreq() + rvcInterval.getFreq(); }
 };
 // A pair of intervals, used for bidirectional searching a bwt/revbwt in lockstep

@@ -811,7 +811,7 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
     size_t IntervalSizeCutoff = m_min_SA_threshold;    //min freq at fwd and rvc bwt, >=3 is equal to >=2 kmer freq
     
     //std::vector<std::pair<size_t,BWTIntervalPair>> bvector;
-	std::pair<size_t, BistrandBWTInterval> bvector[4 + 1];
+	std::pair<size_t, BiBWTInterval> bvector[4 + 1];
      
     size_t totalcount = 0;
     size_t maxfreqsofleave = 0;
@@ -842,7 +842,7 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
         //bip.interval[0]=fwdProbe;
         //bip.interval[1]=rvcProbe;
         //size_t bcount = 0;
-        BistrandBWTInterval object;
+        BiBWTInterval object;
 		object.fwdInterval = fwdProbe;
 		object.rvcInterval = rvcProbe;
 		size_t bcount = object.getFreq();

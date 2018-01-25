@@ -16,8 +16,8 @@
 #include "LongReadOverlap.h"
 #include "Timer.h"
 #include "KmerThresholdTable.h"
+#include "Util.h"
 
-#define OVERTHRESHOLD( a,b,c,d ) ((a >= b) && (c >= 1) && (d >= 1))
 #define MIN(a,b) (a < b ? a : b)
 #define MAX(a,b) (a > b ? a : b)
 
@@ -28,7 +28,7 @@ PacBioSelfCorrectionResult PacBioSelfCorrectionProcess::process(const SequenceWo
 {	
 	PacBioSelfCorrectionResult result;
     result.readid = workItem.read.id;
-	result.kd.setID(result.readid);
+	//result.kd.setID(result.readid);
 	
 	std::string readSeq = workItem.read.seq.toString();	
 	SeedVector seedVec, pieceVec;
@@ -54,63 +54,65 @@ PacBioSelfCorrectionResult PacBioSelfCorrectionProcess::process(const SequenceWo
 // Search seeds with static and dynamic kmers. Noted by KuanWeiLee 20171027
 void PacBioSelfCorrectionProcess::searchSeedsWithHybridKmers(const std::string& readSeq, SeedVector& seedVec, PacBioSelfCorrectionResult& result)
 {
-    Timer* seedTimer = new Timer("Seed Time",true);
-	int type[readSeq.length()]{0};
-	unsigned int offset = determineTableType(readSeq, type, result);
-    const unsigned int staticKmerSize = m_params.kmerLength - offset;
-	if(readSeq.length() < staticKmerSize) return;
-    
-	//Part 1 : Slide the sequence with a static-kmer. Noted by KuanWeiLee
-	BistrandBWTInterval FixedMerInterval[readSeq.length() - staticKmerSize + 1];
-	//std::ostream* pKfWriter = createWriter(m_params.directory + "seed/." + result.readid + ".kf");
-    for(size_t i = 0 ; i <= (readSeq.length() - staticKmerSize) ; i++)
-	{
-        std::string kmer = readSeq.substr(i, staticKmerSize);
-		BistrandBWTInterval object;
-		object.fwdInterval = BWTAlgorithms::findInterval(m_params.indices.pRBWT, reverse(kmer));
-		object.rvcInterval = BWTAlgorithms::findInterval(m_params.indices.pBWT, reverseComplement(kmer));
-		FixedMerInterval[i] = object;
-		int kmerFreq = object.getFreq();
-		result.kd.add(kmerFreq);
-	//	*pKfWriter << i + 1 << "\t" << kmerFreq << "\n";
-    }
-	result.kd.computeKDAttributes(1);
-	//delete pKfWriter;
+	const size_t readSeqLen = readSeq.length();
+	unsigned int staticKmerSize = m_params.kmerLength;
+	if(readSeqLen < staticKmerSize) return;
 	
-	float** table = KmerThresholdTable::m_table;
+    Timer* seedTimer = new Timer("Seed Time", true);
+	int attribute[readSeqLen];
+	//std::fill_n(attribute, readSeqLen, 1);
+	//std::fill_n(attribute, readSeqLen, 2);
+	getSeqAttribute(readSeq, attribute, result);
+    
+	//Part 1 : Slide the sequence a static-kmer of  3 different type . Noted by KuanWeiLee
+	BiBWTInterval* FixedMerInterval[3];
+	for(int type = 0; type <= 2; type++)
+	{
+		staticKmerSize -= m_params.kmerSizeOffset[type];
+		FixedMerInterval[type] = new BiBWTInterval[readSeqLen - staticKmerSize + 1];
+		for(size_t position = 0; position <= (readSeqLen - staticKmerSize); position++)
+		{
+			std::string kmer = readSeq.substr(position, staticKmerSize);
+			BiBWTInterval object;
+			object.fwdInterval = BWTAlgorithms::findInterval(m_params.indices.pRBWT, reverse(kmer));
+			object.rvcInterval = BWTAlgorithms::findInterval(m_params.indices.pBWT, reverseComplement(kmer));
+			FixedMerInterval[type][position] = object;
+		}
+		staticKmerSize += m_params.kmerSizeOffset[type];
+	}
+	
 	//Part 2 : Search seeds; slide through the read sequence with hybrid-kmers. Noted by KuanWeiLee
 	//kmer[Start/Move]Pos indicate the starting & moving positions of the static-kmer.
-	for(size_t kmerStartPos = 0; kmerStartPos <= (readSeq.length() - staticKmerSize); kmerStartPos++)
+	float** table = KmerThresholdTable::m_table;
+	for(size_t kmerStartPos = 0; kmerStartPos <= (readSeqLen - staticKmerSize); kmerStartPos++)
 	{
+		int kmerStartType = attribute[kmerStartPos], kmerMoveType;
+		staticKmerSize -= m_params.kmerSizeOffset[kmerStartType];
 		bool isSeed = false, isRepeat = false;
-		std::string kmer = readSeq.substr(kmerStartPos,staticKmerSize);
+		std::string kmer = readSeq.substr(kmerStartPos, staticKmerSize);
 		unsigned int dynamicKmerSize = staticKmerSize;
-		BWTInterval fwdInterval = FixedMerInterval[kmerStartPos].fwdInterval;
-		BWTInterval rvcInterval = FixedMerInterval[kmerStartPos].rvcInterval;
-		size_t fwdKmerFreq, rvcKmerFreq, dynamicKmerFreq;
-		size_t staticKmerFreq, maxFixedMerFreq = FixedMerInterval[kmerStartPos].getFreq();
+		BiBWTInterval staticKmerInterval, dynamicKmerInterval = FixedMerInterval[kmerStartType][kmerStartPos];
+		int staticKmerFreq, dynamicKmerFreq;
+		int maxFixedMerFreq = dynamicKmerInterval.getFreq();
 		float staticKmerThresholdValue, dynamicKmerThresholdValue, repeatKmerThresholdValue;
 		size_t seedStartPos = kmerStartPos, seedEndPos;
-		float GCratio, freqsDiff;
-		for(size_t kmerMovePos = kmerStartPos; kmerMovePos <= (readSeq.length() - staticKmerSize); kmerMovePos++)
-		{	
-			
+		float freqsDiff;
+		for(size_t kmerMovePos = kmerStartPos; kmerMovePos <= (readSeqLen - staticKmerSize); kmerMovePos++)
+		{
+			kmerMoveType = attribute[kmerMovePos];
+			staticKmerInterval = FixedMerInterval[kmerStartType][kmerMovePos];
+			staticKmerFreq = staticKmerInterval.getFreq();
 			if(isSeed)
 			{
-				char s = readSeq[kmerMovePos + staticKmerSize - 1];//s:step
-				char rcs = complement(s);
-				kmer += s;
+				char b = readSeq[kmerMovePos + staticKmerSize - 1];
+				kmer += b;
 				dynamicKmerSize++;
-				BWTAlgorithms::updateInterval(fwdInterval, s,m_params.indices.pRBWT);
-				BWTAlgorithms::updateInterval(rvcInterval, rcs,m_params.indices.pBWT);
+				BWTAlgorithms::updateBiInterval(dynamicKmerInterval, b, m_params.indices);
 			}
-			staticKmerThresholdValue = table[type[kmerMovePos]][staticKmerSize];
-			dynamicKmerThresholdValue = table[type[seedStartPos]][dynamicKmerSize];
-			repeatKmerThresholdValue = type[kmerMovePos] == 2 ? staticKmerThresholdValue : staticKmerThresholdValue * 5;
-			fwdKmerFreq = fwdInterval.getFreq();
-			rvcKmerFreq = rvcInterval.getFreq();			
-			dynamicKmerFreq = fwdKmerFreq + rvcKmerFreq;
-			staticKmerFreq = FixedMerInterval[kmerMovePos].getFreq();
+			dynamicKmerFreq = dynamicKmerInterval.getFreq();
+			staticKmerThresholdValue = table[kmerMoveType][staticKmerSize];
+			dynamicKmerThresholdValue = table[kmerStartType][dynamicKmerSize];
+			repeatKmerThresholdValue = staticKmerThresholdValue * (5 - ((kmerMoveType >> 1) << 2));
 			freqsDiff = (float)staticKmerFreq/maxFixedMerFreq;
 			//The order between general seed extentsion and kmer hitchhike strategy may make difference 
 			//,which needs furher observation. Noted by KuanWeiLee 20171027
@@ -118,20 +120,21 @@ void PacBioSelfCorrectionProcess::searchSeedsWithHybridKmers(const std::string& 
 			if  (
 				   dynamicKmerSize > m_params.kmerLengthUpperBound											//1.over length
 				|| staticKmerFreq < staticKmerThresholdValue												//2.fixed kmer frequency
-				|| !OVERTHRESHOLD(dynamicKmerFreq, dynamicKmerThresholdValue, fwdKmerFreq, rvcKmerFreq)		//3.dynamic kmer frequency
+				|| dynamicKmerFreq < dynamicKmerThresholdValue												//3.dynamic kmer frequency(1)
+				|| !dynamicKmerInterval.isValid()															//3.dynamic kmer frequency(2)
 				)
 			{
 				if(isSeed) kmer.erase(--dynamicKmerSize);
 				break;
 			}
 			//Kmer Hitchhike strategy.
-			if(isRepeat && freqsDiff < m_params.khhRatio)													//4.hitchhiking kmer (HIGH-->LOW)
+			if(isRepeat && freqsDiff < m_params.khhRatio)													//4.hitchhiking kmer(1) (HIGH-->LOW)
 			{
 				kmer.erase(--dynamicKmerSize);
 				kmerStartPos++;
 				break;
 			}
-			else if(staticKmerFreq >= repeatKmerThresholdValue && freqsDiff > (1/m_params.khhRatio))		//4.hitchhiking kmer (LOW-->HIGH)
+			else if(staticKmerFreq >= repeatKmerThresholdValue && freqsDiff > (1/m_params.khhRatio))		//4.hitchhiking kmer(2) (LOW-->HIGH)
 			{
 				isSeed = false;
 				kmerStartPos = kmerMovePos - 1;
@@ -145,41 +148,37 @@ void PacBioSelfCorrectionProcess::searchSeedsWithHybridKmers(const std::string& 
 		}
 		if(isSeed)
 		{
-			//Low Complexity strategy.
-			if(isLowComplexity(kmer, GCratio)) continue;
 			SeedFeature newSeed(kmer, seedStartPos, maxFixedMerFreq, isRepeat, staticKmerSize, m_params.PBcoverage);
 			newSeed.estimateBestKmerSize(m_params.indices);
 			seedVec.push_back(newSeed);
 		}
+		staticKmerSize += m_params.kmerSizeOffset[kmerStartType];
 	}
 	//Seed Hitchhike strategy.
-	seedVec = removeHitchhikingSeeds(seedVec, type, result);
+	seedVec = removeErrorSeeds(seedVec, attribute, result);
 	//[Debugseed] Output seeds & kd statistics for each reads.Noted by KuanWeiLee
     if(m_params.DebugSeed)
     {
         std::ostream* pSeedWriter = createWriter(m_params.directory + "seed/" + result.readid + ".seed");
 		write(*pSeedWriter, seedVec);
 		delete pSeedWriter;
-		
-		std::ostream* pKdWriter = createWriter(m_params.directory + "kmer-stat", std::ios_base::app);
-		result.kd.write(*pKdWriter,KmerDistribution::TYPE::ATTRIBUTE);
-		delete pKdWriter;
 	}
-	
+	for (auto& iter : FixedMerInterval)
+		delete[] iter;
 	result.totalSeedNum = seedVec.size();
 	result.Timer_Seed = seedTimer->getElapsedWallTime(); 
     delete seedTimer;
 }
-//KmerThresholdTable type is set dynamically using a sliding fixed-mer on each position of the sequence.
+//Sequence attribute is set dynamically using a sliding fixed-mer on each position of the sequence.
 //Noted by KuanWeiLee 20180118
-unsigned int PacBioSelfCorrectionProcess::determineTableType(const std::string& seq, int* const type, const PacBioSelfCorrectionResult& result)
+void PacBioSelfCorrectionProcess::getSeqAttribute(const std::string& seq, int* const attribute, const PacBioSelfCorrectionResult& result)
 {
-	std::ostream* totalWriter = createWriter(m_params.directory + "total", std::ios_base::app);
+	//std::ostream* totalWriter = createWriter(m_params.directory + "total", std::ios_base::app);
 	//std::ostream* recordWriter = createWriter(m_params.directory + "seed/." + result.readid + ".rec");
 	//std::ostream* ratioWriter = createWriter(m_params.directory + "seed/." + result.readid + ".rr");
-	unsigned int offset = 0;
+	//unsigned int offset = 0;
 	size_t seqlen = seq.length();
-	std::fill_n(type, seqlen, 1);
+	std::fill_n(attribute, seqlen, 1);
 	int record[seqlen] = {0};
 	for(size_t i = 0; i <= (seqlen - m_params.scanningKmerLength); i++)
 	{
@@ -232,75 +231,31 @@ unsigned int PacBioSelfCorrectionProcess::determineTableType(const std::string& 
 		float ratio = (float)set["repeat"]/size + 0.0005;
 		if(ratio >= 0.02)
 		{
-			type[i] = 2;
+			attribute[i] = 2;
 			repeatcount++;
 			leftmost = MIN(leftmost, (int)i);
 			rightmost = MAX(rightmost, (int)i);
 		}
 		//*ratioWriter << i << "\t" << ratio << "\n";
 	}
-	*totalWriter << result.readid << "\t" << (float)leftmost/seqlen << "\t" << (float)(seqlen - rightmost)/seqlen << "\t" << (float)repeatcount/seqlen << "\n";
+	//*totalWriter << result.readid << "\t" << (float)leftmost/seqlen << "\t" << (float)(seqlen - rightmost)/seqlen << "\t" << (float)repeatcount/seqlen << "\n";
 	if	(
 		   (float)repeatcount/seqlen >= 0.5
 		&& (float)(leftmost + (seqlen -rightmost))/seqlen <= 0.1
 		)
 	{
-		std::fill_n(type, seqlen, 2);
-		offset = 4;
+		std::fill_n(attribute, seqlen, 2);
+	//	offset = 4;
 	}
 	//delete totalWriter;
 	//delete recordWriter;
 	//delete ratioWriter;
-	return offset;
-}
-//Kmer & Seed Hitchhike strategy would maitain seed-correctness, 
-//once the sequence is stuck between the ambiguity from uniqu to repeat mode.
-//Noted by KuanWeiLee 20180106
-PacBioSelfCorrectionProcess::SeedVector PacBioSelfCorrectionProcess::removeHitchhikingSeeds(SeedVector initSeedVec, int const *type, PacBioSelfCorrectionResult& result)
-{
-	int x = m_params.PBcoverage;
-	int y = m_params.kmerLength;
-	float overfrequency = KmerThresholdTable::calculate(2, x ,y) * 5;
-	for(SeedVector::iterator iterQuery = initSeedVec.begin(); iterQuery != initSeedVec.end(); iterQuery++)
-	{
-		SeedFeature& query = *iterQuery;
-		SeedVector::iterator iterTarget = iterQuery + 1;
-		if(type[query.seedStartPos] == 2 && query.maxFixedMerFreq >= overfrequency) continue;
-		//if(query.isHitchhiked) continue;
-		while(iterTarget != initSeedVec.end() && ((*iterTarget).seedStartPos - query.seedEndPos) <= m_params.repaetDistance)
-		{
-			SeedFeature& target = *iterTarget;
-			iterTarget++;
-			if(type[target.seedStartPos] == 2 && target.maxFixedMerFreq >= overfrequency) continue;
-			//if(target.isHitchhiked) continue;
-			float freqsDiff = (float)target.maxFixedMerFreq/query.maxFixedMerFreq;
-			int isGiantRepeat = (type[query.seedStartPos] ==2 && type[target.seedStartPos] == 2) ? 2 : 1;
-			target.isHitchhiked = target.isHitchhiked || (query.isRepeat && freqsDiff < (m_params.shhRatio/isGiantRepeat));	//HIGH --> LOW
-			query.isHitchhiked = query.isHitchhiked || (target.isRepeat && freqsDiff > (isGiantRepeat/m_params.shhRatio));	//LOW  --> HIGH
-		}
-	}
-	SeedVector finalSeedVec, outcastSeedVec;
-	finalSeedVec.reserve(initSeedVec.size());
-	outcastSeedVec.reserve(initSeedVec.size() >> 1);
-	for(const auto& iter : initSeedVec)
-	{
-		if(iter.isHitchhiked)
-			outcastSeedVec.push_back(iter);
-		else
-			finalSeedVec.push_back(iter);
-	}
-	if(m_params.DebugSeed)
-	{
-		std::ostream* pOutcastSeedWriter = createWriter(m_params.directory + "seed/shh/" + result.readid + ".seed");
-		write(*pOutcastSeedWriter, outcastSeedVec);
-		delete pOutcastSeedWriter;
-	}
-	return finalSeedVec;
+	//return offset;
 }
 
 bool PacBioSelfCorrectionProcess::isLowComplexity (const std::string& seq, float& GCratio, float threshold)
 {
-	size_t seqlen = seq.length();
+	const size_t seqlen = seq.length();
 	int count[4]{0};
 	for (size_t i = 0; i < seqlen; i++)
 	{
@@ -323,6 +278,52 @@ bool PacBioSelfCorrectionProcess::isLowComplexity (const std::string& seq, float
 	}
 	case2 = (num == 2);
 	return case1 || case2;
+}
+//Kmer & Seed Hitchhike strategy would maitain seed-correctness, 
+//once the sequence is stuck between the ambiguity from uniqu to repeat mode.
+//Noted by KuanWeiLee 20180106
+PacBioSelfCorrectionProcess::SeedVector PacBioSelfCorrectionProcess::removeErrorSeeds(SeedVector initSeedVec, int const *attribute, PacBioSelfCorrectionResult& result)
+{
+	int x = m_params.PBcoverage;
+	int y = m_params.kmerLength;
+	float overfrequency = KmerThresholdTable::calculate(2, x ,y) * 5;
+	for(SeedVector::iterator iterQuery = initSeedVec.begin(); iterQuery != initSeedVec.end(); iterQuery++)
+	{
+		SeedFeature& query = *iterQuery;
+		SeedVector::iterator iterTarget = iterQuery + 1;
+		float GCratio;
+		query.isLowComplexity = isLowComplexity(query.seedStr, GCratio);
+		if(attribute[query.seedStartPos] == 2 && query.maxFixedMerFreq >= overfrequency) continue;
+		//if(query.isHitchhiked) continue;
+		while(iterTarget != initSeedVec.end() && ((*iterTarget).seedStartPos - query.seedEndPos) <= m_params.repaetDistance)
+		{
+			SeedFeature& target = *iterTarget;
+			iterTarget++;
+			if(attribute[target.seedStartPos] == 2 && target.maxFixedMerFreq >= overfrequency) continue;
+			//if(target.isHitchhiked) continue;
+			float freqsDiff = (float)target.maxFixedMerFreq/query.maxFixedMerFreq;
+			int isGiantRepeat = (attribute[query.seedStartPos] ==2 && attribute[target.seedStartPos] == 2) ? 2 : 1;
+			target.isHitchhiked = target.isHitchhiked || (query.isRepeat && freqsDiff < (m_params.shhRatio/isGiantRepeat));	//HIGH --> LOW
+			query.isHitchhiked = query.isHitchhiked || (target.isRepeat && freqsDiff > (isGiantRepeat/m_params.shhRatio));	//LOW  --> HIGH
+		}
+	}
+	SeedVector finalSeedVec, outcastSeedVec;
+	finalSeedVec.reserve(initSeedVec.size());
+	outcastSeedVec.reserve(initSeedVec.size() >> 1);
+	for(const auto& iter : initSeedVec)
+	{
+		if(iter.isHitchhiked || iter.isLowComplexity)
+			outcastSeedVec.push_back(iter);
+		else
+			finalSeedVec.push_back(iter);
+	}
+	if(m_params.DebugSeed)
+	{
+		std::ostream* pOutcastSeedWriter = createWriter(m_params.directory + "seed/error/" + result.readid + ".seed");
+		write(*pOutcastSeedWriter, outcastSeedVec);
+		delete pOutcastSeedWriter;
+	}
+	return finalSeedVec;
 }
 
 void PacBioSelfCorrectionProcess::write(std::ostream& outfile, const SeedVector& seedVec) const
@@ -519,8 +520,8 @@ PacBioSelfCorrectionPostProcess::PacBioSelfCorrectionPostProcess(
 {
 	m_pCorrectWriter = createWriter(correctFile);
 	m_pDiscardWriter = createWriter(discardFile);
-	if(m_params.DebugSeed)
-		m_pKdWriter = createWriter(m_params.directory + "kmer-dist");
+	//if(m_params.DebugSeed)
+	//	m_pKdWriter = createWriter(m_params.directory + "kmer-dist");
 }
 
 //
@@ -545,11 +546,13 @@ PacBioSelfCorrectionPostProcess::~PacBioSelfCorrectionPostProcess()
         << "Time of searching FM: " << m_Timer_FM  << "\n"
         << "Time of searching DP: " << m_Timer_DP  << "\n";
 	}
+	/*
 	if(m_params.DebugSeed)
 	{
 		m_kd.write(*m_pKdWriter);
 		delete m_pKdWriter;
 	}
+	*/
 	delete m_pCorrectWriter;
 	delete m_pDiscardWriter;
 }
@@ -593,5 +596,5 @@ void PacBioSelfCorrectionPostProcess::process(const SequenceWorkItem& item, cons
 		mergeRecord.seq = item.read.seq;
 		mergeRecord.write(*m_pDiscardWriter);
 	}
-	m_kd += result.kd;
+	//m_kd += result.kd;
 }
