@@ -26,6 +26,7 @@
 #include <iostream>
 #include <iterator>
 #include <algorithm>
+#include <map>
 #include "Util.h"
 
 //
@@ -34,7 +35,9 @@
 // TODO: Refactor these into a namespaced alphabet like DNA_ALPHABET below
 const uint8_t ALPHABET_SIZE = 5;
 const char ALPHABET[ALPHABET_SIZE] = {'A', 'C', 'G', 'T', '$'};
+extern std::map<char, int> _ALPHABET;
 const char RANK_ALPHABET[ALPHABET_SIZE] = {'$', 'A', 'C', 'G', 'T'};
+extern std::map<char, int> _RANK_ALPHABET;
 const uint8_t DNA_ALPHABET_SIZE = 4;
 typedef uint64_t BaseCount;
 
@@ -58,7 +61,7 @@ namespace DNA_ALPHABET
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
     };
-
+	
     inline static uint8_t getBaseRank(char b)
     {
         return s_dnaLexoRankLUT[static_cast<uint8_t>(b)];
@@ -69,6 +72,19 @@ namespace DNA_ALPHABET
         assert(idx < DNA_ALPHABET_SIZE);
         return ALPHABET[idx];
     }
+	
+	inline int getIdx(char b)
+	{	
+		if(_ALPHABET.empty())
+		{
+			_ALPHABET['A'] = 0;
+			_ALPHABET['C'] = 1;
+			_ALPHABET['G'] = 2;
+			_ALPHABET['T'] = 3;
+			_ALPHABET['$'] = 4;
+		}
+		return _ALPHABET[b];
+	}
 
     static const uint8_t size = 4;
 };
@@ -105,6 +121,19 @@ namespace BWT_ALPHABET
     {
         return RANK_ALPHABET[idx];
     }
+	
+	inline int getIdx(char b)
+	{	
+		if(_RANK_ALPHABET.empty())
+		{
+			_RANK_ALPHABET['$'] = 0;
+			_RANK_ALPHABET['A'] = 1;
+			_RANK_ALPHABET['C'] = 2;
+			_RANK_ALPHABET['G'] = 3;
+			_RANK_ALPHABET['T'] = 4;
+		}
+		return _RANK_ALPHABET[b];
+	}
 };
 
 // IUPAC ambiguity alphabet

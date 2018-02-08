@@ -21,24 +21,22 @@
 #include "KmerDistribution.h"
 #include "LongReadCorrectByOverlap.h"
 #include "SeedFeature.h"
+#include "Kmer.h"
 
 // Parameter object for the error corrector
 struct PacBioSelfCorrectionParameters
-{
-	//PacBioSelfCorrectionAlgorithm algorithm;
+{	
 	BWTIndexSet indices;
 	FMextendParameters FM_params;
 
-	//int numKmerRounds;
-	unsigned int kmerLength;
+//	size_t readSeqLen;
+	unsigned int startKmerLength;
 	unsigned int kmerLengthUpperBound;
-	unsigned int repaetDistance = 100;
-	float shhRatio = 0.6f;
-	float khhRatio = 0.6f;
-	//The hhRatio for seed or kmer hitchhike may be different; 
-	//in repeat mode, one for seed seems lower than the other for kmer.Noted by KuanWeiLee 20171213
-	int scanningKmerLength = 19;
-	unsigned int kmerSizeOffset[3] = {0, 0, 4};
+	unsigned int scanKmerLength = 19;
+//	unsigned int kmerSizeOffset[3] = {0, 0, 4};
+	unsigned int kmerSizeOffset[3] = {0, 0, 0};
+	unsigned int repeatDistance = 100;
+	float hhRatio = 0.6;
 	
 	// tree search parameters
 	int maxLeaves;
@@ -92,8 +90,6 @@ struct PacBioSelfCorrectionResult
 	
 	bool merge;
 	
-	size_t kmerLength;
-
 	// PacBio reads correction by Ya, v20151001.
 	std::vector<DNAString> correctedStrs;
 	int64_t totalReadsLen;
@@ -122,13 +118,12 @@ public:
 
 private:
 	typedef std::vector<SeedFeature> SeedVector;
-	PacBioSelfCorrectionParameters m_params;
+	const PacBioSelfCorrectionParameters m_params;
 	
 	//search seeds
     void searchSeedsWithHybridKmers(const std::string& readSeq, SeedVector& seedVec, PacBioSelfCorrectionResult &result);
-	void getSeqAttribute(const std::string& seq, int* const type, const PacBioSelfCorrectionResult& result);
-	bool isLowComplexity (const std::string& seq, float & GCratio, float threshold = 0.7f);
-	SeedVector removeErrorSeeds(SeedVector initSeedVec, int const *type, PacBioSelfCorrectionResult& result);
+	void getSeqAttribute(const std::string& seq, int* const type);
+	SeedVector removeHitchhikingSeeds(SeedVector initSeedVec, int const *type, PacBioSelfCorrectionResult& result);
 	void write(std::ostream& outfile, const SeedVector& seedVec) const;
 	//correct sequence
 	void initCorrect(std::string& readSeq, const SeedVector& seeds, SeedVector& pacbioCorrectedStrs, PacBioSelfCorrectionResult& result);

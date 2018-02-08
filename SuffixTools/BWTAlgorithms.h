@@ -15,6 +15,7 @@
 #include "GraphCommon.h"
 #include "KmerDistribution.h"
 #include "Util.h"
+#include "Alphabet.h"
 
 #include <queue>
 #include <list>
@@ -38,7 +39,8 @@ namespace BWTAlgorithms
 {
 
 // get the interval(s) in pBWT/pRevBWT that corresponds to the string w using a backward search algorithm
-BWTInterval findInterval(const BWT* pBWT, const std::string& w);
+BWTInterval findInterval(const BWT* pBWT, const std::string& w, int* count = nullptr);
+BiBWTInterval findBiInterval(const BWTIndexSet& indices, const std::string& w, int* count = nullptr);
 BWTInterval findIntervalWithCache(const BWT* pBWT, const BWTIntervalCache* pIntervalCache, const std::string& w);
 BWTInterval findInterval(const BWTIndexSet& indices, const std::string& w);
 
@@ -61,16 +63,16 @@ size_t countSequenceOccurrencesSingleStrand(const std::string& w, const BWT* pBW
 // Update the given interval using backwards search
 // If the interval corrsponds to string S, it will be updated 
 // for string bS
-inline void updateInterval(BWTInterval& interval, char b, const BWT* pBWT)
+inline void updateInterval(BWTInterval& interval, char b, const BWT* pBWT, int* count = nullptr)
 {
-    
+    if(count != nullptr) count[DNA_ALPHABET::getIdx(b)]++;
     size_t pb = pBWT->getPC(b);
     interval.lower = pb + pBWT->getOcc(b, interval.lower - 1);
     interval.upper = pb + pBWT->getOcc(b, interval.upper) - 1;
 }
-inline void updateBiInterval(BiBWTInterval& object, char b, const BWTIndexSet& indices)
+inline void updateBiInterval(BiBWTInterval& object, char b, const BWTIndexSet& indices, int* count = nullptr)
 {
-	updateInterval(object.fwdInterval, b, indices.pRBWT);
+	updateInterval(object.fwdInterval, b, indices.pRBWT, count);
 	updateInterval(object.rvcInterval, complement(b), indices.pBWT);
 }
 // Update the interval pair for the right extension to symbol b.

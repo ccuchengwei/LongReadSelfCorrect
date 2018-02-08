@@ -11,25 +11,31 @@
 // Find the interval in pBWT corresponding to w
 // If w does not exist in the BWT, the interval
 // coordinates [l, u] will be such that l > u
-BWTInterval BWTAlgorithms::findInterval(const BWT* pBWT, const std::string& w)
+BWTInterval BWTAlgorithms::findInterval(const BWT* pBWT, const std::string& w, int* count)
 {
     int len = w.size();
     int j = len - 1;
     char curr = w[j];
+	if(count != nullptr) count[DNA_ALPHABET::getIdx(curr)]++;
     BWTInterval interval;
     initInterval(interval, curr, pBWT);
     --j;
-
+	
     for(;j >= 0; --j)
     {
         curr = w[j];
-        updateInterval(interval, curr, pBWT);
-        if(!interval.isValid())
-            return interval;
+        updateInterval(interval, curr, pBWT, count);
+        if(!interval.isValid()) break;
     }
     return interval;
 }
-
+BiBWTInterval BWTAlgorithms::findBiInterval(const BWTIndexSet& indices, const std::string& w, int* count)
+{
+	BiBWTInterval object;
+	object.fwdInterval = findInterval(indices.pRBWT, reverse(w), count);
+	object.rvcInterval = findInterval(indices.pBWT, reverseComplement(w));
+	return object;
+}
 // Find the interval in pBWT corresponding to w
 // using a cache of short k-mer intervals to avoid
 // some of the iterations
@@ -46,7 +52,7 @@ BWTInterval BWTAlgorithms::findIntervalWithCache(const BWT* pBWT, const BWTInter
     // Check whether the input string has a '$' in it.
     // We don't cache these strings so if it does
     // we have to do a direct lookup
-    if(index(w.c_str() + j, '$') != NULL)
+    if(index(w.c_str() + j, '$') != nullptr)
         return findInterval(pBWT, w);
 
     BWTInterval interval = pIntervalCache->lookup(w.c_str() + j);
@@ -64,7 +70,7 @@ BWTInterval BWTAlgorithms::findIntervalWithCache(const BWT* pBWT, const BWTInter
 // Delegate the findInterval call based on what indices are loaded
 BWTInterval BWTAlgorithms::findInterval(const BWTIndexSet& indices, const std::string& w)
 {
-    if(indices.pCache != NULL)
+    if(indices.pCache != nullptr)
         return findIntervalWithCache(indices.pBWT, indices.pCache, w);
     else
         return findInterval(indices.pBWT, w);
@@ -146,8 +152,8 @@ size_t BWTAlgorithms::countSequenceOccurrencesWithCache(const std::string& w, co
 //
 size_t BWTAlgorithms::countSequenceOccurrences(const std::string& w, const BWTIndexSet& indices)
 {
-    assert(indices.pBWT != NULL);
-    if(indices.pCache != NULL)
+    assert(indices.pBWT != nullptr);
+    if(indices.pCache != nullptr)
         return countSequenceOccurrencesWithCache(w, indices.pBWT, indices.pCache);
     else
         return countSequenceOccurrences(w, indices.pBWT);
@@ -155,15 +161,16 @@ size_t BWTAlgorithms::countSequenceOccurrences(const std::string& w, const BWTIn
 
 size_t BWTAlgorithms::countSequenceOccurrencesSingleStrand(const std::string& w, const BWTIndexSet& indices)
 {
-    assert(indices.pBWT != NULL);
-    //assert(indices.pCache != NULL);
-
+    assert(indices.pBWT != nullptr);
+    //assert(indices.pCache != nullptr);
+	/*
     BWTInterval interval;
-    if(indices.pCache != NULL)
+    if(indices.pCache != nullptr)
         interval = findIntervalWithCache(indices.pBWT, indices.pCache, w);
     else
         interval = findInterval(indices.pBWT, w);
-
+	*/
+	BWTInterval interval = indices.pCache == nullptr ? findInterval(indices.pBWT, w) : findIntervalWithCache(indices.pBWT, indices.pCache, w);
 	return interval.getFreq();
 }
 
@@ -241,7 +248,7 @@ AlphaCount64 BWTAlgorithms::calculateDeBruijnExtensions(const std::string str,
 
     // If pointers to interval caches are available, use them
     // to speed up the initial calculation
-    if(pFwdCache != NULL && pRevCache != NULL)
+    if(pFwdCache != nullptr && pRevCache != nullptr)
     {
         ip = BWTAlgorithms::findIntervalPairWithCache(pBWT, pRevBWT, pFwdCache, pRevCache, pmer);
         rc_ip = BWTAlgorithms::findIntervalPairWithCache(pBWT, pRevBWT, pFwdCache, pRevCache, rc_pmer);

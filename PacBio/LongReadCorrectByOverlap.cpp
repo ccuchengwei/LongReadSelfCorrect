@@ -351,16 +351,16 @@ size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(size_t LowerBound,size_t
             BWTInterval Fwdinterval = pkmers.at(j).second.interval[0];
             BWTInterval Rvcinterval = pkmers.at(j).second.interval[1];
             
-            char s = startkmer[0];//s:step
-            char rcs = complement(s);
+            char b = startkmer[0];
+            char rcb = complement(b);
 			/*
-            if(s == 'A' ) rcs = 'T' ;
-            else if(s == 'C' ) rcs = 'G' ;
-            else if(s == 'G' ) rcs = 'C' ;
-            else if(s == 'T' ) rcs = 'A' ;
+            if(b == 'A' ) rcb = 'T' ;
+            else if(b == 'C' ) rcb = 'G' ;
+            else if(b == 'G' ) rcb = 'C' ;
+            else if(b == 'T' ) rcb = 'A' ;
 			*/
-            BWTAlgorithms::updateInterval(Fwdinterval,s,m_pBWT);
-            BWTAlgorithms::updateInterval(Rvcinterval,rcs,m_pRBWT);
+            BWTAlgorithms::updateInterval(Fwdinterval,b,m_pBWT);
+            BWTAlgorithms::updateInterval(Rvcinterval,rcb,m_pRBWT);
             pkmers.at(j).second.interval[0] = Fwdinterval;
             pkmers.at(j).second.interval[1] = Rvcinterval;
 
@@ -833,11 +833,11 @@ std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverl
         if(fwdProbe.isValid())
             BWTAlgorithms::updateInterval(fwdProbe,b,m_pRBWT);
 
-        //update reverse complement Interval using extension rcs
+        //update reverse complement Interval using extension rcb
         BWTInterval rvcProbe=pNode->rvcInterval;
-		char rcs=BWT_ALPHABET::getChar(5-i);
+		char rcb=BWT_ALPHABET::getChar(5-i);
         if(rvcProbe.isValid())
-            BWTAlgorithms::updateInterval(rvcProbe,rcs,m_pBWT);
+            BWTAlgorithms::updateInterval(rvcProbe,rcb,m_pBWT);
         //BWTIntervalPair bip;
         //bip.interval[0]=fwdProbe;
         //bip.interval[1]=rvcProbe;

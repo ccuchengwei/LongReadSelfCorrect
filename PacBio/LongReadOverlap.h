@@ -26,21 +26,21 @@ namespace LongReadOverlap
                                          size_t min_overlap,
                                          double min_identity,
                                          size_t coverage,
-                                         BWTIndexSet& indices);
+                                         const BWTIndexSet& indices);
     MultipleAlignment buildMultipleAlignment2(const std::string& query,
                                          size_t srcKmerLength,
 										 size_t tarKmerLength,
                                          size_t min_overlap,
                                          double min_identity,
                                          size_t coverage,
-                                         BWTIndexSet& indices);
+                                         const BWTIndexSet& indices);
 
 	MultipleAlignment endMultipleAlignment(const std::string& query,
 										   size_t srcKmerLength,
 										   size_t min_overlap,
 										   double min_identity,
 										   size_t coverage,
-										   BWTIndexSet& indices);
+										   const BWTIndexSet& indices);
 
 	std::string HeadTailSeedMSA(const std::string& query,
 								   SeedFeature& head,
@@ -48,14 +48,14 @@ namespace LongReadOverlap
 								   size_t min_overlap,
 								   double min_identity,
 								   size_t maxIndelSize,
-								   BWTIndexSet& indices);
+								   const BWTIndexSet& indices);
 
 	std::string AllSeedMSA(const std::string& query,
 									std::vector<SeedFeature> seedVec,
 								   size_t min_overlap,
 								   double min_identity,
 								   size_t maxIndelSize,
-								   BWTIndexSet& indices);
+								   const BWTIndexSet& indices);
 				
 	std::string HybridMSA(const std::string& query,
 							   std::vector<SeedFeature>& seedVec1,
@@ -63,7 +63,7 @@ namespace LongReadOverlap
 							   size_t minOverlap,
 							   double min_identity,
 							   size_t maxIndelSize,
-							   BWTIndexSet& indices);
+							   const BWTIndexSet& indices);
 				
 	void findOverlapInexact(const std::string& query, size_t srcKmerLength, const BWT* pBWT, const BWT* pRevBWT, 
 				size_t minOverlap, double errorRate,  size_t maxIndelSize,
@@ -80,14 +80,14 @@ namespace LongReadOverlap
                                           size_t min_overlap,
                                           double min_identity,
                                           size_t coverage,
-                                          BWTIndexSet& indices,
+                                          const BWTIndexSet& indices,
 										  bool isRC,
 										  SequenceOverlapPairVector& overlap_vector);
 
 	void retrieveStr(const std::string& query, 
 							size_t seedSize,  
 							size_t maxLength, 
-							BWTIndexSet& indices, 
+							const BWTIndexSet& indices, 
 							bool isRC,
 							size_t coverage,
 							std::vector<std::string>& ovlStr);

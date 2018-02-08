@@ -153,7 +153,11 @@ libutil_a-MultiOverlap.o: MultiOverlap.cpp /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/bits/mathinline.h \
  /usr/lib/gcc/x86_64-linux-gnu/6/include/omp.h SeqCoord.h Interval.h \
  QualityVector.h Alphabet.h /usr/include/c++/6/iterator \
- /usr/include/c++/6/bits/stream_iterator.h DNADouble.h Pileup.h
+ /usr/include/c++/6/bits/stream_iterator.h /usr/include/c++/6/map \
+ /usr/include/c++/6/bits/stl_tree.h /usr/include/c++/6/bits/stl_map.h \
+ /usr/include/c++/6/tuple /usr/include/c++/6/array \
+ /usr/include/c++/6/bits/uses_allocator.h \
+ /usr/include/c++/6/bits/stl_multimap.h DNADouble.h Pileup.h
 
 /usr/include/stdc-predef.h:
 
@@ -586,6 +590,20 @@ Alphabet.h:
 /usr/include/c++/6/iterator:
 
 /usr/include/c++/6/bits/stream_iterator.h:
+
+/usr/include/c++/6/map:
+
+/usr/include/c++/6/bits/stl_tree.h:
+
+/usr/include/c++/6/bits/stl_map.h:
+
+/usr/include/c++/6/tuple:
+
+/usr/include/c++/6/array:
+
+/usr/include/c++/6/bits/uses_allocator.h:
+
+/usr/include/c++/6/bits/stl_multimap.h:
 
 DNADouble.h:
 

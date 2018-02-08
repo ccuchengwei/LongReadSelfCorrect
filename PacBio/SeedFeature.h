@@ -24,7 +24,6 @@ class SeedFeature
 			maxFixedMerFreq(frequency),
 			isRepeat(repeat),
 			isHitchhiked(false),
-			isLowComplexity(false),
 			startBestKmerSize(kmerSize),
 			endBestKmerSize(kmerSize),
 			sizeUpperBound(seedLength),
@@ -68,7 +67,6 @@ class SeedFeature
         size_t maxFixedMerFreq;
 		bool isRepeat;
 		bool isHitchhiked;
-		bool isLowComplexity;
 		/*************************/
 		//Unknown usage
 		bool isPBSeed;

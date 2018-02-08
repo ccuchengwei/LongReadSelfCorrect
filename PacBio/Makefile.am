@@ -24,4 +24,5 @@ libpacbio_a_SOURCES = \
 	LongReadCorrectByOverlap.h LongReadCorrectByOverlap.cpp \
 	KmerFreqProcess.h KmerFreqProcess.cpp \
 	IntervalTree.h IntervalTree.cpp IntervalTreeInstantiation.cpp \
-	KmerThresholdTable.h KmerThresholdTable.cpp
+	KmerThresholdTable.h KmerThresholdTable.cpp \
+	Kmer.h Kmer.cpp

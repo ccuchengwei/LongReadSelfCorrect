@@ -20,7 +20,7 @@ MultipleAlignment LongReadOverlap::buildMultipleAlignment(const std::string& que
                                                        size_t min_overlap,
                                                        double min_identity,
                                                        size_t coverage,
-                                                       BWTIndexSet& indices)
+                                                       const BWTIndexSet& indices)
 {
     MultipleAlignment multiple_alignment;
     multiple_alignment.addBaseSequence("query", query, "");
@@ -60,7 +60,7 @@ MultipleAlignment LongReadOverlap::buildMultipleAlignment2(const std::string& qu
                                                        size_t min_overlap,
                                                        double min_identity,
                                                        size_t coverage,
-                                                       BWTIndexSet& indices)
+                                                       const BWTIndexSet& indices)
 {
     MultipleAlignment multiple_alignment;
     multiple_alignment.addBaseSequence("query", query, "");
@@ -118,7 +118,7 @@ MultipleAlignment LongReadOverlap::endMultipleAlignment(const std::string& query
 													   size_t min_overlap,
                                                        double min_identity,
                                                        size_t coverage,
-                                                       BWTIndexSet& indices)
+                                                       const BWTIndexSet& indices)
 {
 	// forward overlap from source seed
     SequenceOverlapPairVector overlap_vector;
@@ -138,7 +138,7 @@ std::string LongReadOverlap::HeadTailSeedMSA(const std::string& query,
                                                        size_t minOverlap,
                                                        double min_identity,
 													   size_t maxIndelSize,
-                                                       BWTIndexSet& indices)
+                                                       const BWTIndexSet& indices)
 {
 	double errorRate = 0.6;
 	SequenceOverlapPairVector overlap_vector;
@@ -205,7 +205,7 @@ std::string LongReadOverlap::HybridMSA(const std::string& query,
 											   size_t minOverlap,
 											   double min_identity,
 											   size_t maxIndelSize,
-											   BWTIndexSet& indices)
+											   const BWTIndexSet& indices)
 {
 	double errorRate = 0.6;
 	SequenceOverlapPairVector overlap_vector;
@@ -397,7 +397,7 @@ std::string LongReadOverlap::AllSeedMSA(const std::string& query,
                                                        size_t minOverlap,
                                                        double min_identity,
 													   size_t /*maxIndelSize*/,
-                                                       BWTIndexSet& indices)
+                                                       const BWTIndexSet& indices)
 {
 	SequenceOverlapPairVector overlap_vector;
 
@@ -595,7 +595,7 @@ void LongReadOverlap::retrieveMatches(const std::string& query,
 									size_t min_overlap,
 									double min_identity,
 									size_t coverage,
-									BWTIndexSet& indices,
+									const BWTIndexSet& indices,
 									bool isRC,
 									SequenceOverlapPairVector& overlap_vector)
 {
@@ -665,7 +665,7 @@ void LongReadOverlap::retrieveMatches(const std::string& query,
 // Contaminated reads often are simple repeats C* or T* with large freq
 // Give up this read if the freq is way too large
 void LongReadOverlap::retrieveStr(const std::string& query, size_t seedSize, size_t maxLength, 
-					BWTIndexSet& indices, bool isRC, size_t coverage, std::vector<std::string>& ovlStr)
+					const BWTIndexSet& indices, bool isRC, size_t coverage, std::vector<std::string>& ovlStr)
 {	
 	std::string initKmer;
 	BWTInterval fwdInterval, rvcInterval;

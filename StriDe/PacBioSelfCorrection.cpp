@@ -74,7 +74,7 @@ namespace opt
 	static std::string correctFile;
 	static std::string discardFile;
 	static int sampleRate = BWT::DEFAULT_SAMPLE_RATE_SMALL;
-	static int kmerLength = 19;
+	static int startKmerLength = 19;
 	static int kmerThreshold = 3;
 	static int maxLeaves=32;
     static int idmerLength = 9;
@@ -85,7 +85,7 @@ namespace opt
 	
 	static bool split = false;
 	static bool isFirst = false;
-	size_t maxSeedInterval = 500;
+	static size_t maxSeedInterval = 500;
     static size_t PBcoverage = 90;// PB seed searh depth
     static bool DebugExtend = false;
     static bool DebugSeed = false;
@@ -129,8 +129,6 @@ static const struct option longopts[] = {
 int PacBioSelfCorrectionMain(int argc, char** argv)
 {
 	parsePacBioSelfCorrectionOptions(argc, argv);
-	if(opt::DebugSeed)
-		assert(system(("cat /dev/null > " + opt::directory + "kmer-stat").c_str()) == 0);
 
 	// Set the error correction parameters
 	PacBioSelfCorrectionParameters ecParams;
@@ -163,19 +161,18 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	ecParams.indices = indexSet;
 	
 	//Initialize KmerThresholdTable
-	//KmerThresholdTable::m_startLen = opt::kmerLength;
-	KmerThresholdTable::m_endLen = opt::kmerLengthUpperBound;
-	KmerThresholdTable::m_coverage = opt::PBcoverage;
-	for(auto& iter : KmerThresholdTable::m_table)
-		iter = new float[opt::kmerLengthUpperBound + 1]{0};
-	KmerThresholdTable::pTableWriter = createWriter(opt::directory + "threshold-table");	
+	KmerThresholdTable::initialize(
+			opt::startKmerLength,
+			opt::kmerLengthUpperBound,
+			opt::PBcoverage,
+			opt::directory);
 	KmerThresholdTable::compute();
 	KmerThresholdTable::write();
 	
 	// Open outfiles and start a timer
 	Timer* pTimer = new Timer(PROGRAM_IDENT);
 
-	ecParams.kmerLength = opt::kmerLength;
+	ecParams.startKmerLength = opt::startKmerLength;
 	ecParams.kmerLengthUpperBound = opt::kmerLengthUpperBound;
 	ecParams.maxLeaves = opt::maxLeaves;
 	ecParams.minKmerLength = opt::minKmerLength;
@@ -202,7 +199,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	std::cerr << "\nCorrecting PacBio reads for " << opt::readsFile << " using--\n"
 	<< "number of threads:\t" << opt::numThreads << "\n"
 	<< "PB reads coverage:\t" << ecParams.PBcoverage << "\n"
-	<< "large kmer size:\t" << ecParams.kmerLength << "\n" 
+	<< "large kmer size:\t" << ecParams.startKmerLength << "\n" 
 	<< "small kmer size:\t" << ecParams.minKmerLength << "\n"
 	<< "small kmer freq(cutoff):\t" << ecParams.FMWKmerThreshold << "\n"
 	<< "max leaves:\t" << ecParams.maxLeaves  << "\n"
@@ -276,7 +273,7 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 		case 'p': arg >> opt::prefix; break;
 		case 'o': arg >> opt::directory; break;
 		case 't': arg >> opt::numThreads; break;
-		case 'k': arg >> opt::kmerLength; break;
+		case 'k': arg >> opt::startKmerLength; break;
 		case 'x': arg >> opt::kmerThreshold; break;
 		case 'L': arg >> opt::maxLeaves; break;
 		case 's': arg >> opt::minKmerLength; break;
@@ -319,9 +316,9 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 	}
 
 
-	if(opt::kmerLength <= 0)
+	if(opt::startKmerLength <= 0)
 	{
-		std::cerr << SUBPROGRAM ": invalid kmer length: " << opt::kmerLength << ", must be greater than zero\n";
+		std::cerr << SUBPROGRAM ": invalid kmer length: " << opt::startKmerLength << ", must be greater than zero\n";
 		die = true;
 	}
 
@@ -358,7 +355,7 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 			std::cerr << SUBPROGRAM << ": something wrong in directory: " << opt::directory << "\n";
 			die = true;
 		}
-		workingDir = opt::directory + (opt::DebugExtend ? "extend/" : "");
+		workingDir = opt::directory + (opt::DebugSeed ? "extend/" : "");
 		if( system(("mkdir -p " + workingDir).c_str()) != 0)
 		{
 			std::cerr << SUBPROGRAM << ": something wrong in directory: " << opt::directory << "\n";

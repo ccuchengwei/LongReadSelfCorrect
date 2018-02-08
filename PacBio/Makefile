@@ -119,7 +119,8 @@ am_libpacbio_a_OBJECTS = libpacbio_a-SAIPBSelfCTree.$(OBJEXT) \
 	libpacbio_a-KmerFreqProcess.$(OBJEXT) \
 	libpacbio_a-IntervalTree.$(OBJEXT) \
 	libpacbio_a-IntervalTreeInstantiation.$(OBJEXT) \
-	libpacbio_a-KmerThresholdTable.$(OBJEXT)
+	libpacbio_a-KmerThresholdTable.$(OBJEXT) \
+	libpacbio_a-Kmer.$(OBJEXT)
 libpacbio_a_OBJECTS = $(am_libpacbio_a_OBJECTS)
 AM_V_P = $(am__v_P_$(V))
 am__v_P_ = $(am__v_P_$(AM_DEFAULT_VERBOSITY))
@@ -313,7 +314,8 @@ libpacbio_a_SOURCES = \
 	LongReadCorrectByOverlap.h LongReadCorrectByOverlap.cpp \
 	KmerFreqProcess.h KmerFreqProcess.cpp \
 	IntervalTree.h IntervalTree.cpp IntervalTreeInstantiation.cpp \
-	KmerThresholdTable.h KmerThresholdTable.cpp
+	KmerThresholdTable.h KmerThresholdTable.cpp \
+	Kmer.h Kmer.cpp
 
 all: all-am
 
@@ -366,6 +368,7 @@ distclean-compile:
 include ./$(DEPDIR)/libpacbio_a-HashtableSearch.Po
 include ./$(DEPDIR)/libpacbio_a-IntervalTree.Po
 include ./$(DEPDIR)/libpacbio_a-IntervalTreeInstantiation.Po
+include ./$(DEPDIR)/libpacbio_a-Kmer.Po
 include ./$(DEPDIR)/libpacbio_a-KmerFreqProcess.Po
 include ./$(DEPDIR)/libpacbio_a-KmerThresholdTable.Po
 include ./$(DEPDIR)/libpacbio_a-LongReadCorrectByOverlap.Po
@@ -587,6 +590,20 @@ libpacbio_a-KmerThresholdTable.obj: KmerThresholdTable.cpp
 #	$(AM_V_CXX)source='KmerThresholdTable.cpp' object='libpacbio_a-KmerThresholdTable.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-KmerThresholdTable.obj `if test -f 'KmerThresholdTable.cpp'; then $(CYGPATH_W) 'KmerThresholdTable.cpp'; else $(CYGPATH_W) '$(srcdir)/KmerThresholdTable.cpp'; fi`
+
+libpacbio_a-Kmer.o: Kmer.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-Kmer.o -MD -MP -MF $(DEPDIR)/libpacbio_a-Kmer.Tpo -c -o libpacbio_a-Kmer.o `test -f 'Kmer.cpp' || echo '$(srcdir)/'`Kmer.cpp
+	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-Kmer.Tpo $(DEPDIR)/libpacbio_a-Kmer.Po
+#	$(AM_V_CXX)source='Kmer.cpp' object='libpacbio_a-Kmer.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-Kmer.o `test -f 'Kmer.cpp' || echo '$(srcdir)/'`Kmer.cpp
+
+libpacbio_a-Kmer.obj: Kmer.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-Kmer.obj -MD -MP -MF $(DEPDIR)/libpacbio_a-Kmer.Tpo -c -o libpacbio_a-Kmer.obj `if test -f 'Kmer.cpp'; then $(CYGPATH_W) 'Kmer.cpp'; else $(CYGPATH_W) '$(srcdir)/Kmer.cpp'; fi`
+	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-Kmer.Tpo $(DEPDIR)/libpacbio_a-Kmer.Po
+#	$(AM_V_CXX)source='Kmer.cpp' object='libpacbio_a-Kmer.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-Kmer.obj `if test -f 'Kmer.cpp'; then $(CYGPATH_W) 'Kmer.cpp'; else $(CYGPATH_W) '$(srcdir)/Kmer.cpp'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique

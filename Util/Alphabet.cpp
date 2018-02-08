@@ -12,7 +12,9 @@
 #include <iostream>
 #include <iterator>
 
-// IUPAC alphabet
+std::map<char, int> _ALPHABET;
+std::map<char, int> _RANK_ALPHABET;
+
 bool IUPAC::isUnambiguous(char c)
 {
     switch(c)

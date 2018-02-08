@@ -1,22 +1,6 @@
 #ifndef KMERTHRESHOLDTABLE_H
 #define KMERTHRESHOLDTABLE_H
 
-/*
-struct KmerThresholdTable
-{
-	enum TYPE{ LOWCOV, UNIQUE, REPEAT };
-	typedef float* FloatPointer;
-	static FloatPointer m_lowcov, m_unique, m_repeat;
-	static std::ostream* pTableWriter;
-	static int m_startLen, m_endLen, m_coverage;
-	
-	static float* get(TYPE mode);
-	static void compute();
-	static void write();
-	static void release();
-};
-*/
-
 namespace KmerThresholdTable
 {
 	extern float* m_table[3];
@@ -24,6 +8,7 @@ namespace KmerThresholdTable
 	extern std::ostream* pTableWriter;
 	extern int m_startLen, m_endLen, m_coverage;
 	
+	void initialize(int start, int end, int cov, std::string dir);
 	float calculate(int type, int x, int y);
 	void compute();
 	void write();

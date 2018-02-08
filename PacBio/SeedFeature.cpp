@@ -6,9 +6,21 @@
 #include "Util.h"
 /*************************/
 //Legacy code
-SeedFeature::SeedFeature(size_t startPos, std::string str, bool repeat, size_t staticKmerSize, size_t repeatCutoff, size_t maxFixedMerFreq)
-	:seedStr(str), seedStartPos(startPos), maxFixedMerFreq(maxFixedMerFreq), isRepeat(repeat), isHitchhiked(false), 
-	minKmerSize(staticKmerSize), freqUpperBound(repeatCutoff),freqLowerBound(repeatCutoff>>1)
+SeedFeature::SeedFeature(
+		size_t startPos,
+		std::string str,
+		bool repeat,
+		size_t staticKmerSize,
+		size_t repeatCutoff,
+		size_t maxFixedMerFreq)
+:	seedStr(str),
+	seedStartPos(startPos),
+	maxFixedMerFreq(maxFixedMerFreq),
+	isRepeat(repeat),
+	isHitchhiked(false),
+	minKmerSize(staticKmerSize),
+	freqUpperBound(repeatCutoff),
+	freqLowerBound(repeatCutoff>>1)
 {
 	seedLength = seedStr.length();
 	seedEndPos = seedStartPos + seedLength -1;

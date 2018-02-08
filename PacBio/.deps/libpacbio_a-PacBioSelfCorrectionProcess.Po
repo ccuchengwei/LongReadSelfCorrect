@@ -217,8 +217,12 @@ libpacbio_a-PacBioSelfCorrectionProcess.o: \
  /usr/include/c++/6/deque /usr/include/c++/6/bits/stl_deque.h \
  /usr/include/c++/6/bits/deque.tcc /usr/include/c++/6/bits/stl_queue.h \
  LongReadCorrectByOverlap.h ../SuffixTools/BWT.h ../FMIndexWalk/SAINode.h \
- IntervalTree.h HashtableSearch.h SeedFeature.h SAIPBSelfCTree.h \
- ../Util/CorrectionThresholds.h /usr/include/c++/6/iomanip \
+ IntervalTree.h HashtableSearch.h SeedFeature.h Kmer.h SAIPBSelfCTree.h \
+ ../Util/CorrectionThresholds.h SAIPBHybridCTree.h ../Thirdparty/stdaln.h \
+ LongReadOverlap.h ../Thirdparty/multiple_alignment.h \
+ ../Thirdparty/overlapper.h ../FMIndexWalk/FMIndexWalkProcess.h \
+ ../Util/BitVector.h ../Util/BitChar.h ../Algorithm/KmerOverlaps.h \
+ KmerThresholdTable.h /usr/include/c++/6/iomanip \
  /usr/include/c++/6/locale /usr/include/c++/6/bits/locale_facets_nonio.h \
  /usr/include/c++/6/ctime \
  /usr/include/x86_64-linux-gnu/c++/6/bits/time_members.h \
@@ -226,11 +230,7 @@ libpacbio_a-PacBioSelfCorrectionProcess.o: \
  /usr/include/libintl.h /usr/include/c++/6/bits/locale_facets_nonio.tcc \
  /usr/include/c++/6/bits/locale_conv.h \
  /usr/include/c++/6/bits/stringfwd.h /usr/include/c++/6/bits/allocator.h \
- /usr/include/c++/6/bits/codecvt.h /usr/include/c++/6/bits/unique_ptr.h \
- SAIPBHybridCTree.h ../Thirdparty/stdaln.h LongReadOverlap.h \
- ../Thirdparty/multiple_alignment.h ../Thirdparty/overlapper.h \
- ../FMIndexWalk/FMIndexWalkProcess.h ../Util/BitVector.h \
- ../Util/BitChar.h ../Algorithm/KmerOverlaps.h KmerThresholdTable.h
+ /usr/include/c++/6/bits/codecvt.h /usr/include/c++/6/bits/unique_ptr.h
 
 /usr/include/stdc-predef.h:
 
@@ -886,9 +886,31 @@ HashtableSearch.h:
 
 SeedFeature.h:
 
+Kmer.h:
+
 SAIPBSelfCTree.h:
 
 ../Util/CorrectionThresholds.h:
+
+SAIPBHybridCTree.h:
+
+../Thirdparty/stdaln.h:
+
+LongReadOverlap.h:
+
+../Thirdparty/multiple_alignment.h:
+
+../Thirdparty/overlapper.h:
+
+../FMIndexWalk/FMIndexWalkProcess.h:
+
+../Util/BitVector.h:
+
+../Util/BitChar.h:
+
+../Algorithm/KmerOverlaps.h:
+
+KmerThresholdTable.h:
 
 /usr/include/c++/6/iomanip:
 
@@ -915,23 +937,3 @@ SAIPBSelfCTree.h:
 /usr/include/c++/6/bits/codecvt.h:
 
 /usr/include/c++/6/bits/unique_ptr.h:
-
-SAIPBHybridCTree.h:
-
-../Thirdparty/stdaln.h:
-
-LongReadOverlap.h:
-
-../Thirdparty/multiple_alignment.h:
-
-../Thirdparty/overlapper.h:
-
-../FMIndexWalk/FMIndexWalkProcess.h:
-
-../Util/BitVector.h:
-
-../Util/BitChar.h:
-
-../Algorithm/KmerOverlaps.h:
-
-KmerThresholdTable.h:

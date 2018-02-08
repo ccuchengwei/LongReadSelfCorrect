@@ -18,12 +18,12 @@
 
 // A collection of indices. For some algorithms
 // all indices are not necessary so some of these
-// can be NULL. The algorithms will check as preconditions
+// can be nullptr. The algorithms will check as preconditions
 // which indices they need.
 struct BWTIndexSet
 {
     // Constructor
-    BWTIndexSet() : pBWT(NULL), pRBWT(NULL), pCache(NULL), pSSA(NULL), pQualityTable(NULL) {}
+    BWTIndexSet() : pBWT(nullptr), pRBWT(nullptr), pCache(nullptr), pSSA(nullptr), pQualityTable(nullptr) {}
 
     // Data
     const BWT* pBWT;
