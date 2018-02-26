@@ -62,7 +62,7 @@ class SeedFeature
 		
 		std::string seedStr;
 		size_t seedLength;
-		size_t seedStartPos;
+		int seedStartPos;
 		size_t seedEndPos;
         size_t maxFixedMerFreq;
 		bool isRepeat;

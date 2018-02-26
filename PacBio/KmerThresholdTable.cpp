@@ -18,7 +18,9 @@ namespace KmerThresholdTable
 	float m_formula[3][6] =
 	{
 		//LOWCOV:0
-		{0,                0,              0,             0.05776992234, -0.4583043394, 10.19159685},//lowcov-old
+//		{0,                0,              0,             0.05776992234, -0.4583043394, 10.19159685},//lowcov-old
+//		{0,                0,              0,             0.06660714286, -0.4419117647, 10.10313375},//lowcov-new-line
+		{0.0004799107143, -0.008037815126, 0.03673552754, 0.1850695903,  -1.572552521,  18.0522088 },//lowcov-new-poly
 		//UNIQUE:1
 //		{0,                0,              0,             0.0710704607,  -0.5445663957, 12.26253388},//unique-old
 //		{0,                0,              0,             0.07928571429, -0.5568627451, 12.730007  },//unique-new-line
@@ -47,8 +49,8 @@ namespace KmerThresholdTable
 	}
 	void compute()
 	{
-		float min_unique, min_repeat;
-		min_unique = min_repeat = std::numeric_limits<float>::max();
+		float min_lowcov, min_unique, min_repeat;
+		min_lowcov = min_unique = min_repeat = std::numeric_limits<float>::max();
 		int x = m_coverage;
 		for(int k = m_startLen; k <= m_endLen; k++)
 		{
@@ -56,13 +58,15 @@ namespace KmerThresholdTable
 			float lowcov = calculate(0, x, y);
 			float unique = calculate(1, x, y);
 			float repeat = calculate(2, x, y);
-			lowcov = MAX(lowcov, 5);
-			//unique = MAX(unique, 5);
+		//	lowcov = MAX(lowcov, 5);
+		//	unique = MAX(unique, 5);
+			lowcov = MIN(lowcov, min_lowcov);
 			unique = MIN(unique, min_unique);
 			repeat = MIN(repeat, min_repeat);
 			m_table[0][k] = lowcov;
 			m_table[1][k] = unique;
 			m_table[2][k] = repeat;
+			min_lowcov =MIN(lowcov, min_lowcov);
 			min_unique = MIN(unique, min_unique);
 			min_repeat = MIN(repeat, min_repeat);
 		}

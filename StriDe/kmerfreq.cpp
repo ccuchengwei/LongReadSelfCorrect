@@ -111,11 +111,12 @@ int kmerfreqMain(int argc, char** argv)
 	kfParams.align = opt::align;
 	kfParams.kmerSize.first = opt::kmerSizeLb;
 	kfParams.kmerSize.second = opt::kmerSizeUb;
-
-	KmerFreqPostProcess* pPostProcessor = new KmerFreqPostProcess(kfParams);
-
 	
+	std::cerr << "Using kmer size : " << kfParams.kmerSize.first << " - " << kfParams.kmerSize.second << "\n";
+
 	Timer* pTimer = new Timer(PROGRAM_IDENT);
+	
+	KmerFreqPostProcess* pPostProcessor = new KmerFreqPostProcess(kfParams);
 	
 	if(opt::numThreads <= 1)
 	{
@@ -136,10 +137,7 @@ int kmerfreqMain(int argc, char** argv)
 		
 		std::vector<KmerFreqProcess*> pProcessorVector;
 		for(int i = 0; i < opt::numThreads; ++i)
-		{
-			KmerFreqProcess* pProcessor = new KmerFreqProcess(kfParams);
-			pProcessorVector.push_back(pProcessor);
-		}
+			pProcessorVector.push_back(new KmerFreqProcess(kfParams));
 
 		SequenceProcessFramework::processSequencesParallel<SequenceWorkItem,
 		KmerFreqResult,

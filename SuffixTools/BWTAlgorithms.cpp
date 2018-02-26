@@ -31,10 +31,10 @@ BWTInterval BWTAlgorithms::findInterval(const BWT* pBWT, const std::string& w, i
 }
 BiBWTInterval BWTAlgorithms::findBiInterval(const BWTIndexSet& indices, const std::string& w, int* count)
 {
-	BiBWTInterval object;
-	object.fwdInterval = findInterval(indices.pRBWT, reverse(w), count);
-	object.rvcInterval = findInterval(indices.pBWT, reverseComplement(w));
-	return object;
+	BiBWTInterval biInterval;
+	biInterval.fwdInterval = findInterval(indices.pRBWT, reverse(w), count);
+	biInterval.rvcInterval = findInterval(indices.pBWT, reverseComplement(w));
+	return biInterval;
 }
 // Find the interval in pBWT corresponding to w
 // using a cache of short k-mer intervals to avoid
@@ -134,19 +134,19 @@ BWTIntervalPair BWTAlgorithms::findIntervalPairWithCache(const BWT* pBWT,
 // Count the number of occurrences of string w, including the reverse complement
 size_t BWTAlgorithms::countSequenceOccurrences(const std::string& w, const BWT* pBWT)
 {
-    BiBWTInterval object;
-	object.fwdInterval = findInterval(pBWT, w);
-	object.rvcInterval = findInterval(pBWT, reverseComplement(w));
-	return object.getFreq();
+    BiBWTInterval biInterval;
+	biInterval.fwdInterval = findInterval(pBWT, w);
+	biInterval.rvcInterval = findInterval(pBWT, reverseComplement(w));
+	return biInterval.getFreq();
 }
 
 // Count the number of occurrences of string w, including the reverse complement using a BWTInterval cache
 size_t BWTAlgorithms::countSequenceOccurrencesWithCache(const std::string& w, const BWT* pBWT, const BWTIntervalCache* pIntervalCache)
 {
-	BiBWTInterval object;
-	object.fwdInterval = findIntervalWithCache(pBWT, pIntervalCache, w);
-	object.rvcInterval = findIntervalWithCache(pBWT, pIntervalCache, reverseComplement(w));
-	return object.getFreq();
+	BiBWTInterval biInterval;
+	biInterval.fwdInterval = findIntervalWithCache(pBWT, pIntervalCache, w);
+	biInterval.rvcInterval = findIntervalWithCache(pBWT, pIntervalCache, reverseComplement(w));
+	return biInterval.getFreq();
 }
 
 //

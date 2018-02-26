@@ -32,47 +32,34 @@ PacBioSelfCorrectionResult PacBioSelfCorrectionProcess::process(const SequenceWo
 {
 	PacBioSelfCorrectionResult result;
     result.readid = workItem.read.id;
-	
 	std::string readSeq = workItem.read.seq.toString();
 	const size_t readSeqLen = readSeq.length();
 	SeedVector seedVec, pieceVec;
-//	Kmer::kmerMap[5] = std::unique_ptr<Kmer[]>(new Kmer[readSeqLen]);
-//	Kmer::kmerMap[9] = std::unique_ptr<Kmer[]>(new Kmer[readSeqLen]);
-	Kmer::kmerMap[15] = std::unique_ptr<Kmer[]>(new Kmer[readSeqLen]);
-	Kmer::kmerMap[19] = std::unique_ptr<Kmer[]>(new Kmer[readSeqLen]);
-	searchSeedsWithHybridKmers(readSeq, seedVec, result);
-	//Push the first seed into pieceVec, which will be popped later as source seed
-
-	//Give up reads with less than 2 seeds
-	if(m_params.OnlySeed || seedVec.size() < 2) return result;
-	result.correctedLen += seedVec[0].seedStr.length();
-	pieceVec.push_back(seedVec[0]);
-    //Reserve sufficient str length for fast append
-	pieceVec.back().seedStr.reserve(readSeq.length());
-    initCorrect(readSeq, seedVec, pieceVec, result);
 	
+	for(auto& iter : m_params.kmerSet)
+		Kmer::kmerMap[iter] = std::unique_ptr<Kmer[]>(new Kmer[readSeqLen]);
+	searchSeedsWithHybridKmers(readSeq, seedVec, result);
+    initCorrect(readSeq, seedVec, pieceVec, result);
 	Kmer::kmerMap.clear();
 	
-	result.merge = true;
+	result.merge = !pieceVec.empty();
 	result.totalReadsLen = readSeq.length();
 	for(const auto& iter : pieceVec)
 		result.correctedStrs.push_back(iter.seedStr);
 	return result;
-    
 }
 
 // Search seeds with static and dynamic kmers. Noted by KuanWeiLee 20171027
 void PacBioSelfCorrectionProcess::searchSeedsWithHybridKmers(const std::string& readSeq, SeedVector& seedVec, PacBioSelfCorrectionResult& result)
 {
 	const size_t readSeqLen = readSeq.length();
-	unsigned int staticKmerSize = m_params.startKmerLength;
-	if(readSeqLen < staticKmerSize) return;
+	int staticKmerSize = m_params.startKmerLength;
+	if((int)readSeqLen < staticKmerSize) return;
 	
     Timer* seedTimer = new Timer("Seed Time", true);
 	int attribute[readSeqLen];
 	getSeqAttribute(readSeq, attribute);
-	//std::fill_n(attribute, readSeqLen, 1);
-	//std::fill_n(attribute, readSeqLen, 2);
+	if(m_params.Manual) std::fill_n(attribute, readSeqLen, m_params.mode);
 	
 	//Search seeds; slide through the read sequence with hybrid-kmers. Noted by KuanWeiLee
 	//kmer[Start/Move]Pos indicate the starting/moving position of the static-kmer.
@@ -81,15 +68,17 @@ void PacBioSelfCorrectionProcess::searchSeedsWithHybridKmers(const std::string& 
 	for(size_t kmerStartPos = 0; kmerStartPos < readSeqLen; kmerStartPos++)
 	{
 		int kmerStartType = attribute[kmerStartPos];
-		staticKmerSize -= m_params.kmerSizeOffset[kmerStartType];
+		staticKmerSize -= m_params.kmerOffset[kmerStartType];
 		bool isSeed = false, isRepeat = false;
-		Kmer dynamicKmer(Kmer::kmerMap[staticKmerSize][kmerStartPos]);
+		Kmer dynamicKmer = Kmer::kmerMap[staticKmerSize][kmerStartPos];
+	//	Kmer dynamicKmer(&m_params.indices, readSeq, kmerStartPos, staticKmerSize);
 		int maxFixedMerFreq = dynamicKmer.getFreq();
 		size_t seedStartPos = kmerStartPos;
 		for(size_t kmerMovePos = kmerStartPos; kmerMovePos < readSeqLen; kmerMovePos++)
 		{
 			int kmerMoveType = attribute[kmerMovePos];
 			const Kmer& staticKmer = Kmer::kmerMap[staticKmerSize][kmerMovePos];
+		//	const Kmer staticKmer(&m_params.indices, readSeq, kmerMovePos, staticKmerSize);
 			if(isSeed)
 			{
 				char b = readSeq[(kmerMovePos + staticKmerSize - 1)];
@@ -137,11 +126,17 @@ void PacBioSelfCorrectionProcess::searchSeedsWithHybridKmers(const std::string& 
 			newSeed.estimateBestKmerSize(m_params.indices);
 			seedVec.push_back(newSeed);
 		}
-		staticKmerSize += m_params.kmerSizeOffset[kmerStartType];
+		staticKmerSize += m_params.kmerOffset[kmerStartType];
 	}
 
 	//Seed Hitchhike strategy.
 	seedVec = removeHitchhikingSeeds(seedVec, attribute, result);
+	if(m_params.DebugSeed)
+	{
+		std::ostream* pSeedWriter = createWriter(m_params.directory + "seed/" + result.readid + ".seed");
+		write(*pSeedWriter, seedVec);
+		delete pSeedWriter;
+	}
 	
 	result.totalSeedNum = seedVec.size();
 	result.Timer_Seed = seedTimer->getElapsedWallTime(); 
@@ -157,7 +152,7 @@ void PacBioSelfCorrectionProcess::getSeqAttribute(const std::string& seq, int* c
 	int range = 300;
 	int x = m_params.PBcoverage;
 	int y = m_params.scanKmerLength;
-//	const unsigned int ksize = m_params.scanKmerLength;
+	const int ksize = m_params.scanKmerLength;
 //	float lowcov = KmerThresholdTable::calculate(0, x, y);
 //	float unique = KmerThresholdTable::calculate(1, x, y);
 	float repeat = KmerThresholdTable::calculate(2, x ,y);
@@ -174,12 +169,13 @@ void PacBioSelfCorrectionProcess::getSeqAttribute(const std::string& seq, int* c
 		while(fear < right)
 		{
 			fear++;
-		//	Kmer::kmerMap[5][fear] = Kmer(&m_params.indices, seq, fear, 5);
-		//	Kmer::kmerMap[9][fear] = Kmer(&m_params.indices, seq, fear, 9, (Kmer::kmerMap[5].get() + fear));
-		//	Kmer::kmerMap[15][fear] = Kmer(&m_params.indices, seq, fear, 15, (Kmer::kmerMap[9].get() + fear));
-			Kmer::kmerMap[15][fear] = Kmer(&m_params.indices, seq, fear, 15);
-			Kmer::kmerMap[19][fear] = Kmer(&m_params.indices, seq, fear, 19, (Kmer::kmerMap[15].get() + fear));
-			const Kmer& inKmer = Kmer::kmerMap[19][fear];
+			Kmer* prev = nullptr;
+			for(auto& iter : m_params.kmerSet)
+			{
+				Kmer::kmerMap[iter][fear] = Kmer(&m_params.indices, seq, fear, iter, prev);
+				prev = Kmer::kmerMap[iter].get() + fear;
+			}
+			const Kmer& inKmer = Kmer::kmerMap[ksize][fear];
 		//	Kmer inKmer(&m_params.indices, seq, ++fear, ksize);
 			int freq = inKmer.isLowComplexity() ? 0 : inKmer.getFreq();
 		//	int freq = inKmer.getFreq();
@@ -191,7 +187,7 @@ void PacBioSelfCorrectionProcess::getSeqAttribute(const std::string& seq, int* c
 		}
 		while(front < left)
 		{
-			const Kmer& outKmer = Kmer::kmerMap[19][front];
+			const Kmer& outKmer = Kmer::kmerMap[ksize][front];
 			front++;
 		//	Kmer outKmer(&m_params.indices, seq, front++, ksize);
 			int freq = outKmer.isLowComplexity() ? 0 : outKmer.getFreq();
@@ -213,8 +209,8 @@ void PacBioSelfCorrectionProcess::getSeqAttribute(const std::string& seq, int* c
 		}
 	}
 	
-//	if((float)repeatcount/seqlen >= 0.5 && (float)(leftmost + (seqlen -rightmost))/seqlen <= 0.1)
-//		std::fill_n(attribute, seqlen, 2);
+	if((float)repeatcount/seqlen >= 0.5 && (float)(leftmost + (seqlen -rightmost))/seqlen <= 0.1)
+		std::fill_n(attribute, seqlen, 2);
 }
 
 //Kmer & Seed Hitchhike strategy would maitain seed-correctness, 
@@ -231,15 +227,16 @@ PacBioSelfCorrectionProcess::SeedVector PacBioSelfCorrectionProcess::removeHitch
 		SeedFeature& query = *iterQuery;
 		SeedVector::iterator iterTarget = iterQuery + 1;
 		//if(query.isHitchhiked) continue;
-		int queryType = attribute[query.seedStartPos], targetType;
+		int queryType = attribute[query.seedStartPos];
 		if(queryType == 2 && query.maxFixedMerFreq >= overfrequency) continue;
 		for(; iterTarget != initSeedVec.end(); iterTarget++)
 		{
 			SeedFeature& target = *iterTarget;
 			//if(target.isHitchhiked) continue;
-			targetType = attribute[target.seedStartPos];
-			int isBoundary = (queryType >> 1) ^ (targetType >> 1);
-			if((target.seedStartPos - query.seedEndPos) > (m_params.repeatDistance >> isBoundary)) break;
+			int	targetType = attribute[target.seedStartPos];
+		//	int isBoundary = (queryType >> 1) ^ (targetType >> 1);
+		//	if((int)(target.seedStartPos - query.seedEndPos) > (m_params.repeatDistance >> isBoundary)) break;
+			if((int)(target.seedStartPos - query.seedEndPos) > m_params.repeatDistance) break;
 			if(targetType == 2 && target.maxFixedMerFreq >= overfrequency) continue;
 			float freqDiff = (float)target.maxFixedMerFreq/query.maxFixedMerFreq;
 			int isGiantRepeat = ((queryType >> 1) & (targetType >> 1)) + 1;
@@ -259,11 +256,8 @@ PacBioSelfCorrectionProcess::SeedVector PacBioSelfCorrectionProcess::removeHitch
 	}
 	if(m_params.DebugSeed)
 	{
-		std::ostream* pFinalSeedWriter = createWriter(m_params.directory + "seed/" + result.readid + ".seed");
 		std::ostream* pOutcastSeedWriter = createWriter(m_params.directory + "seed/error/" + result.readid + ".seed");
-		write(*pFinalSeedWriter, finalSeedVec);
 		write(*pOutcastSeedWriter, outcastSeedVec);
-		delete pFinalSeedWriter;
 		delete pOutcastSeedWriter;
 	}
 	return finalSeedVec;
@@ -281,6 +275,9 @@ void PacBioSelfCorrectionProcess::write(std::ostream& outfile, const SeedVector&
 //Correct sequence by FMWalk & MSAlignment. Noted by KuanWeiLee
 void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedVector& seedVec, SeedVector& pieceVec, PacBioSelfCorrectionResult& result)
 {
+	if(m_params.OnlySeed || seedVec.size() < 2) return;
+	pieceVec.push_back(seedVec[0]);
+	pieceVec.back().seedStr.reserve(readSeq.length());
 	std::ostream* pExtWriter = nullptr;
 	std::ostream* pDpWriter = nullptr;
 	if(m_params.DebugSeed)
@@ -288,6 +285,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedVe
 		pExtWriter = createWriter(m_params.directory + "extend/" + result.readid + ".ext");
 		pDpWriter = createWriter(m_params.directory + "extend/" + result.readid + ".dp");
 	}
+	
 	for(SeedVector::const_iterator iterTarget = seedVec.begin() + 1; iterTarget != seedVec.end(); iterTarget++)
 	{
 		int isFMExtensionSuccess = 0, firstFMExtensionType = 0;
@@ -341,7 +339,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedVe
 			{
 				if(m_params.DebugSeed)
 					*pDpWriter << source.seedStartPos << "\t" << target.seedStartPos << "\n";
-				if(m_params.isSplit)
+				if(m_params.Split)
 					pieceVec.push_back(target);
 				else
 				{
@@ -352,6 +350,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedVe
 			}
 		}
 	}
+	
 	delete pExtWriter;
 	delete pDpWriter;
 }
@@ -360,23 +359,23 @@ int PacBioSelfCorrectionProcess::correctByFMExtension
 (const SeedFeature& source, const SeedFeature& target, const std::string& in, std::string& out, PacBioSelfCorrectionResult& result)
 {
 	int interval = target.seedStartPos - source.seedEndPos - 1;
-	size_t extendKmerSize = MIN(source.endBestKmerSize, target.startBestKmerSize) - 2;
+	int extendKmerSize = MIN(source.endBestKmerSize, target.startBestKmerSize) - 2;
 	if(source.isRepeat || target.isRepeat)
 	{
 		extendKmerSize = MIN(source.seedLength, target.seedLength);
 		extendKmerSize = MIN(extendKmerSize, m_params.startKmerLength + 2);
 	}
+//	if(source.isRepeat && target.isRepeat)
+//		extendKmerSize = MIN(source.seedLength, target.seedLength);
+//	size_t extendKmerSize = m_params.startKmerLength;
+	
 	std::string src, trg, path;
 	src = source.seedStr.substr(source.seedLength - extendKmerSize);
 	trg = target.seedStr;
 	path = in.substr(source.seedEndPos + 1, interval);
 	int min_SA_threshold = 3, isFMExtensionSuccess = 0;
 	min_SA_threshold = m_params.PBcoverage > 60 ? ((m_params.PBcoverage / 60) * 3) : min_SA_threshold;
-	//float freqDiff = (float)target.maxFixedMerFreq/source.maxFixedMerFreq;
-	bool isFromRtoU = false;
-	//isFromRtoU = source.isRepeat && freqDiff < m_params.hhRatio;//HIGH --> LOW
-	//isFromRtoU = source.isRepeat && source.maxFixedMerFreq > target.maxFixedMerFreq;
-	isFromRtoU = source.isRepeat && !target.isRepeat;
+	bool isFromRtoU = source.isRepeat && !target.isRepeat;
 	if(isFromRtoU)
 	{
 		std::swap(src,trg);
@@ -412,7 +411,7 @@ bool PacBioSelfCorrectionProcess::correctByMSAlignment
 {
 	if(m_params.NoDp) return false;
 	int interval = target.seedStartPos - source.seedEndPos - 1;
-	size_t extendKmerSize = MIN(source.endBestKmerSize, target.startBestKmerSize) - 2;
+	int extendKmerSize = MIN(source.endBestKmerSize, target.startBestKmerSize) - 2;
 	if(source.isRepeat || target.isRepeat)
 	{
 		extendKmerSize = MIN(source.seedLength, target.seedLength);
@@ -503,7 +502,7 @@ PacBioSelfCorrectionPostProcess::~PacBioSelfCorrectionPostProcess()
 // Writting results for kmerize and validate
 void PacBioSelfCorrectionPostProcess::process(const SequenceWorkItem& item, const PacBioSelfCorrectionResult& result)
 {	
-	if (result.merge)
+	if(result.merge)
 	{
 		m_totalReadsLen += result.totalReadsLen;
 		m_correctedLen += result.correctedLen;
@@ -538,5 +537,4 @@ void PacBioSelfCorrectionPostProcess::process(const SequenceWorkItem& item, cons
 		mergeRecord.seq = item.read.seq;
 		mergeRecord.write(*m_pDiscardWriter);
 	}
-	//m_kd += result.kd;
 }

@@ -40,20 +40,23 @@ static const char *CORRECT_USAGE_MESSAGE =
 "Usage: " PACKAGE_NAME " " SUBPROGRAM " [OPTION] ... READSFILE\n"
 "Correct PacBio reads via FM-index walk\n"
 "\n"
-"      --help                           Display this help and exit\n"
-"      -v, --verbose                    Display verbose output\n"
+"      -t, --threads=NUM                Use NUM threads for the computation (default: 1)\n"
 "      -p, --prefix=PREFIX              Use PREFIX for the names of the index files\n"
 "      -o, --directory=PATH             Put results in the directory\n"
-"      -t, --threads=NUM                Use NUM threads for the computation (default: 1)\n"
 "\nPacBio correction parameters:\n"
-"      -k, --kmer-size=N                The length of the kmer to use. (default: 19 (PacBioS).)\n"
-"      -s, --min-kmer-size=N            The minimum length of the kmer to use. (default: 13.)\n"
-"      -x, --kmer-threshold=N           Attempt to correct kmers that are seen less than N times. (default: 3)\n"
+"      -c, --PBcoverage=N               Coverage of PacBio reads (default: 90)\n"
 "      -e, --error-rate=N               The error rate of PacBio reads.(default:0.15)\n"
+"      -k, --kmer-size=N                The start kmer length (default: 19 (PacBioS).)\n"
+"      -d, --num-of-next-target         The number of next FMWalk target seed(default: 1)\n"
+"      -l, --max-leaves=N               Number of maximum leaves in the search tree. (default: 32)\n"
 "      -i, --idmer-length=N             The length of the kmer to identify similar reads.(default: 9)\n"
-"      -d, --num-of-next-target         The number of next FMWalk seed target when previous one failed (default: 1)\n"
-"      -L, --max-leaves=N               Number of maximum leaves in the search tree. (default: 32)\n"
-"      -c, --PBcoverage=N               Coverage of PacBio reads(default: 90)\n"
+"      -s, --min-kmer-size=N            The minimum length of the kmer to use. (default: 13.)\n"
+"      -n, --genome=(5/10/100)[m]       Genome size of the species (default: 10m)\n"
+"      -m, --mode=(0/1/2)               Mode in seed-searching (default: 1)\n"
+"      -v, --verbose                    Display verbose output\n"
+"      --help                           Display this help and exit\n"
+"      --version                        Display version and exit\n"
+"      --manual                         Disable auto detection module (default: false)\n"
 "      --debugseed                      Output seeds file for each reads (default: false)\n"
 "      --debugextend                    Show extension information (default: false)\n"
 "      --onlyseed                       Only search seeds file for each reads (default: false)\n"
@@ -67,60 +70,61 @@ PACKAGE_NAME "::" SUBPROGRAM;
 
 namespace opt
 {
-	static unsigned int verbose;
 	static int numThreads = 1;
 	static std::string prefix;
+	static std::string directory;
 	static std::string readsFile;
 	static std::string correctFile;
 	static std::string discardFile;
 	static int sampleRate = BWT::DEFAULT_SAMPLE_RATE_SMALL;
+	
+    static size_t PBcoverage = 90;// PB seed searh depth
+    static double ErrorRate=0.15;
 	static int startKmerLength = 19;
-	static int kmerThreshold = 3;
+	static int numOfNextTarget = 1;
 	static int maxLeaves=32;
     static int idmerLength = 9;
-    static double ErrorRate=0.15;	
-	static int minKmerLength = 13;	
-	static int numOfNextTarget = 1;
-	static int kmerLengthUpperBound = 50;
+	static int minKmerLength = 13;
 	
-	static bool split = false;
-	static bool isFirst = false;
-	static size_t maxSeedInterval = 500;
-    static size_t PBcoverage = 90;// PB seed searh depth
+	static int genome = 10;
+	static int mode = 1;
+	static int verbose = 0;
+	
+	static bool Manual = false;
+	static bool Split = false;
     static bool DebugExtend = false;
     static bool DebugSeed = false;
 	static bool OnlySeed = false;
 	static bool NoDp = false;
-	static std::string directory;
 }
 
-static const char* shortopts = "p:t:o:k:x:L:s:d:c:e:i:v";
+static const char* shortopts = "t:p:o:c:e:k:d:l:i:s:n:m:v";
 
-enum { OPT_HELP = 1, OPT_VERSION, OPT_DISCARD, OPT_SPLIT, OPT_FIRST,OPT_DEBUGEXTEND,OPT_DEBUGSEED,OPT_ONLYSEED,OPT_NODP };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_MANUAL, OPT_SPLIT, OPT_FIRST, OPT_DEBUGEXTEND, OPT_DEBUGSEED, OPT_ONLYSEED, OPT_NODP };
 
 static const struct option longopts[] = {
-	{ "threads",            required_argument, NULL, 't' },
-	{ "directory",          required_argument, NULL, 'o' },
-	{ "prefix",             required_argument, NULL, 'p' },
-	{ "kmer-size",          required_argument, NULL, 'k' },
-	{ "kmer-threshold",     required_argument, NULL, 'x' },
-	{ "max-leaves",         required_argument, NULL, 'L' },
-	{ "min-kmer-size",      required_argument, NULL, 's' },
-    { "error-rate",         required_argument, NULL, 'e' },
-    { "idmer-length",       required_argument, NULL, 'i' },
-	{ "num-of-next-target", required_argument, NULL, 'd' },
-    { "PBcoverage",         required_argument, NULL, 'c' },
-	{ "verbose",            no_argument,       NULL, 'v' },
-	{ "split",              no_argument,       NULL, OPT_SPLIT },
-	{ "first",              no_argument,       NULL, OPT_FIRST },
-    { "debugextend",        no_argument,       NULL, OPT_DEBUGEXTEND },
-    { "debugseed",          no_argument,       NULL, OPT_DEBUGSEED },
-	{ "onlyseed",           no_argument,       NULL, OPT_ONLYSEED },
-	{ "nodp",               no_argument,       NULL, OPT_NODP },
-	{ "discard",            no_argument,       NULL, OPT_DISCARD },
-	{ "help",               no_argument,       NULL, OPT_HELP },
-	{ "version",            no_argument,       NULL, OPT_VERSION },
-	{ NULL, 0, NULL, 0 }
+	{ "threads",            required_argument, nullptr, 't' },
+	{ "prefix",             required_argument, nullptr, 'p' },
+	{ "directory",          required_argument, nullptr, 'o' },
+    { "PBcoverage",         required_argument, nullptr, 'c' },
+    { "error-rate",         required_argument, nullptr, 'e' },
+	{ "kmer-size",          required_argument, nullptr, 'k' },
+	{ "num-of-next-target", required_argument, nullptr, 'd' },
+	{ "max-leaves",         required_argument, nullptr, 'l' },
+    { "idmer-length",       required_argument, nullptr, 'i' },
+	{ "min-kmer-size",      required_argument, nullptr, 's' },
+    { "genome",             required_argument, nullptr, 'n' },
+    { "mode",               required_argument, nullptr, 'm' },
+	{ "verbose",            no_argument,       nullptr, 'v' },
+	{ "help",               no_argument,       nullptr, OPT_HELP },
+	{ "version",            no_argument,       nullptr, OPT_VERSION },
+	{ "manual",             no_argument,       nullptr, OPT_MANUAL },
+	{ "split",              no_argument,       nullptr, OPT_SPLIT },
+    { "debugextend",        no_argument,       nullptr, OPT_DEBUGEXTEND },
+    { "debugseed",          no_argument,       nullptr, OPT_DEBUGSEED },
+	{ "onlyseed",           no_argument,       nullptr, OPT_ONLYSEED },
+	{ "nodp",               no_argument,       nullptr, OPT_NODP },
+	{ nullptr, 0, nullptr, 0 }
 };
 
 //
@@ -134,7 +138,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	PacBioSelfCorrectionParameters ecParams;
 	BWT *pBWT, *pRBWT;
 	SampledSuffixArray* pSSA;
-
+	
 	// Load indices
 	#pragma omp parallel
 	{
@@ -159,53 +163,82 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	indexSet.pRBWT = pRBWT;
 	indexSet.pSSA = pSSA;
 	ecParams.indices = indexSet;
-	
-	//Initialize KmerThresholdTable
-	KmerThresholdTable::initialize(
-			opt::startKmerLength,
-			opt::kmerLengthUpperBound,
-			opt::PBcoverage,
-			opt::directory);
-	KmerThresholdTable::compute();
-	KmerThresholdTable::write();
-	
-	// Open outfiles and start a timer
-	Timer* pTimer = new Timer(PROGRAM_IDENT);
+	ecParams.directory = opt::directory;
 
-	ecParams.startKmerLength = opt::startKmerLength;
-	ecParams.kmerLengthUpperBound = opt::kmerLengthUpperBound;
-	ecParams.maxLeaves = opt::maxLeaves;
-	ecParams.minKmerLength = opt::minKmerLength;
-    ecParams.idmerLength = opt::idmerLength;
-    ecParams.ErrorRate = opt::ErrorRate;
-	ecParams.FMWKmerThreshold = opt::kmerThreshold;
-	ecParams.numOfNextTarget = opt::numOfNextTarget;
     ecParams.PBcoverage = opt::PBcoverage;
-	ecParams.isSplit = opt::split;
-	ecParams.isFirst = opt::isFirst;
+    ecParams.ErrorRate = opt::ErrorRate;
+	ecParams.startKmerLength = opt::startKmerLength;
+	ecParams.numOfNextTarget = opt::numOfNextTarget;
+	ecParams.maxLeaves = opt::maxLeaves;
+    ecParams.idmerLength = opt::idmerLength;
+	ecParams.minKmerLength = opt::minKmerLength;
+	
+	ecParams.Manual = opt::Manual;
+	ecParams.Split = opt::Split;
     ecParams.DebugExtend = opt::DebugExtend;
     ecParams.DebugSeed = opt::DebugSeed;
 	ecParams.OnlySeed = opt::OnlySeed;
 	ecParams.NoDp = opt::NoDp;
-	ecParams.maxSeedInterval = opt::maxSeedInterval;
-	ecParams.directory = opt::directory;
 	
-	FMextendParameters FM_params
-	(indexSet,opt::idmerLength,opt::maxLeaves,opt::minKmerLength,opt::PBcoverage,opt::ErrorRate,false);
-	//(indexSet,opt::idmerLength,opt::maxLeaves,opt::minKmerLength,opt::PBcoverage,opt::ErrorRate,opt::DebugExtend);
+	if(!opt::Manual)
+	{
+		switch(opt::genome)
+		{
+			case 5:
+				ecParams.startKmerLength = 17;
+				ecParams.kmerOffset[2] = 2;
+				break;
+			case 10:
+				ecParams.startKmerLength = 19;
+				ecParams.kmerOffset[2] = 4;
+				break;
+			case 100:
+				ecParams.startKmerLength = 21;
+				ecParams.kmerOffset[2] = 6;
+				break;
+		}
+	}
+	ecParams.mode = opt::mode;
+	
+	ecParams.kmerSet.insert(ecParams.startKmerLength);
+	ecParams.kmerSet.insert(ecParams.scanKmerLength);
+	for(auto& iter : ecParams.kmerOffset)
+		ecParams.kmerSet.insert(ecParams.startKmerLength - iter);
+	for(auto& iter : ecParams.overlapKmerLength)
+		ecParams.kmerSet.insert(iter);
+	
+	FMextendParameters FM_params(
+			indexSet,opt::idmerLength,
+			opt::maxLeaves,
+			opt::minKmerLength,
+			opt::PBcoverage,
+			opt::ErrorRate,
+			false);
+		//	opt::DebugExtend);
 	ecParams.FM_params = FM_params;
 	
-
+	//Initialize KmerThresholdTable
+	KmerThresholdTable::initialize(
+			ecParams.startKmerLength,
+			ecParams.kmerLengthUpperBound,
+			ecParams.PBcoverage,
+			ecParams.directory);
+	KmerThresholdTable::compute();
+	KmerThresholdTable::write();
+	
+	
 	std::cerr << "\nCorrecting PacBio reads for " << opt::readsFile << " using--\n"
 	<< "number of threads:\t" << opt::numThreads << "\n"
 	<< "PB reads coverage:\t" << ecParams.PBcoverage << "\n"
+	<< "num of next Targets:\t" << ecParams.numOfNextTarget << "\n"
 	<< "large kmer size:\t" << ecParams.startKmerLength << "\n" 
 	<< "small kmer size:\t" << ecParams.minKmerLength << "\n"
-	<< "small kmer freq(cutoff):\t" << ecParams.FMWKmerThreshold << "\n"
 	<< "max leaves:\t" << ecParams.maxLeaves  << "\n"
-	<< "max depth:\t1.2~0.8* (length between two seeds +- 20)" << "\n"
-	<< "num of next Targets:\t" << ecParams.numOfNextTarget << "\n";
+	<< "max depth:\t1.2~0.8* (length between two seeds +- 20)" << "\n";
 
+	
+	// Start a timer
+	Timer* pTimer = new Timer(PROGRAM_IDENT);
 	
 	// Setup post-processor
 	PacBioSelfCorrectionPostProcess* pPostProcessor = new PacBioSelfCorrectionPostProcess(opt::correctFile, opt::discardFile, ecParams);
@@ -226,10 +259,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 		// Parallel mode
 		std::vector<PacBioSelfCorrectionProcess*> pProcessorVector;
 		for(int i = 0; i < opt::numThreads; ++i)
-		{
-			PacBioSelfCorrectionProcess* pProcessor = new PacBioSelfCorrectionProcess(ecParams);
-			pProcessorVector.push_back(pProcessor);
-		}
+			pProcessorVector.push_back(new PacBioSelfCorrectionProcess(ecParams));
 
 		SequenceProcessFramework::processSequencesParallel<SequenceWorkItem,
 		PacBioSelfCorrectionResult,
@@ -247,13 +277,13 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 			pProcessorVector.pop_back();
 		}
 	}
-	delete pTimer;
 	delete pPostProcessor;
 	delete pBWT;
 	delete pRBWT;
 	delete pSSA;
 	
 	KmerThresholdTable::release();
+	delete pTimer;
 	return 0;
 }
 
@@ -265,36 +295,36 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 {
 	optind = 1;	//reset getopt
 	bool die = false;
-	for (char c; (c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1;)
+	for (char c; (c = getopt_long(argc, argv, shortopts, longopts, nullptr)) != -1;)
 	{
-		std::istringstream arg(optarg != NULL ? optarg : "");
+		std::istringstream arg(optarg != nullptr ? optarg : "");
 		switch (c)
 		{
-		case 'p': arg >> opt::prefix; break;
-		case 'o': arg >> opt::directory; break;
-		case 't': arg >> opt::numThreads; break;
-		case 'k': arg >> opt::startKmerLength; break;
-		case 'x': arg >> opt::kmerThreshold; break;
-		case 'L': arg >> opt::maxLeaves; break;
-		case 's': arg >> opt::minKmerLength; break;
-        case 'e': arg >> opt::ErrorRate; break;
-        case 'i': arg >> opt::idmerLength; break;
-		case 'd': arg >> opt::numOfNextTarget; break;
-        case 'c': arg >> opt::PBcoverage; break;
-		case 'v': opt::verbose++; break;
-		case '?': die = true; break;
-		case OPT_SPLIT: opt::split = true; break;
-		case OPT_FIRST: opt::isFirst = true; break;
-        case OPT_DEBUGEXTEND: opt::DebugExtend = true; break;
-        case OPT_DEBUGSEED: opt::DebugSeed = true; break;
-		case OPT_ONLYSEED: opt::OnlySeed = true; break;
-		case OPT_NODP: opt::NoDp = true; break;
-		case OPT_HELP:
-			std::cerr << CORRECT_USAGE_MESSAGE;
-			exit(EXIT_SUCCESS);
-		case OPT_VERSION:
-			std::cerr << CORRECT_VERSION_MESSAGE;
-			exit(EXIT_SUCCESS);
+			case 't': arg >> opt::numThreads; break;
+			case 'p': arg >> opt::prefix; break;
+			case 'o': arg >> opt::directory; break;
+			case 'c': arg >> opt::PBcoverage; break;
+			case 'e': arg >> opt::ErrorRate; break;
+			case 'k': arg >> opt::startKmerLength; break;
+			case 'd': arg >> opt::numOfNextTarget; break;
+			case 'l': arg >> opt::maxLeaves; break;
+			case 'i': arg >> opt::idmerLength; break;
+			case 's': arg >> opt::minKmerLength; break;
+			case 'n': arg >> opt::genome; break;
+			case 'm': arg >> opt::mode; break;
+			case 'v': opt::verbose++; break;
+			case OPT_HELP:
+				std::cerr << CORRECT_USAGE_MESSAGE;
+				exit(EXIT_SUCCESS);
+			case OPT_VERSION:
+				std::cerr << CORRECT_VERSION_MESSAGE;
+				exit(EXIT_SUCCESS);
+			case OPT_MANUAL: opt::Manual = true; break;
+			case OPT_SPLIT: opt::Split = true; break;
+			case OPT_DEBUGEXTEND: opt::DebugExtend = true; break;
+			case OPT_DEBUGSEED: opt::DebugSeed = true; break;
+			case OPT_ONLYSEED: opt::OnlySeed = true; break;
+			case OPT_NODP: opt::NoDp = true; break;
 		}
 	}
 
@@ -315,29 +345,9 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 		die = true;
 	}
 
-
-	if(opt::startKmerLength <= 0)
-	{
-		std::cerr << SUBPROGRAM ": invalid kmer length: " << opt::startKmerLength << ", must be greater than zero\n";
-		die = true;
-	}
-
-	if(opt::kmerThreshold <= 0)
-	{
-		std::cerr << SUBPROGRAM ": invalid kmer threshold: " << opt::kmerThreshold << ", must be greater than zero\n";
-		die = true;
-	}
-	CorrectionThresholds::Instance().setBaseMinSupport(opt::kmerThreshold);
-
 	if(opt::prefix.empty())
 	{
 		std::cerr << SUBPROGRAM << ": no prefix\n";
-		die = true;
-	}
-	
-	if(opt::numOfNextTarget <=0)
-	{
-		std::cerr << SUBPROGRAM ": invalid number of next target: " << opt::kmerThreshold << ", must be greater than zero\n";
 		die = true;
 	}
 	
@@ -348,7 +358,7 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 	}
 	else
 	{		
-		opt::directory = opt::directory + "/";
+		opt::directory += "/";
 		std::string workingDir = opt::directory + (opt::DebugSeed ? "seed/error/" : "");
 		if( system(("mkdir -p " + workingDir).c_str()) != 0)
 		{
@@ -362,6 +372,61 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 			die = true;
 		}
 	}
+
+	if(opt::PBcoverage <=0)
+	{
+		std::cerr << SUBPROGRAM ": invalid number of coverage: " << opt::PBcoverage << ", must be greater than zero\n";
+		die = true;
+	}
+	
+	if(opt::ErrorRate < 0 || opt::ErrorRate > 1)
+	{
+		std::cerr <<SUBPROGRAM ":invalid error rate: " << opt::ErrorRate << ", must be 0 ~ 1\n";
+		die = true;
+	}
+	
+	if(opt::startKmerLength <= 0)
+	{
+		std::cerr << SUBPROGRAM ": invalid start kmer length: " << opt::startKmerLength << ", must be greater than zero\n";
+		die = true;
+	}
+	
+	if(opt::numOfNextTarget <=0)
+	{
+		std::cerr << SUBPROGRAM ": invalid number of next target: " << opt::numOfNextTarget << ", must be greater than zero\n";
+		die = true;
+	}
+	
+	if(opt::maxLeaves <= 0)
+	{
+		std::cerr << SUBPROGRAM ":invalid number of max leaves:" << opt::maxLeaves << ", must be greater than zero\n";
+		die = true;
+	}
+	
+	if(opt::idmerLength <= 0)
+	{
+		std::cerr << SUBPROGRAM ":invalid kmer length to identify similar reads" << opt::idmerLength << ", must be greater than zero\n";
+		die = true;
+	}
+	
+	if(opt::minKmerLength <= 0)
+	{
+		std::cerr << SUBPROGRAM ":invalid min kmer length:" << opt::minKmerLength << ", must be greater than zero\n";
+		die = true;
+	}
+	
+	if(opt::genome != 5 && opt::genome != 10 && opt::genome != 100)
+	{
+		std::cerr << SUBPROGRAM ": invalid genome size: " << opt::genome << ", must be (5/10/100)[m]\n";
+		die = true;
+	}
+	
+	if(opt::mode != 0 && opt::mode != 1 && opt::mode != 2)
+	{
+		std::cerr << SUBPROGRAM ": invalid mode: " << opt::mode << ", must be (0/1/2)\n";
+		die = true;
+	}
+	
 	if(die)
 	{
 		std::cerr << "\n" << CORRECT_USAGE_MESSAGE;

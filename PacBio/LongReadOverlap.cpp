@@ -49,7 +49,7 @@ MultipleAlignment LongReadOverlap::buildMultipleAlignment(const std::string& que
 	// }
 
 	// for(size_t i = 0; i < overlap_vector.size(); ++i)
-        // multiple_alignment.addOverlap("NULL", overlap_vector[i].sequence[1], "", overlap_vector[i].overlap);
+        // multiple_alignment.addOverlap("nullptr", overlap_vector[i].sequence[1], "", overlap_vector[i].overlap);
 
     return multiple_alignment;
 }
@@ -109,7 +109,7 @@ MultipleAlignment LongReadOverlap::buildMultipleAlignment2(const std::string& qu
 	// }
 
 	// for(size_t i = 0; i < overlap_vector.size(); ++i)
-        // multiple_alignment.addOverlap("NULL", overlap_vector[i].sequence[1], "", overlap_vector[i].overlap);
+        // multiple_alignment.addOverlap("nullptr", overlap_vector[i].sequence[1], "", overlap_vector[i].overlap);
 
     return multiple_alignment;
 }
@@ -599,9 +599,9 @@ void LongReadOverlap::retrieveMatches(const std::string& query,
 									bool isRC,
 									SequenceOverlapPairVector& overlap_vector)
 {
-    assert(indices.pBWT != NULL);
-    assert(indices.pRBWT != NULL);
-    assert(indices.pSSA != NULL);
+    assert(indices.pBWT != nullptr);
+    assert(indices.pRBWT != nullptr);
+    assert(indices.pSSA != nullptr);
 
 	std::vector<std::string> ovlStr;
 

@@ -34,41 +34,41 @@ struct KmerFreqResult
 //
 class KmerFreqProcess
 {
-public:
-	KmerFreqProcess(KmerFreqParameters params):m_params(params){};
-	~KmerFreqProcess(){};
-	KmerFreqResult process(const SequenceWorkItem& workItem);
+	public:
+		KmerFreqProcess(KmerFreqParameters params):m_params(params){ };
+		~KmerFreqProcess(){ };
+		KmerFreqResult process(const SequenceWorkItem& workItem);
 	
-private:
-	void scan(int currentKmerSize, const std::string& query, const std::string& target, KmerFreqResult& result);
-	inline int validatePos(int pos, int seqLen)
-	{
-		seqLen--;
-		if(pos < 0) return 0;
-		if(pos > seqLen - 1) return seqLen - 1;
-		return pos;
-	}
+	private:
+		void scan(int currentKmerSize, const std::string& query, const std::string& target, KmerFreqResult& result);
+		inline int validatePos(int pos, int seqLen)
+		{
+			seqLen--;
+			if(pos < 0) return 0;
+			if(pos > seqLen - 1) return seqLen - 1;
+			return pos;
+		}
 	
-	KmerFreqParameters m_params;
+		KmerFreqParameters m_params;
 };
 
 //
 class KmerFreqPostProcess
 {
-public:
-	KmerFreqPostProcess(KmerFreqParameters params);
-	~KmerFreqPostProcess();
+	public:
+		KmerFreqPostProcess(KmerFreqParameters params);
+		~KmerFreqPostProcess();
 
-	void process(const SequenceWorkItem& workItem, const KmerFreqResult& result);
+		void process(const SequenceWorkItem& workItem, const KmerFreqResult& result);
 
-private:
-	KmerFreqParameters m_params;
-	kdMap m_correctKdMap;
-	kdMap m_errorKdMap;
-	pOstreamMap m_pCorrectWriterMap;
-	pOstreamMap m_pErrorWriterMap;
-	//pOstreamMap m_pSplitCorrectWriterMap;
-	//pOstreamMap m_pSplitErrorWriterMap;
+	private:
+		KmerFreqParameters m_params;
+		kdMap m_correctKdMap;
+		kdMap m_errorKdMap;
+		pOstreamMap m_pCorrectWriterMap;
+		pOstreamMap m_pErrorWriterMap;
+		//pOstreamMap m_pSplitCorrectWriterMap;
+		//pOstreamMap m_pSplitErrorWriterMap;
 
 };
 

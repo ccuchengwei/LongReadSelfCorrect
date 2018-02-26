@@ -1,7 +1,8 @@
 libpacbio_a-PacBioSelfCorrectionProcess.o: \
  PacBioSelfCorrectionProcess.cpp /usr/include/stdc-predef.h \
- PacBioSelfCorrectionProcess.h ../Util/HashMap.h ../config.h \
- /usr/include/c++/6/unordered_map /usr/include/c++/6/utility \
+ PacBioSelfCorrectionProcess.h /usr/include/c++/6/set \
+ /usr/include/c++/6/bits/stl_tree.h \
+ /usr/include/c++/6/bits/stl_algobase.h \
  /usr/include/x86_64-linux-gnu/c++/6/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/6/bits/os_defines.h \
  /usr/include/features.h /usr/include/x86_64-linux-gnu/sys/cdefs.h \
@@ -9,38 +10,46 @@ libpacbio_a-PacBioSelfCorrectionProcess.o: \
  /usr/include/x86_64-linux-gnu/gnu/stubs.h \
  /usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
  /usr/include/x86_64-linux-gnu/c++/6/bits/cpu_defines.h \
- /usr/include/c++/6/bits/stl_relops.h /usr/include/c++/6/bits/stl_pair.h \
- /usr/include/c++/6/bits/move.h /usr/include/c++/6/bits/concept_check.h \
- /usr/include/c++/6/type_traits /usr/include/c++/6/initializer_list \
- /usr/include/c++/6/tuple /usr/include/c++/6/array \
- /usr/include/c++/6/stdexcept /usr/include/c++/6/exception \
- /usr/include/c++/6/bits/atomic_lockfree_defines.h \
- /usr/include/c++/6/bits/exception_ptr.h \
- /usr/include/c++/6/bits/exception_defines.h \
- /usr/include/c++/6/bits/nested_exception.h /usr/include/c++/6/string \
- /usr/include/c++/6/bits/stringfwd.h /usr/include/c++/6/bits/memoryfwd.h \
- /usr/include/c++/6/bits/char_traits.h \
- /usr/include/c++/6/bits/stl_algobase.h \
  /usr/include/c++/6/bits/functexcept.h \
+ /usr/include/c++/6/bits/exception_defines.h \
  /usr/include/c++/6/bits/cpp_type_traits.h \
  /usr/include/c++/6/ext/type_traits.h \
  /usr/include/c++/6/ext/numeric_traits.h \
+ /usr/include/c++/6/bits/stl_pair.h /usr/include/c++/6/bits/move.h \
+ /usr/include/c++/6/bits/concept_check.h /usr/include/c++/6/type_traits \
  /usr/include/c++/6/bits/stl_iterator_base_types.h \
  /usr/include/c++/6/bits/stl_iterator_base_funcs.h \
  /usr/include/c++/6/debug/assertions.h \
  /usr/include/c++/6/bits/stl_iterator.h \
  /usr/include/c++/6/bits/ptr_traits.h /usr/include/c++/6/debug/debug.h \
  /usr/include/c++/6/bits/predefined_ops.h \
- /usr/include/c++/6/bits/postypes.h /usr/include/c++/6/cwchar \
- /usr/include/wchar.h /usr/include/stdio.h \
+ /usr/include/c++/6/bits/allocator.h \
+ /usr/include/x86_64-linux-gnu/c++/6/bits/c++allocator.h \
+ /usr/include/c++/6/ext/new_allocator.h /usr/include/c++/6/new \
+ /usr/include/c++/6/exception \
+ /usr/include/c++/6/bits/atomic_lockfree_defines.h \
+ /usr/include/c++/6/bits/exception_ptr.h \
+ /usr/include/c++/6/bits/nested_exception.h \
+ /usr/include/c++/6/bits/memoryfwd.h \
+ /usr/include/c++/6/bits/stl_function.h \
+ /usr/include/c++/6/backward/binders.h \
+ /usr/include/c++/6/ext/alloc_traits.h \
+ /usr/include/c++/6/bits/alloc_traits.h \
+ /usr/include/c++/6/ext/aligned_buffer.h \
+ /usr/include/c++/6/bits/stl_set.h /usr/include/c++/6/initializer_list \
+ /usr/include/c++/6/bits/stl_multiset.h \
+ /usr/include/c++/6/bits/range_access.h ../Util/HashMap.h ../config.h \
+ /usr/include/c++/6/unordered_map /usr/include/c++/6/utility \
+ /usr/include/c++/6/bits/stl_relops.h /usr/include/c++/6/tuple \
+ /usr/include/c++/6/array /usr/include/c++/6/stdexcept \
+ /usr/include/c++/6/string /usr/include/c++/6/bits/stringfwd.h \
+ /usr/include/c++/6/bits/char_traits.h /usr/include/c++/6/bits/postypes.h \
+ /usr/include/c++/6/cwchar /usr/include/wchar.h /usr/include/stdio.h \
  /usr/lib/gcc/x86_64-linux-gnu/6/include/stdarg.h \
  /usr/include/x86_64-linux-gnu/bits/wchar.h \
  /usr/lib/gcc/x86_64-linux-gnu/6/include/stddef.h /usr/include/xlocale.h \
  /usr/include/x86_64-linux-gnu/bits/wchar2.h /usr/include/c++/6/cstdint \
  /usr/lib/gcc/x86_64-linux-gnu/6/include/stdint.h /usr/include/stdint.h \
- /usr/include/c++/6/bits/allocator.h \
- /usr/include/x86_64-linux-gnu/c++/6/bits/c++allocator.h \
- /usr/include/c++/6/ext/new_allocator.h /usr/include/c++/6/new \
  /usr/include/c++/6/bits/localefwd.h \
  /usr/include/x86_64-linux-gnu/c++/6/bits/c++locale.h \
  /usr/include/c++/6/clocale /usr/include/locale.h \
@@ -53,9 +62,6 @@ libpacbio_a-PacBioSelfCorrectionProcess.o: \
  /usr/include/x86_64-linux-gnu/bits/byteswap-16.h \
  /usr/include/c++/6/bits/ostream_insert.h \
  /usr/include/c++/6/bits/cxxabi_forced.h \
- /usr/include/c++/6/bits/stl_function.h \
- /usr/include/c++/6/backward/binders.h \
- /usr/include/c++/6/bits/range_access.h \
  /usr/include/c++/6/bits/basic_string.h \
  /usr/include/c++/6/ext/atomicity.h \
  /usr/include/x86_64-linux-gnu/c++/6/bits/gthr.h \
@@ -67,8 +73,6 @@ libpacbio_a-PacBioSelfCorrectionProcess.o: \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
  /usr/include/x86_64-linux-gnu/bits/setjmp.h \
  /usr/include/x86_64-linux-gnu/c++/6/bits/atomic_word.h \
- /usr/include/c++/6/ext/alloc_traits.h \
- /usr/include/c++/6/bits/alloc_traits.h \
  /usr/include/c++/6/ext/string_conversions.h /usr/include/c++/6/cstdlib \
  /usr/include/stdlib.h /usr/include/x86_64-linux-gnu/bits/waitflags.h \
  /usr/include/x86_64-linux-gnu/bits/waitstatus.h \
@@ -93,7 +97,6 @@ libpacbio_a-PacBioSelfCorrectionProcess.o: \
  /usr/include/c++/6/bits/hash_bytes.h \
  /usr/include/c++/6/bits/basic_string.tcc \
  /usr/include/c++/6/bits/uses_allocator.h \
- /usr/include/c++/6/ext/aligned_buffer.h \
  /usr/include/c++/6/bits/hashtable.h \
  /usr/include/c++/6/bits/hashtable_policy.h \
  /usr/include/c++/6/bits/unordered_map.h /usr/include/c++/6/unordered_set \
@@ -191,12 +194,10 @@ libpacbio_a-PacBioSelfCorrectionProcess.o: \
  ../Util/Timer.h /usr/include/x86_64-linux-gnu/sys/time.h \
  ../Concurrency/SequenceWorkItem.h ../Util/SeqReader.h ../Util/Util.h \
  ../Concurrency/SequenceWorkItem.h ../Util/Metrics.h \
- /usr/include/c++/6/map /usr/include/c++/6/bits/stl_tree.h \
- /usr/include/c++/6/bits/stl_map.h /usr/include/c++/6/bits/stl_multimap.h \
- ../SuffixTools/BWTIndexSet.h ../SuffixTools/BWT.h ../SuffixTools/RLBWT.h \
- ../SuffixTools/STCommon.h ../SuffixTools/STGlobals.h \
- /usr/include/c++/6/set /usr/include/c++/6/bits/stl_set.h \
- /usr/include/c++/6/bits/stl_multiset.h ../Util/Alphabet.h \
+ /usr/include/c++/6/map /usr/include/c++/6/bits/stl_map.h \
+ /usr/include/c++/6/bits/stl_multimap.h ../SuffixTools/BWTIndexSet.h \
+ ../SuffixTools/BWT.h ../SuffixTools/RLBWT.h ../SuffixTools/STCommon.h \
+ ../SuffixTools/STGlobals.h ../Util/Alphabet.h \
  ../SuffixTools/Occurrence.h ../Util/EncodedString.h ../Util/DNACodec.h \
  ../Util/Alphabet.h ../Util/BWTCodec.h ../Util/BWT4Codec.h \
  ../Util/NoCodec.h ../SuffixTools/SuffixArray.h ../Util/ReadTable.h \
@@ -236,13 +237,11 @@ libpacbio_a-PacBioSelfCorrectionProcess.o: \
 
 PacBioSelfCorrectionProcess.h:
 
-../Util/HashMap.h:
+/usr/include/c++/6/set:
 
-../config.h:
+/usr/include/c++/6/bits/stl_tree.h:
 
-/usr/include/c++/6/unordered_map:
-
-/usr/include/c++/6/utility:
+/usr/include/c++/6/bits/stl_algobase.h:
 
 /usr/include/x86_64-linux-gnu/c++/6/bits/c++config.h:
 
@@ -260,7 +259,15 @@ PacBioSelfCorrectionProcess.h:
 
 /usr/include/x86_64-linux-gnu/c++/6/bits/cpu_defines.h:
 
-/usr/include/c++/6/bits/stl_relops.h:
+/usr/include/c++/6/bits/functexcept.h:
+
+/usr/include/c++/6/bits/exception_defines.h:
+
+/usr/include/c++/6/bits/cpp_type_traits.h:
+
+/usr/include/c++/6/ext/type_traits.h:
+
+/usr/include/c++/6/ext/numeric_traits.h:
 
 /usr/include/c++/6/bits/stl_pair.h:
 
@@ -269,42 +276,6 @@ PacBioSelfCorrectionProcess.h:
 /usr/include/c++/6/bits/concept_check.h:
 
 /usr/include/c++/6/type_traits:
-
-/usr/include/c++/6/initializer_list:
-
-/usr/include/c++/6/tuple:
-
-/usr/include/c++/6/array:
-
-/usr/include/c++/6/stdexcept:
-
-/usr/include/c++/6/exception:
-
-/usr/include/c++/6/bits/atomic_lockfree_defines.h:
-
-/usr/include/c++/6/bits/exception_ptr.h:
-
-/usr/include/c++/6/bits/exception_defines.h:
-
-/usr/include/c++/6/bits/nested_exception.h:
-
-/usr/include/c++/6/string:
-
-/usr/include/c++/6/bits/stringfwd.h:
-
-/usr/include/c++/6/bits/memoryfwd.h:
-
-/usr/include/c++/6/bits/char_traits.h:
-
-/usr/include/c++/6/bits/stl_algobase.h:
-
-/usr/include/c++/6/bits/functexcept.h:
-
-/usr/include/c++/6/bits/cpp_type_traits.h:
-
-/usr/include/c++/6/ext/type_traits.h:
-
-/usr/include/c++/6/ext/numeric_traits.h:
 
 /usr/include/c++/6/bits/stl_iterator_base_types.h:
 
@@ -319,6 +290,64 @@ PacBioSelfCorrectionProcess.h:
 /usr/include/c++/6/debug/debug.h:
 
 /usr/include/c++/6/bits/predefined_ops.h:
+
+/usr/include/c++/6/bits/allocator.h:
+
+/usr/include/x86_64-linux-gnu/c++/6/bits/c++allocator.h:
+
+/usr/include/c++/6/ext/new_allocator.h:
+
+/usr/include/c++/6/new:
+
+/usr/include/c++/6/exception:
+
+/usr/include/c++/6/bits/atomic_lockfree_defines.h:
+
+/usr/include/c++/6/bits/exception_ptr.h:
+
+/usr/include/c++/6/bits/nested_exception.h:
+
+/usr/include/c++/6/bits/memoryfwd.h:
+
+/usr/include/c++/6/bits/stl_function.h:
+
+/usr/include/c++/6/backward/binders.h:
+
+/usr/include/c++/6/ext/alloc_traits.h:
+
+/usr/include/c++/6/bits/alloc_traits.h:
+
+/usr/include/c++/6/ext/aligned_buffer.h:
+
+/usr/include/c++/6/bits/stl_set.h:
+
+/usr/include/c++/6/initializer_list:
+
+/usr/include/c++/6/bits/stl_multiset.h:
+
+/usr/include/c++/6/bits/range_access.h:
+
+../Util/HashMap.h:
+
+../config.h:
+
+/usr/include/c++/6/unordered_map:
+
+/usr/include/c++/6/utility:
+
+/usr/include/c++/6/bits/stl_relops.h:
+
+/usr/include/c++/6/tuple:
+
+/usr/include/c++/6/array:
+
+/usr/include/c++/6/stdexcept:
+
+/usr/include/c++/6/string:
+
+/usr/include/c++/6/bits/stringfwd.h:
+
+/usr/include/c++/6/bits/char_traits.h:
 
 /usr/include/c++/6/bits/postypes.h:
 
@@ -343,14 +372,6 @@ PacBioSelfCorrectionProcess.h:
 /usr/lib/gcc/x86_64-linux-gnu/6/include/stdint.h:
 
 /usr/include/stdint.h:
-
-/usr/include/c++/6/bits/allocator.h:
-
-/usr/include/x86_64-linux-gnu/c++/6/bits/c++allocator.h:
-
-/usr/include/c++/6/ext/new_allocator.h:
-
-/usr/include/c++/6/new:
 
 /usr/include/c++/6/bits/localefwd.h:
 
@@ -384,12 +405,6 @@ PacBioSelfCorrectionProcess.h:
 
 /usr/include/c++/6/bits/cxxabi_forced.h:
 
-/usr/include/c++/6/bits/stl_function.h:
-
-/usr/include/c++/6/backward/binders.h:
-
-/usr/include/c++/6/bits/range_access.h:
-
 /usr/include/c++/6/bits/basic_string.h:
 
 /usr/include/c++/6/ext/atomicity.h:
@@ -415,10 +430,6 @@ PacBioSelfCorrectionProcess.h:
 /usr/include/x86_64-linux-gnu/bits/setjmp.h:
 
 /usr/include/x86_64-linux-gnu/c++/6/bits/atomic_word.h:
-
-/usr/include/c++/6/ext/alloc_traits.h:
-
-/usr/include/c++/6/bits/alloc_traits.h:
 
 /usr/include/c++/6/ext/string_conversions.h:
 
@@ -485,8 +496,6 @@ PacBioSelfCorrectionProcess.h:
 /usr/include/c++/6/bits/basic_string.tcc:
 
 /usr/include/c++/6/bits/uses_allocator.h:
-
-/usr/include/c++/6/ext/aligned_buffer.h:
 
 /usr/include/c++/6/bits/hashtable.h:
 
@@ -754,8 +763,6 @@ PacBioSelfCorrectionProcess.h:
 
 /usr/include/c++/6/map:
 
-/usr/include/c++/6/bits/stl_tree.h:
-
 /usr/include/c++/6/bits/stl_map.h:
 
 /usr/include/c++/6/bits/stl_multimap.h:
@@ -769,12 +776,6 @@ PacBioSelfCorrectionProcess.h:
 ../SuffixTools/STCommon.h:
 
 ../SuffixTools/STGlobals.h:
-
-/usr/include/c++/6/set:
-
-/usr/include/c++/6/bits/stl_set.h:
-
-/usr/include/c++/6/bits/stl_multiset.h:
 
 ../Util/Alphabet.h:
 

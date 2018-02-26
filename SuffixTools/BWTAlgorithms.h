@@ -70,10 +70,10 @@ inline void updateInterval(BWTInterval& interval, char b, const BWT* pBWT, int* 
     interval.lower = pb + pBWT->getOcc(b, interval.lower - 1);
     interval.upper = pb + pBWT->getOcc(b, interval.upper) - 1;
 }
-inline void updateBiInterval(BiBWTInterval& object, char b, const BWTIndexSet& indices, int* count = nullptr)
+inline void updateBiInterval(BiBWTInterval& biInterval, char b, const BWTIndexSet& indices, int* count = nullptr)
 {
-	updateInterval(object.fwdInterval, b, indices.pRBWT, count);
-	updateInterval(object.rvcInterval, complement(b), indices.pBWT);
+	updateInterval(biInterval.fwdInterval, b, indices.pRBWT, count);
+	updateInterval(biInterval.rvcInterval, complement(b), indices.pBWT);
 }
 // Update the interval pair for the right extension to symbol b.
 // In this version the AlphaCounts for the upper and lower intervals
