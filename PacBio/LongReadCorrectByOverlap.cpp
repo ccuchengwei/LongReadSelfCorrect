@@ -7,612 +7,494 @@
 // LongReadSelfCorrectByOverlap - A fast overlap filter using locality-sensitive backward search.
 //
 //
+#include <iomanip>
 #include "LongReadCorrectByOverlap.h"
 #include "BWTAlgorithms.h"
 #include "stdaln.h"
 #include "LongReadOverlap.h"
-#define MAX(a,b) (a > b ? a : b)
-#define MIN(a,b) (a < b ? a : b)
-//
+
 // Class: SAIOverlapTree
-LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap(
-		const std::string& sourceSeed,
-		const std::string& strBetweenSrcTarget,
-		const std::string& targetSeed,				
-		int disBetweenSrcTarget,
-		size_t initkmersize,
-		size_t maxOverlap,
-		const FMextendParameters params,
-		size_t min_SA_threshold, 				
-		double errorRate, 
-		size_t repeatFreq,
-		size_t localSimilarlykmerSize)
-:	m_sourceSeed(sourceSeed), 
-	m_strBetweenSrcTarget(strBetweenSrcTarget),
-	m_targetSeed(targetSeed),				
-	m_disBetweenSrcTarget(disBetweenSrcTarget),
-	m_initkmersize(initkmersize),
-	m_minOverlap(params.minKmerLength),
-	m_maxOverlap(maxOverlap),
-	//m_BWTindices(params.indices),
-	m_pBWT(params.indices.pBWT), 
-	m_pRBWT(params.indices.pRBWT),
-	m_PBcoverage(params.PBcoverage),
-	m_min_SA_threshold(min_SA_threshold),
-	m_errorRate(errorRate),
-	m_maxLeaves(params.maxLeaves), 
-	m_seedSize(params.idmerLength), 
-	m_repeatFreq(repeatFreq),
-	m_localSimilarlykmerSize(localSimilarlykmerSize),
-	m_PacBioErrorRate(params.ErrorRate),
-	m_isDebug(params.Debug)
-{	
+LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap
+				(
+					const std::string& sourceSeed,
+					const std::string& strBetweenSrcTarget,
+					const std::string& targetSeed,
+					int disBetweenSrcTarget,
+					size_t initkmersize,
+					size_t maxOverlap,
+					const FMextendParameters params,
+					size_t min_SA_threshold,
+					const debugExtInfo debug,
+					double errorRate,
+					size_t repeatFreq,
+					size_t localSimilarlykmerSize
+				):
+					m_sourceSeed(sourceSeed),
+					m_strBetweenSrcTarget(strBetweenSrcTarget),
+					m_targetSeed(targetSeed),
+					m_disBetweenSrcTarget(disBetweenSrcTarget),
+					m_initkmersize(initkmersize),
+					m_minOverlap(params.minKmerLength),
+					m_maxOverlap(maxOverlap),
+					m_pBWT(params.indices.pBWT),
+					m_pRBWT(params.indices.pRBWT),
+					m_PBcoverage(params.PBcoverage),
+					m_min_SA_threshold(min_SA_threshold),
+					m_errorRate(errorRate),
+					m_maxLeaves(params.maxLeaves),
+					m_seedSize(params.idmerLength),
+					m_repeatFreq(repeatFreq),
+					m_localSimilarlykmerSize(localSimilarlykmerSize),
+					m_PacBioErrorRate(params.ErrorRate),
+					m_Debug(debug)
+{
 	std::string beginningkmer = m_sourceSeed.substr(m_sourceSeed.length()-m_initkmersize);
-    
-    //if distance < 100 ,use const indel size 
-    m_maxIndelSize  = m_disBetweenSrcTarget > 100 ? m_disBetweenSrcTarget * 0.2 : 20; 
-    
-    
-    //initialRootNode
-    initialRootNode(beginningkmer);
-	
+		m_Debug.sourceReduceSize(m_sourceSeed.length()-m_initkmersize);
+
+	//if distance < 100 ,use const indel size
+		if (m_disBetweenSrcTarget > 100)
+			m_maxIndelSize  =  m_disBetweenSrcTarget * 0.2;
+		else
+			m_maxIndelSize  =  20;
+
+	//initialRootNode
+		initialRootNode(beginningkmer);
+
 	// push new node into roots and leaves vector
-	m_RootNodes.push_back(m_pRootNode);
-	m_leaves.push_back(m_pRootNode);
+		m_RootNodes.push_back(m_pRootNode);
+		m_leaves.emplace_back(m_pRootNode,1);
 
-    
-    //frequencies of correspond k
-	freqsOfKmerSize = new double[100 + 1]{0};
-    for(int i = m_minOverlap ; i <= 100 ; i++)
-        //freqsOfKmerSize.push_back(pow(1-m_PacBioErrorRate,i)*m_PBcoverage);
-        freqsOfKmerSize[i] = pow(1 - m_PacBioErrorRate, i) * m_PBcoverage;
+	//frequencies of correspond k
+		freqsOfKmerSize = new double[100 + 1]{0};
+		for(int i = m_minOverlap ; i <= 100 ; i++)
+			freqsOfKmerSize[i] = pow(1 - m_PacBioErrorRate, i) * m_PBcoverage;
 
-    
-    
-    if(m_isDebug)
-	std::cout << "BE: " << beginningkmer << " " << m_targetSeed << " "<< m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size() << "|" << disBetweenSrcTarget <<"\n"; //debugch
-	// if(m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size() > 100)m_seedSize = 5;
-    // PacBio reads are longer than real length due to insertions
-	m_maxLength = (1.2*(m_disBetweenSrcTarget+10))+2*m_initkmersize;
-	m_minLength = (0.8*(m_disBetweenSrcTarget-20))+2*m_initkmersize;
-    
-  
-    
-    // initialize the ending SA intervals with kmer length = m_minOverlap
-    for(size_t i =0 ;i <= m_targetSeed.length()-m_minOverlap; i++)
-    {
-        std::string endingkmer = m_targetSeed.substr(i, m_minOverlap);
-        
-        m_fwdTerminatedInterval.push_back(BWTAlgorithms::findInterval(m_pRBWT, reverse(endingkmer)));
-        m_rvcTerminatedInterval.push_back(BWTAlgorithms::findInterval(m_pBWT, reverseComplement(endingkmer)));
-    }
-    //build overlap tree
-    buildOverlapbyFMindex(beginningkmer);
+	if(m_Debug.isDebug)
+	{
+		std::cout << m_Debug.caseNum << "\tBE: " << beginningkmer << " " << m_targetSeed << " "<< m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size() << "|" << disBetweenSrcTarget <<"\n";
+	}
 
+	// PacBio reads are longer than real length due to insertions
+		m_maxLength = (1.2*(m_disBetweenSrcTarget+10))+2*m_initkmersize;
+		m_minLength = (0.8*(m_disBetweenSrcTarget-20))+2*m_initkmersize;
+
+	// initialize the ending SA intervals with kmer length = m_minOverlap
+		for(size_t i =0 ;i <= m_targetSeed.length()-m_minOverlap; i++)
+		{
+			std::string endingkmer = m_targetSeed.substr(i, m_minOverlap);
+
+			m_fwdTerminatedInterval.push_back(BWTAlgorithms::findInterval(m_pRBWT, reverse(endingkmer)));
+			m_rvcTerminatedInterval.push_back(BWTAlgorithms::findInterval(m_pBWT, reverseComplement(endingkmer)));
+		}
+    // build overlap tree
+		m_query = beginningkmer + m_strBetweenSrcTarget + m_targetSeed;
+		// build overlap tree to determine the error rate
+			buildOverlapbyFMindex(m_fwdIntervalTree ,m_rvcIntervalTree ,m_seedSize);
+		// build overlap tree to match 5-mer
+			buildOverlapbyFMindex(m_fwdIntervalTree2,m_rvcIntervalTree2,5);
 }
+
 LongReadSelfCorrectByOverlap::~LongReadSelfCorrectByOverlap()
 {
-	for (std::list<SAIOverlapNode3*>::iterator it = m_RootNodes.begin(); it != m_RootNodes.end(); ++it)
-		delete *it;
-	
+	for (auto iter = m_RootNodes.begin(); iter != m_RootNodes.end(); ++iter)
+		delete *iter;
+
 	m_RootNodes.clear();
-    // delete hashIndex;
+
 	delete[] freqsOfKmerSize;
 }
- void LongReadSelfCorrectByOverlap::initialRootNode(std::string beginningkmer)
-{	
-    // create one root node
-	m_pRootNode = new SAIOverlapNode3(&m_sourceSeed, NULL);
-    
-    // store initial str of root
-	m_pRootNode->computeInitial(beginningkmer);
-	m_pRootNode->fwdInterval = BWTAlgorithms::findInterval(m_pRBWT, reverse(beginningkmer));
-	m_pRootNode->rvcInterval = BWTAlgorithms::findInterval(m_pBWT, reverseComplement(beginningkmer));
-	m_pRootNode->lastOverlapLen = m_currentLength = m_pRootNode->currOverlapLen = m_pRootNode->queryOverlapLen = m_currentKmerSize = m_initkmersize;
-	m_pRootNode->lastSeedIdx = m_pRootNode->initSeedIdx = m_initkmersize - m_seedSize;
-	m_pRootNode->totalSeeds = m_initkmersize - m_seedSize + 1;
-	m_pRootNode->numRedeemSeed = 0;
-    m_pRootNode->LocalErrorRateRecord.push_back(0);
-    m_pRootNode->GlobalErrorRateRecord.push_back(0);
-    m_maxfreqs = m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size();
-    
-    
+
+// Initialize the root node
+void LongReadSelfCorrectByOverlap::initialRootNode(const std::string& beginningkmer)
+{
+	// create one root node
+		m_pRootNode = new SAIOverlapNode3(&m_sourceSeed, NULL);
+
+	// store initial str of root
+		m_pRootNode->computeInitial(beginningkmer);
+		m_pRootNode->fwdInterval = BWTAlgorithms::findInterval(m_pRBWT, reverse(beginningkmer));
+		m_pRootNode->rvcInterval = BWTAlgorithms::findInterval(m_pBWT , reverseComplement(beginningkmer));
+		m_pRootNode->lastOverlapLen = m_currentLength = m_pRootNode->currOverlapLen = m_pRootNode->queryOverlapLen = m_currentKmerSize = m_initkmersize;
+		m_pRootNode->lastSeedIdx = m_pRootNode->initSeedIdx = m_initkmersize - m_seedSize;
+		m_pRootNode->totalSeeds = m_initkmersize - m_seedSize + 1;
+		m_pRootNode->numRedeemSeed = 0;
+		m_pRootNode->LocalErrorRateRecord.push_back(0);
+		m_pRootNode->GlobalErrorRateRecord.push_back(0);
+		m_maxfreqs = m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size();
 }
 
-void LongReadSelfCorrectByOverlap::buildOverlapbyFMindex(std::string beginningkmer)
+//Build the overlap tree
+void LongReadSelfCorrectByOverlap::buildOverlapbyFMindex(IntervalTree<size_t>& fwdIntervalTree,IntervalTree<size_t>& rvcIntervalTree,const int& overlapSize)
 {
-   	m_query = beginningkmer + m_strBetweenSrcTarget + m_targetSeed;
-	
-	// put SA intervals into m_fwdIntervals and m_rvcIntervals cache 
-	m_fwdIntervals.reserve(m_query.length()-m_seedSize+1);
-	m_rvcIntervals.reserve(m_query.length()-m_seedSize+1);
+	// put SA intervals into fwdIntervals and rvcIntervals cache
+		std::vector< TreeInterval<size_t> > fwdIntervals;
+			fwdIntervals.reserve(m_query.length()-overlapSize+1);
 
-    for(int i = 0; i <= (int)m_query.length()-(int)m_seedSize ; i++)//build overlap tree
-	{
-         
-		std::string seedStr = m_query.substr(i, m_seedSize);
-        
-		BWTInterval bi;
-		bi = BWTAlgorithms::findInterval( m_pRBWT, reverse(seedStr) );        
-		if(bi.isValid())
-			m_fwdIntervals.push_back( TreeInterval<size_t>(bi.lower, bi.upper, i) );
-		bi = BWTAlgorithms::findInterval( m_pBWT, reverseComplement(seedStr) );       
-		if(bi.isValid())
-			m_rvcIntervals.push_back( TreeInterval<size_t>(bi.lower, bi.upper, i) );
-	}    
-	fwdIntervalTree = IntervalTree<size_t>(m_fwdIntervals);
-	rvcIntervalTree = IntervalTree<size_t>(m_rvcIntervals); 
-   //=======================================
-    for(int i = 0; i <= (int)m_query.length()-5; i++)//build overlap tree
-	{
-         
-		std::string seedStr = m_query.substr(i, 5);
-        
-		BWTInterval bi;
-		bi = BWTAlgorithms::findInterval( m_pRBWT, reverse(seedStr) );        
-		if(bi.isValid())
-			m_fwdIntervals2.push_back( TreeInterval<size_t>(bi.lower, bi.upper, i) );
-		bi = BWTAlgorithms::findInterval( m_pBWT, reverseComplement(seedStr) );       
-		if(bi.isValid())
-			m_rvcIntervals2.push_back( TreeInterval<size_t>(bi.lower, bi.upper, i) );
-	}    
-	fwdIntervalTree2 = IntervalTree<size_t>(m_fwdIntervals2);
-	rvcIntervalTree2 = IntervalTree<size_t>(m_rvcIntervals2);
-    
-    //=======================================
-     
-    
-    
+		std::vector< TreeInterval<size_t> > rvcIntervals;
+			rvcIntervals.reserve(m_query.length()-overlapSize+1);
+
+	// Build the Overlap Tree
+		for(int i = 0; i <= (int)m_query.length()-(int)overlapSize ; i++)//build overlap tree
+		{
+
+			std::string seedStr = m_query.substr(i, overlapSize);
+
+			BWTInterval bi;
+			bi = BWTAlgorithms::findInterval( m_pRBWT, reverse(seedStr) );
+			if(bi.isValid())
+				fwdIntervals.emplace_back( bi.lower, bi.upper, i );
+			bi = BWTAlgorithms::findInterval( m_pBWT, reverseComplement(seedStr) );
+			if(bi.isValid())
+				rvcIntervals.emplace_back( bi.lower, bi.upper, i );
+		}
+		fwdIntervalTree = IntervalTree<size_t>(fwdIntervals);
+		rvcIntervalTree = IntervalTree<size_t>(rvcIntervals);
 }
-//
-
-/*
-// comparison, not case sensitive.
-static bool SeedComparator(const SAIOverlapNode3* first, const SAIOverlapNode3* second)
-{
-  return ( 	first->totalSeeds > second->totalSeeds );
-}*/
 
 //On success return the length of merged string
-int LongReadSelfCorrectByOverlap::extendOverlap(FMWalkResult2 &FMWResult)
+int LongReadSelfCorrectByOverlap::extendOverlap(FMWalkResult2& FMWResult)
 {
 	SAIntervalNodeResultVector results;
-	
+	m_step_number = 1;
+
 	//Overlap extension via FM-index walk
-    while(!m_leaves.empty() && m_leaves.size() <= m_maxLeaves && m_currentLength <= m_maxLength)
-    {   
+	while(!m_leaves.empty() && m_leaves.size() <= m_maxLeaves && m_currentLength <= m_maxLength)
+	{
+/*		if(m_Debug.isDebug)
+			std::cout << "    " << m_step_number << " Leaves number for extension:" << m_leaves.size() << std::endl;
+*/
 		// ACGT-extend the leaf nodes via updating existing SA interval
-        SONode3PtrList newLeaves = extendLeaves();
-
-		
-        //use overlap tree to trim branch
-		PrunedBySeedSupport(newLeaves);
-       
-        //update leaves
-        m_leaves.clear();
-        m_leaves = newLeaves;
-
-		
-		
-        if(m_isDebug)
-            std::cout << "----" << std::endl;
+			leafList newLeaves;
+			extendLeaves(newLeaves);
+/*
+		if(m_Debug.isDebug)
+			std::cout << "Leaves number to trim branch:" << newLeaves.size() << std::endl;
+*/
+		//use overlap tree to trim branch
+			PrunedBySeedSupport(newLeaves);
+/*
+		if(m_Debug.isDebug)
+		{
+			std::cout << "Leaves number after trimming branch: " << newLeaves.size() << std::endl;
+			std::cout << "Current Length:" << m_currentLength << " (" << m_minLength << "," << m_maxLength << ")" << std::endl;
+		}
+*/
+		//update leaves
+			m_leaves.clear();
+			m_leaves = newLeaves;
+/*
+		if(m_Debug.isDebug)
+			std::cout << "----" << std::endl;
+*/
 		if(m_currentLength >= m_minLength)
-            isTerminated(results);       
+			isTerminated(results);
+
+		m_step_number++;
 	}
 
 	// reach the terminal kmer
 	if(results.size() > 0)
-		// find the path with maximum match percent or kmer coverage
-		return findTheBestPath(results, FMWResult);
+		return findTheBestPath(results, FMWResult); // find the path with maximum match percent or kmer coverage
+
+	if(m_Debug.isDebug)
+			std::cout << "\tERROR\t" << std::endl;
 
 	// Did not reach the terminal kmer
-    if(m_leaves.empty())	//high error   
-        return -1;
-    else if(m_currentLength > m_maxLength)	//exceed search depth
-        return -2;
-    else if(m_leaves.size() > m_maxLeaves)	//too much repeats
-        return -3;
+	if(m_leaves.empty())	//high error
+		return -1;
+	else if(m_currentLength > m_maxLength)	//exceed search depth
+		return -2;
+	else if(m_leaves.size() > m_maxLeaves)	//too much repeats
+		return -3;
 	else
 		return -4;
 }
 
-
-int LongReadSelfCorrectByOverlap::findTheBestPath(SAIntervalNodeResultVector results, FMWalkResult2 &FMWResult)
+// find the path where is the min error rate.
+int LongReadSelfCorrectByOverlap::findTheBestPath(const SAIntervalNodeResultVector& results, FMWalkResult2& FMWResult)
 {
-	
-    double minErrorRate = 1;
-    
+	double minErrorRate = 1;
+
 	for (size_t i = 0 ; i < results.size() ;i++)
 	{
-        std::string candidateSeq;
-        if(m_targetSeed.length() > m_minOverlap)
-            candidateSeq = results[i].thread ;
-		else
-			candidateSeq = results[i].thread;
-      
-        if(results[i].errorRate < minErrorRate )
-        {
-            minErrorRate = results[i].errorRate;
-            FMWResult.mergedSeq = candidateSeq;
-        }
-            
-        
+		const std::string& candidateSeq = results[i].thread;
+		if(m_Debug.isDebug)
+			{
+				std::cout << "Final Seqs:" << results[i].thread << "\tError Rate:" << results[i].errorRate << std::endl;
+			}
+		if(results[i].errorRate < minErrorRate )
+		{
+			minErrorRate = results[i].errorRate;
+			FMWResult.mergedSeq = candidateSeq;
+			minTotalcount = results[i].SAIntervalSize;
+		}
 	}
-
 
 	if(FMWResult.mergedSeq.length() != 0)
 		return 1;
 	return -4;
 }
 
-
-SONode3PtrList LongReadSelfCorrectByOverlap::extendLeaves()
+// Extend all Leaves by FM-index
+void LongReadSelfCorrectByOverlap::extendLeaves(leafList& newLeaves)
 {
-    SONode3PtrList newLeaves;
-    
-    //resize if length too long
-    if(m_currentKmerSize > m_maxOverlap) refineSAInterval(m_maxOverlap);
-        
-        
-    attempToExtend(newLeaves);
-        
-        
-    if(newLeaves.empty() ) //level 1 reduce size 
-    { 
-        size_t LowerBound = m_currentKmerSize - 2 >= m_minOverlap ? m_currentKmerSize - 2 : m_minOverlap;
-        size_t ReduceSize = SelectFreqsOfrange(LowerBound,m_currentKmerSize,m_leaves);
-        refineSAInterval(ReduceSize);
-         
-        attempToExtend(newLeaves);
-        
-      
-        if( newLeaves.empty() )//level 2 reduce threshold
-        {
-            
-            m_min_SA_threshold--;
-            attempToExtend(newLeaves);
-            m_min_SA_threshold++;
-        }
+	//resize if length too long
+	if(m_currentKmerSize > m_maxOverlap)
+		refineSAInterval(m_leaves, m_maxOverlap);
 
-    }
-    
-    //extension succeed
-    if(!newLeaves.empty())
-    { 
-        m_currentLength++;  
-        m_currentKmerSize++;
-        if( isInsufficientFreqs(newLeaves)   )// if frequency are low , relax it
-        {
-            
-            // size_t ReduceSize = m_currentKmerSize > m_minOverlap-1 ? m_currentKmerSize-1: m_currentKmerSize;
-            
+	attempToExtend(newLeaves,1);
 
-            size_t LowerBound = m_currentKmerSize > m_minOverlap + 1 ? m_currentKmerSize - 2 : m_minOverlap;
-            size_t ReduceSize = SelectFreqsOfrange(LowerBound,m_currentKmerSize,newLeaves);
-            
-            for(auto& iter : newLeaves)
-            {   
-                
-                // reset the SA intervals 
-                std::string pkmer = iter->getSuffix(ReduceSize);
-                iter->fwdInterval=BWTAlgorithms::findInterval(m_pRBWT, reverse(pkmer));
-                iter->rvcInterval=BWTAlgorithms::findInterval(m_pBWT, reverseComplement(pkmer));
-
-            }
-            
-            m_currentKmerSize = ReduceSize;
-
-           
-        }     
-
-    }
-   
-     
-    
-       return newLeaves;
-    
-}
-size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(size_t LowerBound,size_t UpperBound,SONode3PtrList &newLeaves)
-{
-   std::vector<std::pair<std::string,BWTIntervalPair>> pkmers;
-   int tempmaxfmfreqs = 0;
-// std::cout<<      "here\n";
-   for(auto& iter : newLeaves)
-    {
-        std::string pkmer = iter->getFullString().substr(iter->getFullString().length()-UpperBound);
-
-        std::string startkmer = pkmer.substr(UpperBound - LowerBound); //  string of lower bound kmer size
-        
-        BWTInterval Fwdinterval = BWTAlgorithms::findInterval(m_pBWT, startkmer);
-        BWTInterval Rvcinterval = BWTAlgorithms::findInterval(m_pRBWT, reverseComplement(reverse(startkmer)));
-        BWTIntervalPair bip;
-        bip.interval[0] = Fwdinterval;
-        bip.interval[1] = Rvcinterval;
-        
-
-        pkmers.push_back(std::make_pair(pkmer,bip));
-
-        if( Fwdinterval.size() +  Rvcinterval.size() > (int)tempmaxfmfreqs) //check interval size
-            tempmaxfmfreqs = Fwdinterval.size() +  Rvcinterval.size();
-
-    }
-    
-    
-    // std::cout<<   (int)tempmaxfmfreqs - (int)freqsOfKmerSize.at(LowerBound - m_minOverlap)    <<" mm\n";
-    //if( (int)tempmaxfmfreqs - (int)freqsOfKmerSize.at(LowerBound - m_minOverlap) < 5 ) return LowerBound;
-    if( (int)tempmaxfmfreqs - (int)freqsOfKmerSize[LowerBound] < 5 ) return LowerBound;
- 
-    for(size_t i=1 ; i <= UpperBound - LowerBound; i++ )
-    {
-       tempmaxfmfreqs = 0;
-       for(size_t j = 0; j < pkmers.size(); j++)
-       {
-            std::string startkmer = pkmers.at(j).first.substr(UpperBound - LowerBound - i);
-            BWTInterval Fwdinterval = pkmers.at(j).second.interval[0];
-            BWTInterval Rvcinterval = pkmers.at(j).second.interval[1];
-            
-            char b = startkmer[0];
-            char rcb = complement(b);
-			/*
-            if(b == 'A' ) rcb = 'T' ;
-            else if(b == 'C' ) rcb = 'G' ;
-            else if(b == 'G' ) rcb = 'C' ;
-            else if(b == 'T' ) rcb = 'A' ;
-			*/
-            BWTAlgorithms::updateInterval(Fwdinterval,b,m_pBWT);
-            BWTAlgorithms::updateInterval(Rvcinterval,rcb,m_pRBWT);
-            pkmers.at(j).second.interval[0] = Fwdinterval;
-            pkmers.at(j).second.interval[1] = Rvcinterval;
-
-            
-            if( Fwdinterval.size() +  Rvcinterval.size()> (int)tempmaxfmfreqs)
-                tempmaxfmfreqs = Fwdinterval.size() +  Rvcinterval.size();
-
-        
-        }
-    
-   
-   
-        //if( (int)tempmaxfmfreqs - (int)freqsOfKmerSize.at(LowerBound - m_minOverlap + i) < 5 ) return LowerBound +i ;
-        if( (int)tempmaxfmfreqs - (int)freqsOfKmerSize[LowerBound + i] < 5 ) return LowerBound + i ;
-             
-
-    }
-    
-    
-    return UpperBound;
-
-    
-}
-
-
-
-
-
-bool LongReadSelfCorrectByOverlap::isInsufficientFreqs(SONode3PtrList &newLeaves)
-{
-    size_t highfreqscount = 0;
-    for(auto& iter : newLeaves)
-    {
-        
-       int t = m_PBcoverage > 60 ? int(m_PBcoverage/60)*3:3; 
-        
-       if( iter->fwdInterval.size() + iter->rvcInterval.size() > t)
-           highfreqscount++;
-
-    }
-    
-    if(highfreqscount == 0)
-        return true;
-    else if (highfreqscount <= 2 && newLeaves.size()>=5 )
-        return true;
-    else if (highfreqscount <= 1 && newLeaves.size()>=3 )
-        return true;
-    return false;
-}
-
-// Refine SA intervals of each leave with a new kmer
-void LongReadSelfCorrectByOverlap::refineSAInterval(size_t newKmer)
-{   
-    std::vector<std::pair<BWTInterval,BWTInterval>> refine_interval;
-
-    for(auto& iter : m_leaves)
-    {
-        
-        // reset the SA intervals using original m_minOverlap
-        std::string pkmer = iter->getSuffix(newKmer);
-
-        iter->fwdInterval = BWTAlgorithms::findInterval(m_pRBWT, reverse(pkmer));
-        iter->rvcInterval = BWTAlgorithms::findInterval(m_pBWT, reverseComplement(pkmer));
-       
-       
-    }
-    m_currentKmerSize = newKmer;
-    
-	
-}
-
-
-
-
-void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList &newLeaves)
-{
-    
-    double minimumErrorRate = 1;
-    m_maxfreqs = 0;
-
-    std::vector<size_t> frequencies;
-   
-     for(auto& iter : m_leaves)
-    {
-        if(iter->LocalErrorRateRecord.back() < minimumErrorRate)
-            minimumErrorRate = iter->LocalErrorRateRecord.back();
-    }
-    
-    
-   // size_t leavesSize = m_leaves.size();
-    // std::cout<<  leavesSize    <<"   123\n";
-	/*
-    for(SONode3PtrList::iterator iter = m_leaves.begin(); iter != m_leaves.end(); ++iter)
-    {
-
-        if( leavesSize > 10 && (double)(*iter)->LocalErrorRateRecord.back() - (double)minimumErrorRate > 0.04)
-         {
-            
-           iter = m_leaves.erase(iter);
-            --iter;
-           continue;
-        } 
-       else  if((double)(*iter)->LocalErrorRateRecord.back() - (double)minimumErrorRate > 0.05 && m_currentLength > m_localSimilarlykmerSize/2 )
-        {
-            
-           iter = m_leaves.erase(iter);
-           --iter;
-           continue;
-        } 
-        
-        else if((double)(*iter)->LocalErrorRateRecord.back() - (double)minimumErrorRate > 0.1 && m_currentLength > 15 )
-        {
-            
-           iter = m_leaves.erase(iter);
-           --iter;
-           continue;
-        } 
-        
-
-    }
-	*/
-	SONode3PtrList::iterator leaf = m_leaves.begin();
-	while(leaf != m_leaves.end())
+	if(newLeaves.empty() ) //level 1 reduce size
 	{
-		double diff = (*leaf)->LocalErrorRateRecord.back() - minimumErrorRate;
-		if	(
-				(diff > 0.05 && m_currentLength > (m_localSimilarlykmerSize >> 1))
-			||	(diff > 0.10 && m_currentLength > 15)
-		//	||	(diff > 0.04 && leavesSize > 10)
-			)
+		size_t LowerBound = std::max(m_currentKmerSize - 2, m_minOverlap);
+		size_t ReduceSize = SelectFreqsOfrange(LowerBound,m_currentKmerSize,m_leaves);
+		bool isSuccessToReduce = m_currentKmerSize != ReduceSize;
+		refineSAInterval(m_leaves, ReduceSize);
+
+		attempToExtend(newLeaves,isSuccessToReduce);
+
+		if( newLeaves.empty() )//level 2 reduce threshold
 		{
-			leaf = m_leaves.erase(leaf);
-			continue;
+			m_min_SA_threshold--;
+			attempToExtend(newLeaves,0);
+			m_min_SA_threshold++;
 		}
-		leaf++;
 	}
-	/*
-    for(SONode3PtrList::iterator iter = m_leaves.begin(); iter != m_leaves.end(); ++iter)
-    {
-        
-        std::vector< std::pair<std::string, BWTIntervalPair> > extensions;
-        
-           
-        extensions = getFMIndexExtensions(*iter);
-        // std::cout<<extensions.size()<<"  size\n";
-        // Either extend the current node or branch it
-        // If no extension, do nothing and this node
-        // is no longer considered a leaf
-        
-        if (extensions.size()>0) updateLeaves(newLeaves,extensions,*iter);
 
-        else  // no extensions , give one more chance for lowest error rate path
-        {
-            
-            if((*iter)->LocalErrorRateRecord.back() == minimumErrorRate  && m_leaves.size()>1 )
-            {   
+	//extension succeed
+	if(!newLeaves.empty())
+	{
+		m_currentLength++;
+		m_currentKmerSize++;
+		if( isInsufficientFreqs(newLeaves) )// if frequency are low , relax it
+		{
+			size_t LowerBound = std::max(m_currentKmerSize - 2, m_minOverlap);
+			size_t ReduceSize = SelectFreqsOfrange(LowerBound,m_currentKmerSize,newLeaves);
+			refineSAInterval(newLeaves,ReduceSize);
+		}
 
-                m_min_SA_threshold--;//reduce threshold
-                extensions = getFMIndexExtensions(*iter);
-                
-                updateLeaves(newLeaves,extensions,*iter);
+	}
 
-                m_min_SA_threshold++;
-                
-            }
-        }
-    }
-	*/
+}
+
+// Determine the size of the reduced k-mer in leaves when the max freq of them approach to the expected one.
+size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(const size_t LowerBound, const size_t UpperBound, leafList& newLeaves)
+{
+	extArray maxKmerArray;
+	int tempmaxfmfreqs = 0;
+
+	for(auto& iter : newLeaves)
+	{
+		SAIOverlapNode3* leaf    = iter.leafNodePtr;
+		std::string    maxKmer = leaf -> getSuffix(UpperBound);
+
+		std::string startkmer  = maxKmer.substr(UpperBound - LowerBound); //  string of lower bound kmer size
+
+		BWTInterval Fwdinterval = BWTAlgorithms::findInterval(m_pBWT, startkmer);
+		BWTInterval Rvcinterval = BWTAlgorithms::findInterval(m_pRBWT, reverseComplement(reverse(startkmer)));
+
+		maxKmerArray.emplace_back(maxKmer,Fwdinterval,Rvcinterval);
+		FMidx& currKmer = maxKmerArray.back();
+
+		if(currKmer.getKmerFrequency() > tempmaxfmfreqs ) //check interval size
+			tempmaxfmfreqs = currKmer.getKmerFrequency();
+
+	}
+
+	if( tempmaxfmfreqs - (int)freqsOfKmerSize[LowerBound] < 5 ) return LowerBound;
+
+	for(size_t i=1 ; i <= UpperBound - LowerBound; i++ )
+	{
+		tempmaxfmfreqs = 0;
+		for(size_t j = 0; j < maxKmerArray.size(); j++)
+		{
+			std::string startkmer   = maxKmerArray.at(j).SearchLetters.substr(UpperBound - LowerBound - i);
+			BWTInterval Fwdinterval = maxKmerArray.at(j).getFwdInterval();
+			BWTInterval Rvcinterval = maxKmerArray.at(j).getRvcInterval();
+
+			char b   = startkmer[0];//b:base
+			char rcb = complement(b);
+			BWTAlgorithms::updateInterval(Fwdinterval,  b,m_pBWT );
+			BWTAlgorithms::updateInterval(Rvcinterval,rcb,m_pRBWT);
+
+			maxKmerArray.at(j).setInterval(Fwdinterval,Rvcinterval);
+
+			if(maxKmerArray.at(j).getKmerFrequency() > tempmaxfmfreqs) //check interval size
+				tempmaxfmfreqs = maxKmerArray.at(j).getKmerFrequency();
+
+		}
+
+		if( tempmaxfmfreqs - (int)freqsOfKmerSize[LowerBound + i] < 5 ) return LowerBound + i ;
+	}
+
+	return UpperBound;
+}
+
+// Determine if frequencies in leaves are too low to perform the next extension.
+bool LongReadSelfCorrectByOverlap::isInsufficientFreqs(leafList& newLeaves)
+{
+	size_t highfreqscount = 0;
+	for(auto& iter : newLeaves)
+	{
+		int highfreqThreshold = m_PBcoverage > 60 ? (size_t)(m_PBcoverage/60)*3 : 3;
+
+		if( iter.kmerFrequency > highfreqThreshold)
+			highfreqscount++;
+	}
+
+	if(highfreqscount == 0)
+		return true;
+	else if (highfreqscount <= 2 && newLeaves.size()>=5 )
+		return true;
+	else if (highfreqscount <= 1 && newLeaves.size()>=3 )
+		return true;
+	return false;
+}
+
+// Refine SA intervals of each leave with a new k-mer
+void LongReadSelfCorrectByOverlap::refineSAInterval(leafList& leaves, const size_t  newKmerSize)
+{
+	for(auto& iter : leaves)
+	{
+		SAIOverlapNode3* leaf = iter.leafNodePtr;
+
+		// reset the SA intervals using newKmerSize
+			std::string reducedKmer = leaf -> getSuffix(newKmerSize);
+
+			leaf -> fwdInterval = BWTAlgorithms::findInterval(m_pRBWT,           reverse(reducedKmer));
+			leaf -> rvcInterval = BWTAlgorithms::findInterval(m_pBWT , reverseComplement(reducedKmer));
+	}
+
+	m_currentKmerSize = newKmerSize;
+}
+
+// Keep the leaves whose highly-correct rates are relative to the others.
+// And attempt to extend those leaves.
+void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves,bool isSuccessToReduce)
+{
+	double minimumErrorRate = 1;
+	m_maxfreqs = 0;
+
+	std::vector<size_t> frequencies;
+
+	// Compute the min error rate
 	for(auto& iter : m_leaves)
 	{
-		std::vector<std::pair<std::string, BWTIntervalPair> > extensions;
+		SAIOverlapNode3* leaf = iter.leafNodePtr;
+		if( leaf->LocalErrorRateRecord.back() < minimumErrorRate)
+			minimumErrorRate = leaf->LocalErrorRateRecord.back();
+	}
+
+	// Compute the errorRateDiff to trim leaves whose error rates relative to the others is high.
+	leafList::iterator iter = m_leaves.begin();
+	while(iter != m_leaves.end())
+	{
+		SAIOverlapNode3* leaf = (*iter).leafNodePtr;
+		double errorRateDiff  = (leaf->LocalErrorRateRecord.back()) - minimumErrorRate;
+		if((errorRateDiff > 0.05 && m_currentLength > m_localSimilarlykmerSize/2)
+		|| (errorRateDiff > 0.1  && m_currentLength > 15))
+		{
+			iter = m_leaves.erase(iter);
+			continue;
+		}
+		++iter;
+	}
+
+	minTotalcount = 10000000;
+	size_t currLeavesNum = 1;
+
+	iter = m_leaves.begin();
+	while(iter != m_leaves.end())
+	{
+		extArray extensions;
 		int count = 0;
+		SAIOverlapNode3* leaf = (*iter).leafNodePtr;
 		while(count < 2)
 		{
-			if	(
-				count == 1 
-				&& !(iter->LocalErrorRateRecord.back() == minimumErrorRate && m_leaves.size() > 1)
-				)
+			if	( count == 1
+			&& !(leaf->LocalErrorRateRecord.back() == minimumErrorRate && m_leaves.size() > 1))
 				break;
-			extensions = getFMIndexExtensions(iter);
+
+			if (m_Debug.isDebug && isSuccessToReduce)
+			{
+				int kmer_freq = leaf->fwdInterval.size() + leaf->rvcInterval.size();
+
+				char strand;
+				if(m_Debug.isPosStrand)
+					strand = '+';
+				else
+					strand = '-';
+
+				*(m_Debug.debug_file)   << ">" << m_Debug.readID
+										<< "|" << m_Debug.sourceStart << "|" << m_Debug.sourceEnd
+										<< "|" << strand
+										<< "&" << m_Debug.caseNum     << "|" << m_step_number
+										<< "|" << m_leaves.size()
+										<< "&" << currLeavesNum       << "|" << ((*iter).lastLeafID)
+										<< "&" << m_currentKmerSize   << "|" <<  kmer_freq
+										<< "|" << std::fixed          << std::setprecision(2)
+										<< 100*(leaf ->LocalErrorRateRecord.back()) << "&" ;
+			}
+
+			extensions = getFMIndexExtensions(*iter,isSuccessToReduce);
+
+			if (m_Debug.isDebug && isSuccessToReduce)
+			{
+				*(m_Debug.debug_file) << leaf -> getFullString() << "\n";
+			}
+
 			if(extensions.size() > 0)
 			{
-				updateLeaves(newLeaves, extensions, iter);
+				updateLeaves(newLeaves, extensions, *iter,currLeavesNum);
 				break;
 			}
+			isSuccessToReduce = false;
 			m_min_SA_threshold--;
 			count++;
 		}
 		m_min_SA_threshold += count;
+
+		if (minTotalcount >= totalcount)
+		{
+			minTotalcount = totalcount;
+		}
+
+		++iter;
+		++currLeavesNum;
 	}
 }
 
-void LongReadSelfCorrectByOverlap::updateLeaves(SONode3PtrList &newLeaves,std::vector< std::pair<std::string, BWTIntervalPair> > &extensions,SAIOverlapNode3* pNode)
+// Update the leaves after the extension is successful.
+void LongReadSelfCorrectByOverlap::updateLeaves(leafList& newLeaves,extArray& extensions,leafInfo& leaf,size_t currLeavesNum)
 {
-    
-    if(extensions.size() == 1)
-        {
- 
-
-            // Single extension, do not branch
-            pNode->extend(extensions.front().first);
-            pNode->fwdInterval = extensions.front().second.interval[0];
-            pNode->rvcInterval = extensions.front().second.interval[1];
-			if(pNode->fwdInterval.isValid())
-				pNode->addKmerCount( pNode->fwdInterval.size());
-			if(pNode->rvcInterval.isValid())
-				pNode->addKmerCount( pNode->rvcInterval.size());
-			
-			// currOverlapLen/queryOverlapLen always increase wrt each extension
-			// in order to know the approximate real-time matched length for terminal/containment processing
-			pNode->currOverlapLen++;
-			pNode->queryOverlapLen++;
-			
-			newLeaves.push_back(pNode);
-        }
-        
-    else if(extensions.size() > 1)
-    {
-        
-        // Branch
-        for(size_t i = 0; i < extensions.size(); ++i)
-        {   
-
-            SAIOverlapNode3* pChildNode = pNode->createChild(extensions[i].first);
-            
-
-            
-            
-            pChildNode->fwdInterval=extensions[i].second.interval[0];
-            pChildNode->rvcInterval=extensions[i].second.interval[1];
-
-            //inherit accumulated kmerCount from parent
-            pChildNode->addKmerCount( pNode->getKmerCount() );
-            if(pChildNode->fwdInterval.isValid())
-                pChildNode->addKmerCount( pChildNode->fwdInterval.size());
-            if(pChildNode->rvcInterval.isValid())
-                pChildNode->addKmerCount( pChildNode->rvcInterval.size());
-            pChildNode->currOverlapLen++;
-            pChildNode->queryOverlapLen++;
-            
-            newLeaves.push_back(pChildNode);
-        }
-    }
-    
+	SAIOverlapNode3* pNode    = leaf.leafNodePtr;
+	if(extensions.size() == 1)
+	{
+		// Single extension, do not branch
+			pNode->extend(extensions.front().SearchLetters);
+			newLeaves.emplace_back(pNode, leaf, extensions.front(), currLeavesNum);
+	}
+	else if(extensions.size() > 1)
+	{
+		// Branch
+		for(size_t i = 0; i < extensions.size(); ++i)
+		{
+			SAIOverlapNode3* pChildNode = pNode->createChild(extensions[i].SearchLetters);
+			//inherit accumulated kmerCount from parent
+				pChildNode->addKmerCount( pNode->getKmerCount() );
+			newLeaves.emplace_back(pChildNode, leaf, extensions[i], currLeavesNum);
+		}
+	}
 }
-bool LongReadSelfCorrectByOverlap::PrunedBySeedSupport(SONode3PtrList &newLeaves)
+
+// Compute the error rates and keep the leaves whose error rates <= expected error rate.
+bool LongReadSelfCorrectByOverlap::PrunedBySeedSupport(leafList& newLeaves)
 {
 	// the seed index in m_TerminatedIntervals for m_currentLength
 	// the m_currentLength is the same for all leaves
 	// which is used as the central index within the m_maxIndelSize window
 	size_t currSeedIdx = m_currentLength-m_seedSize;
-	
+
 	//        ---	seed size =3. seed dist = 1;
 	//         --*
 	//          -*-
@@ -621,77 +503,66 @@ bool LongReadSelfCorrectByOverlap::PrunedBySeedSupport(SONode3PtrList &newLeaves
 	// *: SNP or indel errors, ---: seed size
 	// Erase the leaf if no feasible seeds are found within seedSize+maxIndelSize.
 	size_t indelOffset = m_seedSize+m_maxIndelSize;
-			
+
 	// Compute the range of small and large indices for tolerating m_maxIndelSize
 	size_t smallSeedIdx = currSeedIdx <= indelOffset ? 0 : currSeedIdx - indelOffset;
 	size_t largeSeedIdx = (currSeedIdx+indelOffset) >= (m_query.length()-m_seedSize)?
 						  (m_query.length()-m_seedSize):currSeedIdx+indelOffset;
 
 	// check range of last seed and find new seeds for each interval
-	SONode3PtrList::iterator iter = newLeaves.begin(); 
-    while(iter != newLeaves.end())
-    {
-        bool isNewSeedFound = false;
-        
-		if( m_currentLength - (*iter)->lastOverlapLen > m_seedSize || m_currentLength - (*iter)->lastOverlapLen <= 1)
+	leafList::iterator iter = newLeaves.begin();
+	while(iter != newLeaves.end())
+	{
+		bool isNewSeedFound = false;
+		SAIOverlapNode3* leaf = (*iter).leafNodePtr;
+
+		if (m_currentLength - leaf -> lastOverlapLen > m_seedSize
+		||  m_currentLength - leaf -> lastOverlapLen <= 1 )
 		{
-            size_t preSeedIdx = (*iter)->lastSeedIdx;
+			size_t preSeedIdx = leaf -> lastSeedIdx;
 			// search for matched new seeds
-			isNewSeedFound = isSupportedByNewSeed(*iter, smallSeedIdx, largeSeedIdx);
-           
+			isNewSeedFound = isSupportedByNewSeed(leaf, smallSeedIdx, largeSeedIdx);
+
 			// lastSeedIdxOffset records the offset between lastSeedIdx and currSeedIdx when first match is found
 			if(isNewSeedFound)
-            {
-                if( currSeedIdx+(*iter)->lastSeedIdxOffset - preSeedIdx > m_seedSize )
-                   (*iter)->numRedeemSeed += (m_seedSize-1)*m_PacBioErrorRate;
-                (*iter)->lastSeedIdxOffset = (int)(*iter)->lastSeedIdx - (int)currSeedIdx;
-            }   
-            
-			// If the seed extension is stopped by SNP or indel error for the 1st time
-			// increment the error number in order to distinguish two separate seeds
-			// and one larger consecutive seed during error rate computation
-            if(!isNewSeedFound &&(currSeedIdx+(*iter)->lastSeedIdxOffset - (*iter)->lastSeedIdx) % m_seedSize == 1 )
-                (*iter)->numOfErrors ++;
-			else if(!isNewSeedFound && currSeedIdx+(*iter)->lastSeedIdxOffset - (*iter)->lastSeedIdx > m_seedSize-1)
-				(*iter)->numRedeemSeed += 1-m_PacBioErrorRate;
-		}
-        
-		else
-			(*iter)->numRedeemSeed += 1-m_PacBioErrorRate;
-		
-		 
-              
-        double currErrorRate = computeErrorRate(*iter);
-          
-           
-  
+			{
+				if( currSeedIdx + leaf -> lastSeedIdxOffset - preSeedIdx > m_seedSize )
+					leaf -> numRedeemSeed += (m_seedSize-1)*m_PacBioErrorRate;
 
+				leaf -> lastSeedIdxOffset = (int) leaf->lastSeedIdx - (int)currSeedIdx;
+			}
+			else
+			{
+				// If the seed extension is stopped by SNP or indel error for the 1st time
+				// increment the error number in order to distinguish two separate seeds
+				// and one larger consecutive seed during error rate computation
+				if     ( (currSeedIdx + leaf->lastSeedIdxOffset - leaf->lastSeedIdx) % m_seedSize == 1 )
+					leaf->numOfErrors ++;
+				else if( (currSeedIdx + leaf->lastSeedIdxOffset - leaf->lastSeedIdx) > m_seedSize  - 1 )
+					leaf->numRedeemSeed += 1-m_PacBioErrorRate;
+			}
+		}
+
+		else
+			leaf->numRedeemSeed += 1-m_PacBioErrorRate;
+
+		double currErrorRate = computeErrorRate(leaf);
 
 		// speedup by skipping dissimilar reads
-		// This is the 2nd filter less reliable than the 1st one 
-		if(currErrorRate > m_errorRate  && (*iter)->LocalErrorRateRecord.size() > m_localSimilarlykmerSize ) //testcw
+		// This is the 2nd filter less reliable than the 1st one
+		if(currErrorRate > m_errorRate) //testcw
 		{
 			iter = newLeaves.erase(iter);
-           
-            
 			continue;
 		}
-        else if (currErrorRate > m_errorRate && (*iter)->LocalErrorRateRecord.size() <= m_localSimilarlykmerSize)
-        {
-            iter = newLeaves.erase(iter);
-           
-          
-			continue;
-        }
 
-		
 		iter++;
-    }
-	
-    return true;
+	}
+
+	return true;
 }
 
-// Identify new seeds wrt currSeedIdx
+// Find the matched k-mer with the current extension sequence in the raw read.
 bool LongReadSelfCorrectByOverlap::isSupportedByNewSeed(SAIOverlapNode3* currNode, size_t smallSeedIdx, size_t largeSeedIdx)
 {
 	// If there is mismatch/indel, jump to the next m_seedSize/m_seedDist, and 1 otherwise.
@@ -700,7 +571,7 @@ bool LongReadSelfCorrectByOverlap::isSupportedByNewSeed(SAIOverlapNode3* currNod
 
 	// search for new seed starting from last matched seed or smallSeedIdx
 	size_t startSeedIdx = std::max(smallSeedIdx, currNode->lastSeedIdx+seedIdxOffset);
-	
+
 	bool isNewSeedFound = false;
 	BWTInterval currFwdInterval = currNode->fwdInterval;
 	BWTInterval currRvcInterval = currNode->rvcInterval;
@@ -708,18 +579,18 @@ bool LongReadSelfCorrectByOverlap::isSupportedByNewSeed(SAIOverlapNode3* currNod
 	// Binary search for new seeds using Query interval tree
 	std::vector<TreeInterval<size_t> > resultsFwd, resultsRvc;
 	if(currFwdInterval.isValid())
-		fwdIntervalTree.findOverlapping(currFwdInterval.lower, currFwdInterval.upper, resultsFwd);
+		m_fwdIntervalTree.findOverlapping(currFwdInterval.lower, currFwdInterval.upper, resultsFwd);
 	if(currRvcInterval.isValid())
-		rvcIntervalTree.findOverlapping(currRvcInterval.lower, currRvcInterval.upper, resultsRvc);
+		m_rvcIntervalTree.findOverlapping(currRvcInterval.lower, currRvcInterval.upper, resultsRvc);
 	int minIdxDiff = 10000;
 	size_t currSeedIdx = m_currentLength-m_seedSize;
 	for(size_t i=0 ; i<resultsFwd.size() || i<resultsRvc.size() ; i++)
 	{
-		if( currFwdInterval.isValid() && 
-			i<resultsFwd.size() && 
-			resultsFwd.at(i).value >= startSeedIdx && 
+		if( currFwdInterval.isValid() &&
+			i<resultsFwd.size() &&
+			resultsFwd.at(i).value >= startSeedIdx &&
 			resultsFwd.at(i).value <= largeSeedIdx )
-		{   
+		{
 			// update currNode members
 			if(std::abs((int)resultsFwd.at(i).value - (int)currSeedIdx) < minIdxDiff)
 			{
@@ -735,15 +606,15 @@ bool LongReadSelfCorrectByOverlap::isSupportedByNewSeed(SAIOverlapNode3* currNod
 			currNode->currOverlapLen = m_currentLength;
 			isNewSeedFound = true;
 		}
-		else if( currRvcInterval.isValid() && 
-			i<resultsRvc.size() && 
-			resultsRvc.at(i).value >= startSeedIdx && 
+		else if( currRvcInterval.isValid() &&
+			i<resultsRvc.size() &&
+			resultsRvc.at(i).value >= startSeedIdx &&
 			resultsRvc.at(i).value <= largeSeedIdx )
-		{   
+		{
 
 			// update currNode members
 			if(std::abs( (int)currSeedIdx - (int)resultsRvc.at(i).value ) < minIdxDiff)
-			{					
+			{
 				currNode->lastSeedIdx = resultsRvc.at(i).value;
 
 				// query overlap may shift due to indels
@@ -757,227 +628,196 @@ bool LongReadSelfCorrectByOverlap::isSupportedByNewSeed(SAIOverlapNode3* currNod
 			isNewSeedFound = true;
 		}
 	}
-	
+
 	if(isNewSeedFound)
 		currNode->totalSeeds++;
-	// std::cout<<   resultsFwd.size() << " " <<  resultsFwd.size()  <<"\n";
 	return isNewSeedFound;
 }
 
+// Compute the error rate in the leaf.
 double LongReadSelfCorrectByOverlap::computeErrorRate(SAIOverlapNode3* currNode)
-{	
+{
 	// Compute accuracy via matched length in both query and subject
-	// double matchedLen = (double)currNode->totalSeeds*2;
-    // double matchedLen = (double)currNode->totalSeeds ;
-	
 
-    
-    double matchedLen = (double)currNode->totalSeeds + m_seedSize-1;
-    
+	double matchedLen = (double)currNode->totalSeeds + m_seedSize-1;
+
 	// SNP and indel over-estimate the unmatched lengths across error, ---*---
 	// Restore the unmatched region via numOfErrors, which is still over-estimated
 
 	matchedLen += currNode->numRedeemSeed;
 
 	double totalLen = (double)currNode->currOverlapLen ;
-    
 
 	double unmatchedLen = totalLen - matchedLen;
 
+	double  currErrorRate =  unmatchedLen/totalLen;
+	currNode->GlobalErrorRateRecord.push_back(currErrorRate);
 
-    
-    double  currErrorRate =  unmatchedLen/totalLen;
-    currNode->GlobalErrorRateRecord.push_back(currErrorRate);
-   
-    if(currNode->GlobalErrorRateRecord.size() >= m_localSimilarlykmerSize)
-    {
-        size_t totalsize = currNode->GlobalErrorRateRecord.size();
-      
-        currErrorRate = ( currErrorRate*totalLen-currNode->GlobalErrorRateRecord.at( totalsize - m_localSimilarlykmerSize)*(totalLen - m_localSimilarlykmerSize) )/m_localSimilarlykmerSize;
-         
-    }
+	if(currNode->GlobalErrorRateRecord.size() >= m_localSimilarlykmerSize)
+	{
+		size_t totalsize = currNode->GlobalErrorRateRecord.size();
+
+		currErrorRate = ( currErrorRate*totalLen-currNode->GlobalErrorRateRecord.at( totalsize - m_localSimilarlykmerSize)*(totalLen - m_localSimilarlykmerSize) )/m_localSimilarlykmerSize;
+	}
 	currNode->LocalErrorRateRecord.push_back(currErrorRate);
 	return currErrorRate;
 }
 
-
-
-
-
-
-std::vector<std::pair<std::string, BWTIntervalPair> > LongReadSelfCorrectByOverlap::getFMIndexExtensions(SAIOverlapNode3* pNode)
+// Attempt to the extension in the current leaf and get the extension information.
+extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const leafInfo& currLeaf,const bool printDebugInfo)
 {
-    std::vector<std::pair<std::string, BWTIntervalPair> > out;
-    size_t IntervalSizeCutoff = m_min_SA_threshold;    //min freq at fwd and rvc bwt, >=3 is equal to >=2 kmer freq
-    
-    //std::vector<std::pair<size_t,BWTIntervalPair>> bvector;
-	std::pair<size_t, BiBWTInterval> bvector[4 + 1];
-     
-    size_t totalcount = 0;
-    size_t maxfreqsofleave = 0;
-    std::string currKmer = pNode->getFullString().substr( pNode->getFullString().length()-m_currentKmerSize);
+	SAIOverlapNode3* leaf = currLeaf.leafNodePtr;
+	extArray output;
+		output.reserve(4);
+	extArray totalExt;
+		totalExt.reserve(4);
 
-    
-    
-    if(m_isDebug)
-    
-    std::cout<<pNode->getFullString()<<" || "<< pNode->LocalErrorRateRecord.back()<<"\n" << currKmer << "\t" << pNode->fwdInterval.size()+ pNode->rvcInterval.size()<<"\n";
-     
+	size_t IntervalSizeCutoff = m_min_SA_threshold;    //min freq at fwd and rvc bwt, >=3 is equal to >=2 kmer freq
 
-    for(int i = 1; i < BWT_ALPHABET::size; ++i) //i=A,C,G,T
-    {
-        char b = BWT_ALPHABET::getChar(i);
-         
-        //update forward Interval using extension b
-        BWTInterval fwdProbe=pNode->fwdInterval;
-        if(fwdProbe.isValid())
-            BWTAlgorithms::updateInterval(fwdProbe,b,m_pRBWT);
-
-        //update reverse complement Interval using extension rcb
-        BWTInterval rvcProbe=pNode->rvcInterval;
-		char rcb=BWT_ALPHABET::getChar(5-i);
-        if(rvcProbe.isValid())
-            BWTAlgorithms::updateInterval(rvcProbe,rcb,m_pBWT);
-        //BWTIntervalPair bip;
-        //bip.interval[0]=fwdProbe;
-        //bip.interval[1]=rvcProbe;
-        //size_t bcount = 0;
-        BiBWTInterval object;
-		object.fwdInterval = fwdProbe;
-		object.rvcInterval = rvcProbe;
-		size_t bcount = object.getFreq();
-        //if(fwdProbe.isValid())
-        //    bcount += fwdProbe.size();
-        //if(rvcProbe.isValid())
-        //    bcount += rvcProbe.size();
-        
-
-        
-        totalcount += bcount;
-
-        if(m_isDebug)
-            std::cout << "bcount:" << bcount << "||" << b << "\n";//testcw
-        
-        //bvector.push_back(std::make_pair(bcount, bip));
-        bvector[i] = std::make_pair(bcount, object);
-        if(bcount >  maxfreqsofleave)
-            maxfreqsofleave = bcount;
-        
-
-    }// end of ACGT
-      // std::cout << "totalcount: " << totalcount << std::endl;//testcw
-     
-     
-    //if(totalcount > 1024)  // fillter low complex repeat e.g. AAAAAAAAAAAA
-    //    return out;
-     
-     m_maxfreqs = m_maxfreqs < totalcount ? totalcount :m_maxfreqs;
-
-       
-        
-       for(int i = 1; i < BWT_ALPHABET::size; ++i)
-       {
-           //float bratio = (float)bvector.at(i-1).first/(float)maxfreqsofleave;
-           float bratio = (float)bvector[i].first/(float)maxfreqsofleave;
-           //size_t bdiff = std::abs((int)bvector.at(i-1).first-(int)maxfreqsofleave);
-          
-          char b = BWT_ALPHABET::getChar(i);
-          bool match = false;
-        if (currKmer.substr(currKmer.length()-2,1) == currKmer.substr(currKmer.length()-1,1) && currKmer.substr(currKmer.length()-3,1) ==currKmer.substr(currKmer.length()-2,1))   
-        {   
-            // bvector.at(i-1).first =  bratio >= 0.6  ? bvector.at(i-1).first : 0;
-            bratio = ((maxfreqsofleave <= 100 && bratio >= 0.6) || (maxfreqsofleave > 100 && bratio >= 0.3) ) ? bratio : 0;
-            // std::cout<<   bratio   <<"\n";
-           // if ( totalcount > 100 && bratio >= 0.4 && ismatchedbykmer(bvector.at(i-1).second.interval[0],bvector.at(i-1).second.interval[1])) match = true;
-         }
-       
-        //if ((  (maxfreqsofleave > 150 && bratio >= 0.125) || (maxfreqsofleave > 50 && bratio >= 0.2) ) &&ismatchedbykmer(bvector.at(i-1).second.interval[0],bvector.at(i-1).second.interval[1])) match = true;
-        if	(
-			((maxfreqsofleave > 150 && bratio >= 0.125) || (maxfreqsofleave > 50 && bratio >= 0.2))
-			&& (ismatchedbykmer(bvector[i].second.fwdInterval, true) || ismatchedbykmer(bvector[i].second.rvcInterval, false))
-			)
-			match = true;
-
-        //bool isPassedThreshold =  bratio >= 0.25 && (bvector.at(i-1).first >= IntervalSizeCutoff || (bratio >= 0.6 && totalcount >= IntervalSizeCutoff+2 )) ? true: false;
-        bool isPassedThreshold =  bratio >= 0.25 && (bvector[i].first >= IntervalSizeCutoff || (bratio >= 0.6 && totalcount >= IntervalSizeCutoff+2 ));
-       if( match || isPassedThreshold  )
-       // if(((totalcount <= 100 && bratio >= 0.3) ||  (bratio >= 0.4 &&  totalcount > 100))  &&(bvector.at(i-1).first >= IntervalSizeCutoff || (bratio >= 0.6 && totalcount >= IntervalSizeCutoff+2 )))
-        {
-			
-            // extend to b
-            
-            std::string tmp = std::string(1, b);
-            //tmp.append(1,b);
-            BWTIntervalPair bip;
-            //bip.interval[0] = bvector.at(i-1).second.interval[0];
-            bip.interval[0] = bvector[i].second.fwdInterval;
-            //bip.interval[1] = bvector.at(i-1).second.interval[1];
-            bip.interval[1] = bvector[i].second.rvcInterval;
-            out.push_back(std::make_pair(tmp, bip));
-        }
-       }
-
-    return out;
-}
+	totalcount = 0;
+	int maxfreqsofleave = 0;
 /*
-bool LongReadSelfCorrectByOverlap::ismatchedbykmer(BWTInterval currFwdInterval,BWTInterval currRvcInterval)
-{	
-    bool match = false;
+	if(m_Debug.isDebug)
+		std::cout   << leaf->getFullString() <<" || Local Error Rate: "
+					<< leaf->LocalErrorRateRecord.back()  <<"\n"
+					<< leaf->getSuffix(m_currentKmerSize) << " || k-mer freqs: "
+					<< currLeaf.kmerFrequency << std::endl;
+*/
+	for(int i = 1; i < BWT_ALPHABET::size; ++i) //i=A,C,G,T
+	{
+		//update forward Interval using extension b
+			char b = BWT_ALPHABET::getChar(i);
+			BWTInterval fwdProbe = leaf->fwdInterval;
+			if(fwdProbe.isValid())
+				BWTAlgorithms::updateInterval(fwdProbe,b,m_pRBWT);
 
+		//update reverse complement Interval using extension rcb
+			char rcb=BWT_ALPHABET::getChar(5-i);
+			BWTInterval rvcProbe = leaf->rvcInterval;
+			if(rvcProbe.isValid())
+				BWTAlgorithms::updateInterval(rvcProbe,rcb,m_pBWT);
+
+		FMidx currExt = FMidx(b,fwdProbe,rvcProbe);
+
+		totalcount += currExt.getKmerFrequency();
+
+		if(m_Debug.isDebug && printDebugInfo)
+		{
+			*(m_Debug.debug_file) << currExt.getKmerFrequency();
+			if(i < BWT_ALPHABET::size-1)
+				*(m_Debug.debug_file) << "|";
+			else
+				*(m_Debug.debug_file) << "&";
+		}
+
+		if(currExt.getKmerFrequency() >  maxfreqsofleave)
+			maxfreqsofleave = currExt.getKmerFrequency();
+
+		totalExt.push_back(currExt);
+
+	}// end of ACGT
+/*
+	if(totalcount > 1024)  // filter low complex repeat e.g. AAAAAAAAAAAA
+		return output;
+/**/
+	m_maxfreqs = std::max(m_maxfreqs,totalcount);
+
+	for(int i = 1; i < BWT_ALPHABET::size; ++i)
+	{
+		// Get the information
+		size_t kmerFreq         = totalExt.at(i-1).getKmerFrequency();
+		BWTInterval fwdInterval = totalExt.at(i-1).getFwdInterval();
+		BWTInterval rvcInterval = totalExt.at(i-1).getRvcInterval();
+
+		// Compute the k-mer ratio arguments
+		const double kmerRatioNotPass = 2;
+		double kmerRatioCutoff = 0;
+		double kmerRatio = (double) kmerFreq/(double)maxfreqsofleave;
+
+		char b = BWT_ALPHABET::getChar(i);
+
+		bool isHomopolymer = (currLeaf.tailLetterCount >= 3);
+		bool isMatchedBy5mer = ismatchedbykmer(fwdInterval,rvcInterval);
+
+		bool isFreqPass     = kmerFreq   >= IntervalSizeCutoff;
+		bool isLowCoverage  = totalcount >= IntervalSizeCutoff+2;
+		bool isRepeat       = maxfreqsofleave > 100;
+		bool isHighlyRepeat = maxfreqsofleave > 150;
+		bool isLowlyRepeat  = maxfreqsofleave >  50;
+
+		// matched case
+			if  ( isMatchedBy5mer &&  isHighlyRepeat )
+				kmerRatioCutoff = 0.125;
+		else if ( isMatchedBy5mer &&  isLowlyRepeat  )
+				kmerRatioCutoff = 0.2  ;
+		// unmatched case
+		else if ( isFreqPass )
+				kmerRatioCutoff = 0.25 ;
+		else if ( isLowCoverage )
+				kmerRatioCutoff = 0.6  ;
+		else
+				kmerRatioCutoff = kmerRatioNotPass;
+
+		// Homopolymer case
+			if  ( isHomopolymer   &&  isRepeat )
+				kmerRatioCutoff = std::max(kmerRatioCutoff,0.3);
+		else if ( isHomopolymer )
+				kmerRatioCutoff = std::max(kmerRatioCutoff,0.6);
+
+		if(m_Debug.isDebug && printDebugInfo)
+		{
+			*(m_Debug.debug_file) << kmerRatio;
+			if(i < BWT_ALPHABET::size-1)
+				*(m_Debug.debug_file) << "|";
+			else
+				*(m_Debug.debug_file) << "\n";
+		}
+
+		if( kmerRatio >=   kmerRatioCutoff )
+		{
+			// extend to b
+				output.emplace_back(b,fwdInterval,rvcInterval);
+		}
+	}
+
+	return output;
+}
+
+// Determine if the current sequence is matched 5-mer raw read.
+bool LongReadSelfCorrectByOverlap::ismatchedbykmer(BWTInterval currFwdInterval,BWTInterval currRvcInterval)
+{
+	bool match = false;
 
 	// Binary search for new seeds using Query interval tree
 	std::vector<TreeInterval<size_t> > resultsFwd, resultsRvc;
 	if(currFwdInterval.isValid())
-		fwdIntervalTree2.findOverlapping(currFwdInterval.lower, currFwdInterval.upper, resultsFwd);
+		m_fwdIntervalTree2.findOverlapping(currFwdInterval.lower, currFwdInterval.upper, resultsFwd);
 	if(currRvcInterval.isValid())
-		rvcIntervalTree2.findOverlapping(currRvcInterval.lower, currRvcInterval.upper, resultsRvc);
-    size_t startSeedIdx = (int)m_currentLength - (int)m_maxIndelSize > 0 ? m_currentLength - m_maxIndelSize:0;
-    size_t largeSeedIdx = m_currentLength + m_maxIndelSize;
-    // std::cout<<    resultsFwd.size() +  resultsRvc.size()  << " "<<startSeedIdx  << " "<<largeSeedIdx<<"  yoo\n";
-	
+		m_rvcIntervalTree2.findOverlapping(currRvcInterval.lower, currRvcInterval.upper, resultsRvc);
+	size_t startSeedIdx = std::max((int)m_currentLength - (int)m_maxIndelSize,0);
+	size_t largeSeedIdx = m_currentLength + m_maxIndelSize;
+
 	for(size_t i=0 ; i<resultsFwd.size() || i<resultsRvc.size() ; i++)
 	{
-		if( currFwdInterval.isValid() && 
-			i<resultsFwd.size() && 
-			resultsFwd.at(i).value >= startSeedIdx && 
+		if( currFwdInterval.isValid() &&
+			i<resultsFwd.size() &&
+			resultsFwd.at(i).value >= startSeedIdx &&
 			resultsFwd.at(i).value <= largeSeedIdx )
-		{   
-
+		{
 			match = true;
-            break;
+			break;
 		}
-		else if( currRvcInterval.isValid() && 
-			i<resultsRvc.size() && 
-			resultsRvc.at(i).value >= startSeedIdx && 
+		else if( currRvcInterval.isValid() &&
+			i<resultsRvc.size() &&
+			resultsRvc.at(i).value >= startSeedIdx &&
 			resultsRvc.at(i).value <= largeSeedIdx )
-		{   
-
+		{
 			match = true;
-            break;
+			break;
 		}
 	}
-    
-    return match;
-    
-}
-*/
-bool LongReadSelfCorrectByOverlap::ismatchedbykmer(BWTInterval interval, bool strand)
-{
-	if(!interval.isValid()) return false;
-	const IntervalTree<size_t>& tree = strand ? fwdIntervalTree2 : rvcIntervalTree2;
-	typename IntervalTree<size_t>::intervalVector result;
-	tree.findOverlapping(interval.lower, interval.upper, result);
-	size_t startSeedIdx, endSeedIdx;
-	startSeedIdx = m_currentLength - m_maxIndelSize;
-	startSeedIdx = MAX(startSeedIdx, 0);
-	endSeedIdx = m_currentLength + m_maxIndelSize;
-	for(auto& iter : result)
-	{
-		size_t pos = iter.value;
-		if(pos >= startSeedIdx && pos <= endSeedIdx)
-			return true;
-	}
-	return false;
+
+	return match;
 }
 
 // Check for leaves whose extension has terminated. If the leaf has
@@ -985,56 +825,54 @@ bool LongReadSelfCorrectByOverlap::ismatchedbykmer(BWTInterval interval, bool st
 bool LongReadSelfCorrectByOverlap::isTerminated(SAIntervalNodeResultVector& results)
 {
 	bool found = false;
-    
-    for(SONode3PtrList::iterator iter = m_leaves.begin(); iter != m_leaves.end(); ++iter)
-    {
-        
-        
-        BWTInterval currfwd=(*iter)->fwdInterval;
-        BWTInterval currrvc=(*iter)->rvcInterval;
 
-        assert(currfwd.isValid() || currrvc.isValid());
-		
+	for(leafList::iterator iter = m_leaves.begin(); iter != m_leaves.end(); ++iter)
+	{
+		SAIOverlapNode3* leaf = (*iter).leafNodePtr;
+		BWTInterval currfwd = leaf -> fwdInterval;
+		BWTInterval currrvc = leaf -> rvcInterval;
+
+		assert(currfwd.isValid() || currrvc.isValid());
+
 		//The current SA interval stands for a string >= terminating kmer
 		//If terminating kmer is a substr, the current SA interval is a sub-interval of the terminating interval
-         bool isFwdTerminated = false;
-         bool isRvcTerminated = false;
-        for(size_t i = (*iter)->resultindex.second > 0 ? (*iter)->resultindex.second : 0;i <= m_targetSeed.length()-(int)m_minOverlap; i++)
-       {
-        isFwdTerminated=currfwd.isValid() && currfwd.lower >= m_fwdTerminatedInterval.at(i).lower
-                            && currfwd.upper <= m_fwdTerminatedInterval.at(i).upper;
-         isRvcTerminated=currrvc.isValid() && currrvc.lower >= m_rvcTerminatedInterval.at(i).lower
-                            && currrvc.upper <= m_rvcTerminatedInterval.at(i).upper;
-        
-       if(isFwdTerminated || isRvcTerminated)
-        {
-           
-            std::string STNodeStr = m_targetSeed.length() > m_minOverlap?(*iter)->getFullString() + m_targetSeed.substr(i+m_minOverlap):(*iter)->getFullString();
-            
-            SAIntervalNodeResult STresult;
-            STresult.thread=STNodeStr;
-			STresult.SAICoverage=(*iter)->getKmerCount();
-            STresult.errorRate = (*iter)->GlobalErrorRateRecord.back();
-            //compute the merged pos right next to the kmer on 2nd read.
-            //STresult.index = m_minOverlap ;
-            if((*iter)->resultindex.first == -1 )
-            {
-                results.push_back(STresult);    
-                (*iter)->resultindex = std::make_pair(results.size(),i);
-            }
-            else 
-            {   
+		bool isFwdTerminated = false;
+		bool isRvcTerminated = false;
+		for(size_t i = std::max(leaf -> resultindex.second,0);i <= m_targetSeed.length()-(int)m_minOverlap; i++)
+		{
+			isFwdTerminated=currfwd.isValid() && currfwd.lower >= m_fwdTerminatedInterval.at(i).lower
+							&& currfwd.upper <= m_fwdTerminatedInterval.at(i).upper;
+			isRvcTerminated=currrvc.isValid() && currrvc.lower >= m_rvcTerminatedInterval.at(i).lower
+							&& currrvc.upper <= m_rvcTerminatedInterval.at(i).upper;
 
-                results.at((*iter)->resultindex.first-1) = STresult;
-                (*iter)->resultindex = std::make_pair((*iter)->resultindex.first,i);
-            }
-            
-            found =  true;
-        }
-       }
-       
+			if(isFwdTerminated || isRvcTerminated)
+			{
+				std::string STNodeStr = leaf->getFullString();
+				if (m_targetSeed.length() > m_minOverlap)
+					STNodeStr += m_targetSeed.substr(i+m_minOverlap);
 
-    }
+				SAIntervalNodeResult STresult;
+				STresult.thread=STNodeStr;
+				STresult.SAICoverage = leaf->getKmerCount();
+				STresult.errorRate   = leaf->GlobalErrorRateRecord.back();
+				STresult.SAIntervalSize = (currfwd.upper-currfwd.lower+1);
 
-    return found;
+				if( leaf->resultindex.first == -1 )
+				{
+					results.push_back(STresult);
+					leaf->resultindex = std::make_pair(results.size(),i);
+				}
+				else
+				{
+					results.at( leaf->resultindex.first-1 ) = STresult;
+					leaf->resultindex = std::make_pair(leaf->resultindex.first,i);
+				}
+
+				found =  true;
+			}
+		}
+
+	}
+
+	return found;
 }

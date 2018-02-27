@@ -212,9 +212,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 			opt::maxLeaves,
 			opt::minKmerLength,
 			opt::PBcoverage,
-			opt::ErrorRate,
-			false);
-		//	opt::DebugExtend);
+			opt::ErrorRate);
 	ecParams.FM_params = FM_params;
 	
 	//Initialize KmerThresholdTable
