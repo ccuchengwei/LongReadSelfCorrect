@@ -285,7 +285,9 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedVe
 	{
 		pExtWriter    = createWriter(m_params.directory + "extend/" + result.readid + ".ext");
 		pDpWriter     = createWriter(m_params.directory + "extend/" + result.readid + ".dp");
+/*
 		pExtDebugFile = createWriter(m_params.directory + "extend/" + result.readid + ".fa");
+*/
 	}
 
 	int case_number = 1;
