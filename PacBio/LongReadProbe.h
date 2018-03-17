@@ -6,6 +6,7 @@
 
 struct ProbeParameters
 {
+	ProbeParameters(){ }
 	ProbeParameters(
 			BWTIndexSet _indices,
 			std::string _readid,
@@ -55,10 +56,11 @@ struct ProbeParameters
 };
 
 namespace LongReadProbe
-{	
-	void searchSeedsWithHybridKmers(const std::string& readSeq, SeedFeature::SeedVector& seedVec, const ProbeParameters& m_params);
-	void getSeqAttribute(const std::string& seq, int* const type, const ProbeParameters& m_params);
-	SeedFeature::SeedVector removeHitchhikingSeeds(SeedFeature::SeedVector initSeedVec, int const *type, const ProbeParameters& m_params);
+{
+	extern thread_local ProbeParameters m_params;
+	void searchSeedsWithHybridKmers(const std::string& readSeq, SeedFeature::SeedVector& seedVec);
+	void getSeqAttribute(const std::string& seq, int* const type);
+	SeedFeature::SeedVector removeHitchhikingSeeds(SeedFeature::SeedVector initSeedVec, int const *type);
 	void write(std::ostream& outfile, const SeedFeature::SeedVector& seedVec);
 };
 #endif

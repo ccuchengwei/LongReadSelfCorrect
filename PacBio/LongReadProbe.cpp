@@ -5,15 +5,17 @@
 #include "KmerFeature.h"
 #include "KmerThreshold.h"
 
+thread_local ProbeParameters LongReadProbe::m_params = ProbeParameters();
+
 // Search seeds with [static/dynamic] kmers. Noted by KuanWeiLee 20171027
-void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedFeature::SeedVector& seedVec, const ProbeParameters& m_params)
+void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedFeature::SeedVector& seedVec)
 {
 	const size_t readSeqLen = readSeq.length();
 	int staticKmerSize = m_params.startKmerLen;
 	if((int)readSeqLen < staticKmerSize) return;
 	
 	int attribute[readSeqLen];
-	getSeqAttribute(readSeq, attribute, m_params);
+	getSeqAttribute(readSeq, attribute);
 	if(m_params.Manual) std::fill_n(attribute, readSeqLen, m_params.mode);
 	
 	//Search seeds; slide through the read sequence with hybrid-kmers. Noted by KuanWeiLee
@@ -87,7 +89,7 @@ void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedF
 	}
 
 	//Seed Hitchhike strategy.
-	seedVec = removeHitchhikingSeeds(seedVec, attribute, m_params);
+	seedVec = removeHitchhikingSeeds(seedVec, attribute);
 	if(m_params.DebugSeed)
 	{
 		std::ostream* pSeedWriter = createWriter(m_params.directory + "seed/" + m_params.readid + ".seed");
@@ -97,7 +99,7 @@ void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedF
 }
 //Sequence attribute is set dynamically using a sliding fixed-mer on each position of the sequence.
 //Noted by KuanWeiLee 20180118
-void LongReadProbe::getSeqAttribute(const std::string& seq, int* const attribute, const ProbeParameters& m_params)
+void LongReadProbe::getSeqAttribute(const std::string& seq, int* const attribute)
 {
 	const size_t seqlen = seq.length();
 	std::fill_n(attribute, seqlen, 1);
@@ -169,7 +171,7 @@ void LongReadProbe::getSeqAttribute(const std::string& seq, int* const attribute
 //Kmer & Seed Hitchhike strategy would maitain seed-correctness, 
 //once the sequence is stuck between the ambiguity from uniqu to repeat mode.
 //Noted by KuanWeiLee 20180106
-SeedFeature::SeedVector LongReadProbe::removeHitchhikingSeeds(SeedFeature::SeedVector initSeedVec, int const *attribute, const ProbeParameters& m_params)
+SeedFeature::SeedVector LongReadProbe::removeHitchhikingSeeds(SeedFeature::SeedVector initSeedVec, int const *attribute)
 {
 	if(initSeedVec.size() < 2) return initSeedVec;
 	

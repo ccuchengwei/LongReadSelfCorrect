@@ -31,7 +31,8 @@ PacBioSelfCorrectionResult PacBioSelfCorrectionProcess::process(const SequenceWo
 		KmerFeature::kmerRec[iter] = std::unique_ptr<KmerFeature[]>(new KmerFeature[readSeqLen]);
 	
 	//Part 1: start searching seeds
-	ProbeParameters PR_params(
+	LongReadProbe::m_params = 
+	ProbeParameters(
 			m_params.indices,
 			result.readid,
 			m_params.directory,
@@ -48,7 +49,7 @@ PacBioSelfCorrectionResult PacBioSelfCorrectionProcess::process(const SequenceWo
 			m_params.Manual);
 	
     Timer* seedTimer = new Timer("Seed Time", true);
-	LongReadProbe::searchSeedsWithHybridKmers(readSeq, seedVec, PR_params);
+	LongReadProbe::searchSeedsWithHybridKmers(readSeq, seedVec);
 	result.totalSeedNum = seedVec.size();
 	result.Timer_Seed = seedTimer->getElapsedWallTime(); 
 	delete seedTimer;
