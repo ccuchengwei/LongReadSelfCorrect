@@ -25,7 +25,7 @@
 #include "PacBioSelfCorrectionProcess.h"
 #include "CorrectionThresholds.h"
 #include "BWTIntervalCache.h"
-#include "KmerThresholdTable.h"
+#include "KmerThreshold.h"
 //
 // Getopt
 //
@@ -78,16 +78,19 @@ namespace opt
 	static std::string discardFile;
 	static int sampleRate = BWT::DEFAULT_SAMPLE_RATE_SMALL;
 	
-    static size_t PBcoverage = 90;// PB seed searh depth
+    static size_t PBcoverage = 90; // PB seed searh depth
     static double ErrorRate=0.15;
-	static int startKmerLength = 19;
+	
+	static int startKmerLen = 19;
+//	static int startKmerLen = 23;
 	static int numOfNextTarget = 1;
 	static int maxLeaves=32;
-    static int idmerLength = 9;
-	static int minKmerLength = 13;
+    static int idmerLen = 9;
+	static int minKmerLen = 13;
 	
 	static int genome = 10;
 	static int mode = 1;
+	static int offset = 0; // wait for delete
 	static int verbose = 0;
 	
 	static bool Manual = false;
@@ -98,7 +101,8 @@ namespace opt
 	static bool NoDp = false;
 }
 
-static const char* shortopts = "t:p:o:c:e:k:d:l:i:s:n:m:v";
+//static const char* shortopts = "t:p:o:c:e:k:d:l:i:s:n:m:v";
+static const char* shortopts = "t:p:o:c:e:k:d:l:i:s:n:m:f:v"; // wait for delete
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_MANUAL, OPT_SPLIT, OPT_FIRST, OPT_DEBUGEXTEND, OPT_DEBUGSEED, OPT_ONLYSEED, OPT_NODP };
 
@@ -115,6 +119,7 @@ static const struct option longopts[] = {
 	{ "min-kmer-size",      required_argument, nullptr, 's' },
     { "genome",             required_argument, nullptr, 'n' },
     { "mode",               required_argument, nullptr, 'm' },
+    { "offset",             required_argument, nullptr, 'f' }, // wait for delete
 	{ "verbose",            no_argument,       nullptr, 'v' },
 	{ "help",               no_argument,       nullptr, OPT_HELP },
 	{ "version",            no_argument,       nullptr, OPT_VERSION },
@@ -158,6 +163,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 			pSSA = new SampledSuffixArray(opt::prefix + SAI_EXT, SSA_FT_SAI);
 		}
 	}
+	
 	BWTIndexSet indexSet;
 	indexSet.pBWT = pBWT;
 	indexSet.pRBWT = pRBWT;
@@ -167,11 +173,11 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 
     ecParams.PBcoverage = opt::PBcoverage;
     ecParams.ErrorRate = opt::ErrorRate;
-	ecParams.startKmerLength = opt::startKmerLength;
+	ecParams.startKmerLen = opt::startKmerLen;
 	ecParams.numOfNextTarget = opt::numOfNextTarget;
 	ecParams.maxLeaves = opt::maxLeaves;
-    ecParams.idmerLength = opt::idmerLength;
-	ecParams.minKmerLength = opt::minKmerLength;
+    ecParams.idmerLen = opt::idmerLen;
+	ecParams.minKmerLen = opt::minKmerLen;
 	
 	ecParams.Manual = opt::Manual;
 	ecParams.Split = opt::Split;
@@ -185,54 +191,61 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 		switch(opt::genome)
 		{
 			case 5:
-				ecParams.startKmerLength = 17;
-				ecParams.kmerOffset[2] = 2;
+				ecParams.startKmerLen = 17;
+				ecParams.kmerOffset[2] = -2;
+				ecParams.kmerOffset[1] += opt::offset; // wait for delete
 				break;
 			case 10:
-				ecParams.startKmerLength = 19;
-				ecParams.kmerOffset[2] = 4;
+				ecParams.startKmerLen = 19;
+			//	ecParams.startKmerLen = 23;
+				ecParams.kmerOffset[2] = -4;
+			//	ecParams.kmerOffset[2] = -8;
+			//	ecParams.kmerOffset[1] += 4; // wait for delete
+				ecParams.kmerOffset[1] += opt::offset; // wait for delete
+			//	ecParams.kmerOffset[2] += opt::offset; // wait for delete
 				break;
 			case 100:
-				ecParams.startKmerLength = 21;
-				ecParams.kmerOffset[2] = 6;
+				ecParams.startKmerLen = 21;
+				ecParams.kmerOffset[2] = -6;
 				break;
 		}
 	}
 	ecParams.mode = opt::mode;
 	
-	ecParams.kmerSet.insert(ecParams.startKmerLength);
-	ecParams.kmerSet.insert(ecParams.scanKmerLength);
+	//Insert kmer sizes in pool for future usage. Noted by KuanWeiLee 18/3/12
+	ecParams.kmerPool.insert(ecParams.startKmerLen);
+	ecParams.kmerPool.insert(ecParams.scanKmerLen);
 	for(auto& iter : ecParams.kmerOffset)
-		ecParams.kmerSet.insert(ecParams.startKmerLength - iter);
-	for(auto& iter : ecParams.overlapKmerLength)
-		ecParams.kmerSet.insert(iter);
+		ecParams.kmerPool.insert(ecParams.startKmerLen + iter);
+	for(auto& iter : ecParams.overlapKmerLen)
+		ecParams.kmerPool.insert(iter);
 	
 	FMextendParameters FM_params(
-			indexSet,opt::idmerLength,
+			indexSet,opt::idmerLen,
 			opt::maxLeaves,
-			opt::minKmerLength,
+			opt::minKmerLen,
 			opt::PBcoverage,
 			opt::ErrorRate,
 			false);
 		//	opt::DebugExtend);
 	ecParams.FM_params = FM_params;
 	
-	//Initialize KmerThresholdTable
-	KmerThresholdTable::initialize(
-			ecParams.startKmerLength,
-			ecParams.kmerLengthUpperBound,
+	//Initialize KmerThreshold
+	KmerThreshold::initialize(
+			ecParams.startKmerLen,
+			ecParams.kmerLenUpBound,
 			ecParams.PBcoverage,
 			ecParams.directory);
-	KmerThresholdTable::compute();
-	KmerThresholdTable::write();
+	KmerThreshold::compute();
+	KmerThreshold::write();
 	
 	
 	std::cerr << "\nCorrecting PacBio reads for " << opt::readsFile << " using--\n"
 	<< "number of threads:\t" << opt::numThreads << "\n"
 	<< "PB reads coverage:\t" << ecParams.PBcoverage << "\n"
 	<< "num of next Targets:\t" << ecParams.numOfNextTarget << "\n"
-	<< "large kmer size:\t" << ecParams.startKmerLength << "\n" 
-	<< "small kmer size:\t" << ecParams.minKmerLength << "\n"
+	<< "large kmer size:\t" << ecParams.startKmerLen << "\n" 
+	<< "small kmer size:\t" << ecParams.minKmerLen << "\n"
 	<< "max leaves:\t" << ecParams.maxLeaves  << "\n"
 	<< "max depth:\t1.2~0.8* (length between two seeds +- 20)" << "\n";
 
@@ -257,24 +270,24 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	else
 	{
 		// Parallel mode
-		std::vector<PacBioSelfCorrectionProcess*> pProcessorVector;
+		std::vector<PacBioSelfCorrectionProcess*> pProcessorVec;
 		for(int i = 0; i < opt::numThreads; ++i)
-			pProcessorVector.push_back(new PacBioSelfCorrectionProcess(ecParams));
+			pProcessorVec.push_back(new PacBioSelfCorrectionProcess(ecParams));
 
 		SequenceProcessFramework::processSequencesParallel<SequenceWorkItem,
 		PacBioSelfCorrectionResult,
 		PacBioSelfCorrectionProcess,
-		PacBioSelfCorrectionPostProcess>(opt::readsFile, pProcessorVector, pPostProcessor);
+		PacBioSelfCorrectionPostProcess>(opt::readsFile, pProcessorVec, pPostProcessor);
 
 		// SequenceProcessFramework::processSequencesParallelOpenMP<SequenceWorkItem,
 		// PacBioSelfCorrectionResult,
 		// PacBioSelfCorrectionProcess,
-		// PacBioSelfCorrectionPostProcess>(opt::readsFile, pProcessorVector, pPostProcessor);
+		// PacBioSelfCorrectionPostProcess>(opt::readsFile, pProcessorVec, pPostProcessor);
 		
-		while(!pProcessorVector.empty())
+		while(!pProcessorVec.empty())
 		{
-			delete pProcessorVector.back();
-			pProcessorVector.pop_back();
+			delete pProcessorVec.back();
+			pProcessorVec.pop_back();
 		}
 	}
 	delete pPostProcessor;
@@ -282,7 +295,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	delete pRBWT;
 	delete pSSA;
 	
-	KmerThresholdTable::release();
+	KmerThreshold::release();
 	delete pTimer;
 	return 0;
 }
@@ -305,13 +318,14 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 			case 'o': arg >> opt::directory; break;
 			case 'c': arg >> opt::PBcoverage; break;
 			case 'e': arg >> opt::ErrorRate; break;
-			case 'k': arg >> opt::startKmerLength; break;
+			case 'k': arg >> opt::startKmerLen; break;
 			case 'd': arg >> opt::numOfNextTarget; break;
 			case 'l': arg >> opt::maxLeaves; break;
-			case 'i': arg >> opt::idmerLength; break;
-			case 's': arg >> opt::minKmerLength; break;
+			case 'i': arg >> opt::idmerLen; break;
+			case 's': arg >> opt::minKmerLen; break;
 			case 'n': arg >> opt::genome; break;
 			case 'm': arg >> opt::mode; break;
+			case 'f': arg >> opt::offset; break; // wait for delete
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				std::cerr << CORRECT_USAGE_MESSAGE;
@@ -385,9 +399,9 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 		die = true;
 	}
 	
-	if(opt::startKmerLength <= 0)
+	if(opt::startKmerLen <= 0)
 	{
-		std::cerr << SUBPROGRAM ": invalid start kmer length: " << opt::startKmerLength << ", must be greater than zero\n";
+		std::cerr << SUBPROGRAM ": invalid start kmer length: " << opt::startKmerLen << ", must be greater than zero\n";
 		die = true;
 	}
 	
@@ -403,15 +417,15 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 		die = true;
 	}
 	
-	if(opt::idmerLength <= 0)
+	if(opt::idmerLen <= 0)
 	{
-		std::cerr << SUBPROGRAM ":invalid kmer length to identify similar reads" << opt::idmerLength << ", must be greater than zero\n";
+		std::cerr << SUBPROGRAM ":invalid kmer length to identify similar reads" << opt::idmerLen << ", must be greater than zero\n";
 		die = true;
 	}
 	
-	if(opt::minKmerLength <= 0)
+	if(opt::minKmerLen <= 0)
 	{
-		std::cerr << SUBPROGRAM ":invalid min kmer length:" << opt::minKmerLength << ", must be greater than zero\n";
+		std::cerr << SUBPROGRAM ":invalid min kmer length:" << opt::minKmerLen << ", must be greater than zero\n";
 		die = true;
 	}
 	

@@ -18,15 +18,15 @@ class SeedFeature
 				size_t kmerSize,
 				size_t PBcoverage)
 		:	seedStr(str),
-			seedLength(seedStr.length()),
+			seedLen(seedStr.length()),
 			seedStartPos(startPos),
-			seedEndPos(startPos + seedLength - 1),
+			seedEndPos(startPos + seedLen - 1),
 			maxFixedMerFreq(frequency),
 			isRepeat(repeat),
 			isHitchhiked(false),
 			startBestKmerSize(kmerSize),
 			endBestKmerSize(kmerSize),
-			sizeUpperBound(seedLength),
+			sizeUpperBound(seedLen),
 			sizeLowerBound(kmerSize),
 			freqUpperBound(PBcoverage >> 1),
 			freqLowerBound(PBcoverage >> 2){ }
@@ -37,7 +37,7 @@ class SeedFeature
 		inline void append(std::string extendedStr, const SeedFeature& target)
 		{
 			seedStr += extendedStr;
-			seedLength += extendedStr.length();
+			seedLen += extendedStr.length();
 			//Upadate seed features in source to target
 			startBestKmerSize = target.startBestKmerSize;
 			endBestKmerSize = target.endBestKmerSize;
@@ -46,22 +46,25 @@ class SeedFeature
 			seedStartPos = target.seedStartPos;
 			seedEndPos = target.seedEndPos;
 		};
+		/*************************/
+		//Legacy code
 		inline void append(std::string extendedStr)
 		{
 			seedStr += extendedStr;
-			seedLength += extendedStr.length();
+			seedLen += extendedStr.length();
 			seedStartPos += extendedStr.length();
 			seedEndPos += extendedStr.length();
 		};
-		inline bool isSmall(){return seedLength<=17?true:false ;};
+		inline bool isSmall(){return seedLen<=17?true:false ;};
 		inline void setBestKmerSize(size_t staticKmerSize)
 		{
 			startBestKmerSize = endBestKmerSize = staticKmerSize;;
 		};
+		/*************************/
 		void estimateBestKmerSize(const BWTIndexSet& indices);
 		
 		std::string seedStr;
-		size_t seedLength;
+		size_t seedLen;
 		int seedStartPos;
 		size_t seedEndPos;
         size_t maxFixedMerFreq;
@@ -79,6 +82,8 @@ class SeedFeature
 		int startKmerFreq;
 		int endKmerFreq;
 		
+		typedef std::vector<SeedFeature> SeedVector;
+		
 	private:
 		size_t minKmerSize;
 		int sizeUpperBound;
@@ -87,15 +92,6 @@ class SeedFeature
 		int freqLowerBound;
 		//size_t stepSize;
 		void modifyKmerSize(const BWTIndexSet& indices, bool which);
-		/*
-		//estimate kmer size
-		void increaseStartKmerSize(const BWT* pBWT);
-		void decreaseStartKmerSize(const BWT* pBWT);
-
-		//estimate kmer size
-		void increaseEndKmerSize(const BWT* pBWT);
-		void decreaseEndKmerSize(const BWT* pBWT);
-		*/
 };
 
 #endif

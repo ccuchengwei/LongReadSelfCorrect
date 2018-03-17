@@ -14,15 +14,16 @@ libpacbio_a_CPPFLAGS = \
 libpacbio_a_SOURCES = \
 	SAIPBSelfCTree.h SAIPBSelfCTree.cpp \
 	SAIPBHybridCTree.h SAIPBHybridCTree.cpp \
-	SeedFeature.h SeedFeature.cpp \
 	PacBioSelfCorrectionProcess.h PacBioSelfCorrectionProcess.cpp \
 	PacBioHybridCorrectionProcess.h PacBioHybridCorrectionProcess.cpp \
         LongReadOverlap.h LongReadOverlap.cpp \
+        LongReadProbe.h LongReadProbe.cpp \
 	PBOverlapTree.h PBOverlapTree.cpp \
 	ShortReadOverlapTree.h ShortReadOverlapTree.cpp \
-    HashtableSearch.h HashtableSearch.cpp \
+	HashtableSearch.h HashtableSearch.cpp \
 	LongReadCorrectByOverlap.h LongReadCorrectByOverlap.cpp \
 	KmerFreqProcess.h KmerFreqProcess.cpp \
 	IntervalTree.h IntervalTree.cpp IntervalTreeInstantiation.cpp \
-	KmerThresholdTable.h KmerThresholdTable.cpp \
-	Kmer.h Kmer.cpp
+	KmerThreshold.h KmerThreshold.cpp \
+	SeedFeature.h SeedFeature.cpp \
+	KmerFeature.h KmerFeature.cpp

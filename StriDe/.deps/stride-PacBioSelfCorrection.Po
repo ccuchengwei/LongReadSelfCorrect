@@ -215,12 +215,12 @@ stride-PacBioSelfCorrection.o: PacBioSelfCorrection.cpp \
  /usr/include/semaphore.h /usr/include/x86_64-linux-gnu/bits/semaphore.h \
  ../Concurrency/SequenceWorkItem.h ../Util/SeqReader.h \
  ../PacBio/PacBioSelfCorrectionProcess.h \
- ../Concurrency/SequenceWorkItem.h ../Util/Metrics.h \
- ../SuffixTools/BWTIndexSet.h ../SuffixTools/SampledSuffixArray.h \
+ ../Concurrency/SequenceWorkItem.h ../SuffixTools/BWTIndexSet.h \
+ ../SuffixTools/SampledSuffixArray.h ../PacBio/SeedFeature.h \
  ../PacBio/LongReadCorrectByOverlap.h ../FMIndexWalk/SAINode.h \
  ../PacBio/IntervalTree.h ../PacBio/HashtableSearch.h \
- ../PacBio/SeedFeature.h ../PacBio/Kmer.h ../Util/CorrectionThresholds.h \
- ../SuffixTools/BWTIntervalCache.h ../PacBio/KmerThresholdTable.h
+ ../Util/CorrectionThresholds.h ../SuffixTools/BWTIntervalCache.h \
+ ../PacBio/KmerThreshold.h
 
 /usr/include/stdc-predef.h:
 
@@ -884,11 +884,11 @@ overlap.h:
 
 ../Concurrency/SequenceWorkItem.h:
 
-../Util/Metrics.h:
-
 ../SuffixTools/BWTIndexSet.h:
 
 ../SuffixTools/SampledSuffixArray.h:
+
+../PacBio/SeedFeature.h:
 
 ../PacBio/LongReadCorrectByOverlap.h:
 
@@ -898,12 +898,8 @@ overlap.h:
 
 ../PacBio/HashtableSearch.h:
 
-../PacBio/SeedFeature.h:
-
-../PacBio/Kmer.h:
-
 ../Util/CorrectionThresholds.h:
 
 ../SuffixTools/BWTIntervalCache.h:
 
-../PacBio/KmerThresholdTable.h:
+../PacBio/KmerThreshold.h:
