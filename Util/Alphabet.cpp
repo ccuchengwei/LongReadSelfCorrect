@@ -12,8 +12,8 @@
 #include <iostream>
 #include <iterator>
 
-std::map<char, int> _ALPHABET;
-std::map<char, int> _RANK_ALPHABET;
+std::map<char, int> _ALPHABET = { {'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}, {'$', 4} };
+std::map<char, int> _RANK_ALPHABET = { {'$', 0}, {'A', 1}, {'C', 2}, {'G', 3}, {'T', 4} };
 
 bool IUPAC::isUnambiguous(char c)
 {

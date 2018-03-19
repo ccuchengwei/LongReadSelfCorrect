@@ -20,40 +20,34 @@ void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedF
 	
 	//Search seeds; slide through the read sequence with hybrid-kmers. Noted by KuanWeiLee
 	//kmer[Start/Move]Pos indicate the starting/moving position of the current static-kmer.
-	float** table = KmerThreshold::m_table;
-
 	for(size_t kmerStartPos = 0; kmerStartPos < readSeqLen; kmerStartPos++)
 	{
 		int kmerStartType = attribute[kmerStartPos];
 		staticKmerSize += m_params.kmerOffset[kmerStartType];
 		bool isSeed = false, isRepeat = false;
 		KmerFeature dynamicKmer = KmerFeature::kmerRec[staticKmerSize][kmerStartPos];
-	//	KmerFeature dynamicKmer(&m_params.indices, readSeq, kmerStartPos, staticKmerSize);
 		int maxFixedMerFreq = dynamicKmer.getFreq();
 		size_t seedStartPos = kmerStartPos;
 		for(size_t kmerMovePos = kmerStartPos; kmerMovePos < readSeqLen; kmerMovePos++)
 		{
 			int kmerMoveType = attribute[kmerMovePos];
 			const KmerFeature& staticKmer = KmerFeature::kmerRec[staticKmerSize][kmerMovePos];
-		//	const KmerFeature staticKmer(&m_params.indices, readSeq, kmerMovePos, staticKmerSize);
 			if(isSeed)
 			{
 				char b = readSeq[(kmerMovePos + staticKmerSize - 1)];
 				dynamicKmer.expand(b);
 			}
-			float dynamicThreshold = table[kmerStartType][dynamicKmer.getSize()];
-		//	float dynamicThreshold = table[            1][dynamicKmer.getSize()]; //wait for delete
-			float staticThreshold = table[kmerMoveType][staticKmerSize];
-		//	float staticThreshold = table[           1][staticKmerSize]; //wait for delete
+			float dynamicThreshold = KmerThreshold::Instance().get(kmerStartType, dynamicKmer.getSize());
+			float staticThreshold  = KmerThreshold::Instance().get(kmerMoveType,  staticKmer.getSize());
 			float repeatThreshold = staticThreshold * (5 - ((kmerMoveType >> 1) << 2));
 			bool isOnRepeat = (staticKmer.getFreq() >= repeatThreshold);
 			float freqDiff = (float)staticKmer.getFreq()/maxFixedMerFreq;
 			//Gerneral seed extension strategy.
 			if	(
-				   dynamicKmer.getSize() > m_params.kmerLenUpBound				//1.over length
-				|| !dynamicKmer.isValid()										//2.dynamic frequency(1)
-				|| dynamicKmer.getFreq() < dynamicThreshold						//2.dynamic frequency(2)
-				|| staticKmer.getFreq() < staticThreshold						//3.static frequency
+				   staticKmer.getFreq() < staticThreshold						//1.static frequency
+				|| dynamicKmer.getFreq() < dynamicThreshold						//2.dynamic frequency(1)
+				|| !dynamicKmer.isValid()										//2.dynamic frequency(2)
+				|| dynamicKmer.getSize() > m_params.kmerLenUpBound				//3.over length
 				)
 			{
 				if(isSeed && !staticKmer.getPseudo()) dynamicKmer.shrink(1);
@@ -105,12 +99,11 @@ void LongReadProbe::getSeqAttribute(const std::string& seq, int* const attribute
 	std::fill_n(attribute, seqlen, 1);
 	
 	int range = 300;
-	int x = m_params.PBcoverage;
-	int y = m_params.scanKmerLen;
 	const int ksize = m_params.scanKmerLen;
-//	float lowcov = KmerThreshold::calculate(0, x, y);
-//	float unique = KmerThreshold::calculate(1, x, y);
-	float repeat = KmerThreshold::calculate(2, x ,y);
+//	float lowcov = KmerThreshold::Instance().get(0, ksize);
+//	float unique = KmerThreshold::Instance().get(1, ksize);
+	float repeat = KmerThreshold::Instance().get(2, ksize);
+	
 	int front = 0, fear = -1;
 	int leftmost = (seqlen - 1), rightmost = 0, repeatcount = 0;
 	std::map<int, int> set;
@@ -119,7 +112,7 @@ void LongReadProbe::getSeqAttribute(const std::string& seq, int* const attribute
 	{
 		int left = pos - (range >> 1);
 		int right = pos + (range >> 1);
-		left = std::max(left, 0);
+		left  = std::max(left, 0);
 		right = std::min(right, (int)(seqlen - 1));
 		while(fear < right)
 		{
@@ -127,11 +120,10 @@ void LongReadProbe::getSeqAttribute(const std::string& seq, int* const attribute
 			KmerFeature* prev = nullptr;
 			for(auto& iter : m_params.kmerPool)
 			{
-				KmerFeature::kmerRec[iter][fear] = KmerFeature(&m_params.indices, seq, fear, iter, prev);
+				KmerFeature::kmerRec[iter][fear] = KmerFeature(m_params.indices, seq, fear, iter, prev);
 				prev = KmerFeature::kmerRec[iter].get() + fear;
 			}
 			const KmerFeature& inKmer = KmerFeature::kmerRec[ksize][fear];
-		//	Kmer inKmer(&m_params.indices, seq, ++fear, ksize);
 			int freq = inKmer.isLowComplexity() ? 0 : inKmer.getFreq();
 		//	int freq = inKmer.getFreq();
 			int type;
@@ -144,7 +136,6 @@ void LongReadProbe::getSeqAttribute(const std::string& seq, int* const attribute
 		{
 			const KmerFeature& outKmer = KmerFeature::kmerRec[ksize][front];
 			front++;
-		//	Kmer outKmer(&m_params.indices, seq, front++, ksize);
 			int freq = outKmer.isLowComplexity() ? 0 : outKmer.getFreq();
 		//	int freq = outKmer.getFreq();
 			int type;
@@ -175,9 +166,8 @@ SeedFeature::SeedVector LongReadProbe::removeHitchhikingSeeds(SeedFeature::SeedV
 {
 	if(initSeedVec.size() < 2) return initSeedVec;
 	
-	int x = m_params.PBcoverage;
-	int y = m_params.startKmerLen + m_params.kmerOffset[2];
-	float overFreq = KmerThreshold::calculate(2, x ,y) * 5;
+	int ksize = m_params.startKmerLen + m_params.kmerOffset[2];
+	float overFreq = KmerThreshold::Instance().get(2, ksize)*5;
 	
 	for(SeedFeature::SeedVector::iterator iterQuery = initSeedVec.begin(); (iterQuery + 1) != initSeedVec.end(); iterQuery++)
 	{

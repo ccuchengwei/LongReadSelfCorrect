@@ -231,16 +231,15 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	ecParams.FM_params = FM_params;
 	
 	//Initialize KmerThreshold
-	KmerThreshold::initialize(
+	KmerThreshold::Instance().set(
 			ecParams.startKmerLen,
 			ecParams.kmerLenUpBound,
 			ecParams.PBcoverage,
 			ecParams.directory);
-	KmerThreshold::compute();
-	KmerThreshold::write();
+//	KmerThreshold::Instance().print();
 	
-	
-	std::cerr << "\nCorrecting PacBio reads for " << opt::readsFile << " using--\n"
+	std::cerr
+	<< "\nCorrecting PacBio reads for " << opt::readsFile << " using--\n"
 	<< "number of threads:\t" << opt::numThreads << "\n"
 	<< "PB reads coverage:\t" << ecParams.PBcoverage << "\n"
 	<< "num of next Targets:\t" << ecParams.numOfNextTarget << "\n"
@@ -284,18 +283,13 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 		// PacBioSelfCorrectionProcess,
 		// PacBioSelfCorrectionPostProcess>(opt::readsFile, pProcessorVec, pPostProcessor);
 		
-		while(!pProcessorVec.empty())
-		{
-			delete pProcessorVec.back();
-			pProcessorVec.pop_back();
-		}
+		for(auto& iter : pProcessorVec)
+			delete iter;
 	}
 	delete pPostProcessor;
 	delete pBWT;
 	delete pRBWT;
 	delete pSSA;
-	
-	KmerThreshold::release();
 	delete pTimer;
 	return 0;
 }

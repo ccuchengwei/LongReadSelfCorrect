@@ -7,16 +7,16 @@
 #include <algorithm>
 #include <map>
 #include <memory>
-//Implemntaiont of kmer object on each position of some sequence;
-//theoretically all kmers could be established on previous smaller one. Noted by KuanWeiLee 18/3/12
+
 /*
-ex: On position 14, 4-mer is established first, and 6-mer is established on 4-mer, so does 10-mer on 4-mer.
-              14(pos)
-			  .
+Implemntaiont of kmer object on each position of some sequence;
+theoretically all kmers could be established on previous smaller one. Noted by KuanWeiLee 18/3/12
+ex: On position 14, 4-mer is established first, and 6-mer is established on 4-mer, so does 10-mer on 6-mer.
+			. 14[pos]
 ===========================================================================> sequence
-              ---> size == 4
-			  -----> size == 6 
-			  ---------> size == 10
+            ---> size == 4
+			-----> size == 6 
+			---------> size == 10
 */
 class KmerFeature
 {
@@ -25,9 +25,7 @@ class KmerFeature
 		static thread_local std::map<int, std::unique_ptr<KmerFeature[]> > kmerRec;
 	
 		//Null kmer
-		KmerFeature()
-		:	count(nullptr),
-			indices(nullptr){ }
+		KmerFeature():count(nullptr){ }
 	
 		//Copy kmer
 		KmerFeature(const KmerFeature& base)
@@ -41,16 +39,31 @@ class KmerFeature
 		
 		//Base(or not) kmer
 		KmerFeature(
-				const BWTIndexSet* indexSet,
+				const BWTIndexSet _indices,
 				const std::string & seq,
 				size_t pos,
 				int len,
 				const KmerFeature* base = nullptr)
-		:	count(base == nullptr ? std::unique_ptr<int[]>(new int[DNA_ALPHABET::size]{0}) : (*base).getCount()),
-			indices(base == nullptr ? indexSet : (*base).getIndex()),
-			word(base == nullptr ?  seq.substr(pos, len) : (*base).getWord()),
-			size(base == nullptr ? word.length() : (*base).getSize()),
-			biInterval(base == nullptr ? BWTAlgorithms::findBiInterval(*indices, word, count.get()) : (*base).getInterval())
+		:	count(
+				base != nullptr ?
+				base->getCount() :
+				std::unique_ptr<int[]>(new int[DNA_ALPHABET::size]{0})),
+			indices(
+				base != nullptr ?
+				base->getIndex() :
+				_indices),
+			word(
+				base != nullptr ?
+				base->getWord() :
+				seq.substr(pos, len)),
+			size(
+				base != nullptr ?
+				base->getSize() :
+				word.length()),
+			biInterval(
+				base != nullptr ?
+				base->getInterval() :
+				BWTAlgorithms::findBiInterval(indices, word, count.get()))
 		{
 			size_t seqlen = seq.length();
 			for(size_t i = (pos + size); (i < seqlen) && (size < len); i++)
@@ -66,14 +79,14 @@ class KmerFeature
 	
 		inline KmerFeature& operator=(const KmerFeature& other)
 		{
-		//	if(&other == this) return *this;
-			count = other.getCount();
-			indices = other.getIndex();
-			word = other.getWord();
-			size = other.getSize();
+			if(&other == this) return *this;
+			count      = other.getCount();
+			indices    = other.getIndex();
+			word       = other.getWord();
+			size       = other.getSize();
 			biInterval = other.getInterval();
-			isFake = other.getPseudo();
-			frequency = other.getFreq();
+			isFake     = other.getPseudo();
+			frequency  = other.getFreq();
 			return *this;
 		}
 	
@@ -84,12 +97,12 @@ class KmerFeature
 			std::copy(oldOne, (oldOne + 4), newOne.get());
 			return newOne;
 		}
-		inline const BWTIndexSet* getIndex() const { return indices; }
-		inline std::string getWord() const { return word; }
-		inline int getSize() const { return size; }
+		inline BWTIndexSet   getIndex()    const { return indices; }
+		inline std::string   getWord()     const { return word; }
+		inline int           getSize()     const { return size; }
 		inline BiBWTInterval getInterval() const { return biInterval; }
-		inline bool getPseudo() const { return isFake; }
-		inline int getFreq() const { return isFake ? 0 : frequency; }
+		inline bool          getPseudo()   const { return isFake; }
+		inline int           getFreq()     const { return isFake ? -1 : frequency; }
 	
 		inline bool isValid() const { return biInterval.isValid(); }
 		inline void expand(char b)
@@ -97,7 +110,7 @@ class KmerFeature
 			if(b == 0) return;
 			size++;
 			word += b;
-			BWTAlgorithms::updateBiInterval(biInterval, b, *indices, count.get());
+			BWTAlgorithms::updateBiInterval(biInterval, b, indices, count.get());
 			frequency = biInterval.getFreq();
 		}
 		inline void shrink(int len, bool update = false)
@@ -107,7 +120,7 @@ class KmerFeature
 				count[DNA_ALPHABET::getIdx(*iter)]--;
 			word.erase(size, len);
 			if(!update) return;
-			biInterval = BWTAlgorithms::findBiInterval(*indices, word);
+			biInterval = BWTAlgorithms::findBiInterval(indices, word);
 			frequency = biInterval.getFreq();
 		}
 		inline bool isLowComplexity(float t = 0.7) const
@@ -125,12 +138,11 @@ class KmerFeature
 
 	private:
 		std::unique_ptr<int[]> count;
-		const BWTIndexSet* indices;
+		BWTIndexSet indices;
 		std::string word;
 		int size;
 		BiBWTInterval biInterval;
-		//'isFake' is set only when initialized.
-		bool isFake;
+		bool isFake; //'isFake' is set only when initialized.
 		int frequency;
 	
 };

@@ -1,19 +1,38 @@
 #ifndef KMERTHRESHOLDTABLE_H
 #define KMERTHRESHOLDTABLE_H
 
-namespace KmerThreshold
+class KmerThreshold
 {
-	extern float* m_table[3];
-	extern float m_formula[3][6];
-	extern std::ostream* pTableWriter;
-	extern int m_startLen, m_endLen, m_coverage;
-	
-	void initialize(int start, int end, int cov, std::string dir);
-	float calculate(int type, int x, int y);
-	void compute();
-	void write();
-	void release();
+	public:
+		KmerThreshold(const KmerThreshold&) = delete;
+		void operator=(const KmerThreshold&) = delete;
 		
+		void set(int _start, int _end, int _cov, std::string& dir);
+		void print();
+		
+		inline static KmerThreshold& Instance()
+		{
+			static KmerThreshold instance;
+			return instance;
+		}
+		inline float get(int type, int ksize)
+		{
+			assert(type >= 0 && type <= 2);
+			assert(ksize >= 0 && ksize <= (end + 1));
+			return table[type][ksize];
+		}
+		
+	private:
+		KmerThreshold();
+		~KmerThreshold();
+		
+		float calculate(int type, int x, int y);
+		
+		int start;
+		int end;
+		int cov;
+		float* table[3];
+		std::ostream* pTableWriter;
 };
 
 #endif
