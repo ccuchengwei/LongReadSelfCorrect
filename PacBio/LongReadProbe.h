@@ -6,7 +6,9 @@
 
 struct ProbeParameters
 {
-	ProbeParameters(){ }
+	ProbeParameters(void) = default;
+	~ProbeParameters(void) = default;
+	
 	ProbeParameters(
 			BWTIndexSet _indices,
 			std::string _readid,
@@ -36,8 +38,6 @@ struct ProbeParameters
 		kmerPool(_kmerPool),
 		DebugSeed(_DebugSeed),
 		Manual(_Manual){ }
-		
-	~ProbeParameters(void) = default;
 		
 	BWTIndexSet indices;
 	std::string readid;

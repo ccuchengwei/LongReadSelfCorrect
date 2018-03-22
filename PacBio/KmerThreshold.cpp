@@ -35,11 +35,7 @@ KmerThreshold::KmerThreshold():table{nullptr},pTableWriter(nullptr)
 KmerThreshold::~KmerThreshold()
 {
 	*pTableWriter << "Coverage : " << cov << "\n" << "size\tlowcov\tuique\trepeat\n";
-	float const *lowcov = table[0] + start;
-	float const *unique = table[1] + start;
-	float const *repeat = table[2] + start;
-	for(int k = start; k <= end; k++, lowcov++, unique++, repeat++)
-		*pTableWriter << k << "\t" << *lowcov << "\t" << *unique << "\t" << *repeat << "\n";
+	write(*pTableWriter);
 	
 	for(auto& iter : table)
 		delete iter;
@@ -57,22 +53,23 @@ void KmerThreshold::set(int _start, int _end, int _cov, std::string& dir)
 	for(int type = 0; type <= 2; type++)
 	{
 		table[type] = new float[end + 2]{0};
+		float* value = table[type] + start;
 		float cavity = std::numeric_limits<float>::max();
-		for(int ksize = start; ksize <= end; ksize++)
+		for(int ksize = start; ksize <= end; ksize++, value++)
 		{
 			cavity = std::min(cavity, calculate(type, cov, ksize));
-			table[type][ksize] = cavity;
+			*value = cavity;
 		}
 	}
 }
 
-void KmerThreshold::print()
+void KmerThreshold::write(std::ostream& outfile)
 {
 	float const *lowcov = table[0] + start;
 	float const *unique = table[1] + start;
 	float const *repeat = table[2] + start;
-	for(int k = start; k <= end; k++, lowcov++, unique++, repeat++)
-		std::cout << k << "\t" << *lowcov << "\t" << *unique << "\t" << *repeat << "\n";
+	for(int ksize = start; ksize <= end; ksize++, lowcov++, unique++, repeat++)
+		outfile << ksize << "\t" << *lowcov << "\t" << *unique << "\t" << *repeat << "\n";
 }
 
 float KmerThreshold::calculate(int t, int x, int y)

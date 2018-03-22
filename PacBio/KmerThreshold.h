@@ -8,7 +8,7 @@ class KmerThreshold
 		void operator=(const KmerThreshold&) = delete;
 		
 		void set(int _start, int _end, int _cov, std::string& dir);
-		void print();
+		void write(std::ostream& outfile = std::cout);
 		
 		inline static KmerThreshold& Instance()
 		{

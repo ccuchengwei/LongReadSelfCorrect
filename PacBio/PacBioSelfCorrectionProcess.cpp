@@ -143,7 +143,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 					pieceVec.push_back(target);
 				else
 				{
-					mergedSeq = readSeq.substr(source.seedEndPos + 1, target.seedEndPos - source.seedEndPos);
+					mergedSeq = readSeq.substr((source.seedEndPos + 1), (target.seedEndPos - source.seedEndPos));
 					source.append(mergedSeq, target);
 				}
 				result.correctedLen += target.seedStr.length();	
@@ -320,21 +320,20 @@ void PacBioSelfCorrectionPostProcess::process(const SequenceWorkItem& item, cons
 		
 		for(std::vector<DNAString>::const_iterator iter = result.correctedStrs.begin(); iter != result.correctedStrs.end(); iter++)
 		{
-			size_t i = iter - result.correctedStrs.begin();
-			SeqItem mergeRecord;
-			std::stringstream ss;
-			ss << item.read.id << "_" << i << (*iter).toString().length();
-			mergeRecord.id = ss.str();
-			mergeRecord.seq = *iter;
-			mergeRecord.write(*m_pCorrectWriter);
+			size_t index = iter - result.correctedStrs.begin();
+			SeqItem mergeSeq;
+			std::string flag = m_params.Split ? ("_" + std::to_string(index)) : "";
+			mergeSeq.id = item.read.id + flag;
+			mergeSeq.seq = *iter;
+			mergeSeq.write(*m_pCorrectWriter);
 		}
 	}
 	else
 	{
 		// write into discard.fa
-		SeqItem mergeRecord;
-		mergeRecord.id = item.read.id;
-		mergeRecord.seq = item.read.seq;
-		mergeRecord.write(*m_pDiscardWriter);
+		SeqItem mergeSeq;
+		mergeSeq.id = item.read.id;
+		mergeSeq.seq = item.read.seq;
+		mergeSeq.write(*m_pDiscardWriter);
 	}
 }

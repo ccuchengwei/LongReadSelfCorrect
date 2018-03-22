@@ -278,10 +278,10 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 		PacBioSelfCorrectionProcess,
 		PacBioSelfCorrectionPostProcess>(opt::readsFile, pProcessorVec, pPostProcessor);
 
-		// SequenceProcessFramework::processSequencesParallelOpenMP<SequenceWorkItem,
-		// PacBioSelfCorrectionResult,
-		// PacBioSelfCorrectionProcess,
-		// PacBioSelfCorrectionPostProcess>(opt::readsFile, pProcessorVec, pPostProcessor);
+	//	SequenceProcessFramework::processSequencesParallelOpenMP<SequenceWorkItem,
+	//	PacBioSelfCorrectionResult,
+	//	PacBioSelfCorrectionProcess,
+	//	PacBioSelfCorrectionPostProcess>(opt::readsFile, pProcessorVec, pPostProcessor);
 		
 		for(auto& iter : pProcessorVec)
 			delete iter;

@@ -24,9 +24,9 @@ class KmerFeature
 
 		static thread_local std::map<int, std::unique_ptr<KmerFeature[]> > kmerRec;
 	
-		//Null kmer
-		KmerFeature():count(nullptr){ }
-	
+		KmerFeature(void) = default;
+		~KmerFeature(void) = default;
+		
 		//Copy kmer
 		KmerFeature(const KmerFeature& base)
 		:	count(base.getCount()),
@@ -74,8 +74,6 @@ class KmerFeature
 			isFake = (len != size);
 			frequency = biInterval.getFreq();
 		}
-	
-		~KmerFeature(){ }
 	
 		inline KmerFeature& operator=(const KmerFeature& other)
 		{

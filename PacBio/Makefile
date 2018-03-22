@@ -116,7 +116,7 @@ am_libpacbio_a_OBJECTS = libpacbio_a-SAIPBSelfCTree.$(OBJEXT) \
 	libpacbio_a-ShortReadOverlapTree.$(OBJEXT) \
 	libpacbio_a-HashtableSearch.$(OBJEXT) \
 	libpacbio_a-LongReadCorrectByOverlap.$(OBJEXT) \
-	libpacbio_a-KmerFreqProcess.$(OBJEXT) \
+	libpacbio_a-KmerCheckProcess.$(OBJEXT) \
 	libpacbio_a-IntervalTree.$(OBJEXT) \
 	libpacbio_a-IntervalTreeInstantiation.$(OBJEXT) \
 	libpacbio_a-KmerThreshold.$(OBJEXT) \
@@ -313,7 +313,7 @@ libpacbio_a_SOURCES = \
 	ShortReadOverlapTree.h ShortReadOverlapTree.cpp \
 	HashtableSearch.h HashtableSearch.cpp \
 	LongReadCorrectByOverlap.h LongReadCorrectByOverlap.cpp \
-	KmerFreqProcess.h KmerFreqProcess.cpp \
+	KmerCheckProcess.h KmerCheckProcess.cpp \
 	IntervalTree.h IntervalTree.cpp IntervalTreeInstantiation.cpp \
 	KmerThreshold.h KmerThreshold.cpp \
 	SeedFeature.h SeedFeature.cpp \
@@ -370,8 +370,8 @@ distclean-compile:
 include ./$(DEPDIR)/libpacbio_a-HashtableSearch.Po
 include ./$(DEPDIR)/libpacbio_a-IntervalTree.Po
 include ./$(DEPDIR)/libpacbio_a-IntervalTreeInstantiation.Po
+include ./$(DEPDIR)/libpacbio_a-KmerCheckProcess.Po
 include ./$(DEPDIR)/libpacbio_a-KmerFeature.Po
-include ./$(DEPDIR)/libpacbio_a-KmerFreqProcess.Po
 include ./$(DEPDIR)/libpacbio_a-KmerThreshold.Po
 include ./$(DEPDIR)/libpacbio_a-LongReadCorrectByOverlap.Po
 include ./$(DEPDIR)/libpacbio_a-LongReadOverlap.Po
@@ -538,19 +538,19 @@ libpacbio_a-LongReadCorrectByOverlap.obj: LongReadCorrectByOverlap.cpp
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-LongReadCorrectByOverlap.obj `if test -f 'LongReadCorrectByOverlap.cpp'; then $(CYGPATH_W) 'LongReadCorrectByOverlap.cpp'; else $(CYGPATH_W) '$(srcdir)/LongReadCorrectByOverlap.cpp'; fi`
 
-libpacbio_a-KmerFreqProcess.o: KmerFreqProcess.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-KmerFreqProcess.o -MD -MP -MF $(DEPDIR)/libpacbio_a-KmerFreqProcess.Tpo -c -o libpacbio_a-KmerFreqProcess.o `test -f 'KmerFreqProcess.cpp' || echo '$(srcdir)/'`KmerFreqProcess.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-KmerFreqProcess.Tpo $(DEPDIR)/libpacbio_a-KmerFreqProcess.Po
-#	$(AM_V_CXX)source='KmerFreqProcess.cpp' object='libpacbio_a-KmerFreqProcess.o' libtool=no \
+libpacbio_a-KmerCheckProcess.o: KmerCheckProcess.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-KmerCheckProcess.o -MD -MP -MF $(DEPDIR)/libpacbio_a-KmerCheckProcess.Tpo -c -o libpacbio_a-KmerCheckProcess.o `test -f 'KmerCheckProcess.cpp' || echo '$(srcdir)/'`KmerCheckProcess.cpp
+	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-KmerCheckProcess.Tpo $(DEPDIR)/libpacbio_a-KmerCheckProcess.Po
+#	$(AM_V_CXX)source='KmerCheckProcess.cpp' object='libpacbio_a-KmerCheckProcess.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-KmerFreqProcess.o `test -f 'KmerFreqProcess.cpp' || echo '$(srcdir)/'`KmerFreqProcess.cpp
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-KmerCheckProcess.o `test -f 'KmerCheckProcess.cpp' || echo '$(srcdir)/'`KmerCheckProcess.cpp
 
-libpacbio_a-KmerFreqProcess.obj: KmerFreqProcess.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-KmerFreqProcess.obj -MD -MP -MF $(DEPDIR)/libpacbio_a-KmerFreqProcess.Tpo -c -o libpacbio_a-KmerFreqProcess.obj `if test -f 'KmerFreqProcess.cpp'; then $(CYGPATH_W) 'KmerFreqProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/KmerFreqProcess.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-KmerFreqProcess.Tpo $(DEPDIR)/libpacbio_a-KmerFreqProcess.Po
-#	$(AM_V_CXX)source='KmerFreqProcess.cpp' object='libpacbio_a-KmerFreqProcess.obj' libtool=no \
+libpacbio_a-KmerCheckProcess.obj: KmerCheckProcess.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-KmerCheckProcess.obj -MD -MP -MF $(DEPDIR)/libpacbio_a-KmerCheckProcess.Tpo -c -o libpacbio_a-KmerCheckProcess.obj `if test -f 'KmerCheckProcess.cpp'; then $(CYGPATH_W) 'KmerCheckProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/KmerCheckProcess.cpp'; fi`
+	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-KmerCheckProcess.Tpo $(DEPDIR)/libpacbio_a-KmerCheckProcess.Po
+#	$(AM_V_CXX)source='KmerCheckProcess.cpp' object='libpacbio_a-KmerCheckProcess.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-KmerFreqProcess.obj `if test -f 'KmerFreqProcess.cpp'; then $(CYGPATH_W) 'KmerFreqProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/KmerFreqProcess.cpp'; fi`
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-KmerCheckProcess.obj `if test -f 'KmerCheckProcess.cpp'; then $(CYGPATH_W) 'KmerCheckProcess.cpp'; else $(CYGPATH_W) '$(srcdir)/KmerCheckProcess.cpp'; fi`
 
 libpacbio_a-IntervalTree.o: IntervalTree.cpp
 	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-IntervalTree.o -MD -MP -MF $(DEPDIR)/libpacbio_a-IntervalTree.Tpo -c -o libpacbio_a-IntervalTree.o `test -f 'IntervalTree.cpp' || echo '$(srcdir)/'`IntervalTree.cpp

@@ -5,7 +5,7 @@
 #include "KmerFeature.h"
 #include "KmerThreshold.h"
 
-thread_local ProbeParameters LongReadProbe::m_params = ProbeParameters();
+thread_local ProbeParameters LongReadProbe::m_params;
 
 // Search seeds with [static/dynamic] kmers. Noted by KuanWeiLee 20171027
 void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedFeature::SeedVector& seedVec)

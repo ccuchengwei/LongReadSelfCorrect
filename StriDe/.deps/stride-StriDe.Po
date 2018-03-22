@@ -215,8 +215,9 @@ stride-StriDe.o: StriDe.cpp /usr/include/stdc-predef.h \
  ../StringGraph/SGVisitors.h ../StringGraph/SGAlgorithms.h \
  ../StringGraph/SGUtil.h ../SQG/ASQG.h ../SQG/SQG.h \
  ../SuffixTools/BWTIndexSet.h oview.h preprocess.h ../Util/Quality.h \
- correct.h subgraph.h filter.h fm-merge.h kmerfreq.h grep.h FMIndexWalk.h \
- PacBioSelfCorrection.h PacBioHybridCorrection.h strideall.h asmlong.h
+ correct.h subgraph.h filter.h fm-merge.h kmercheck.h grep.h \
+ FMIndexWalk.h PacBioSelfCorrection.h PacBioHybridCorrection.h \
+ strideall.h asmlong.h
 
 /usr/include/stdc-predef.h:
 
@@ -880,7 +881,7 @@ filter.h:
 
 fm-merge.h:
 
-kmerfreq.h:
+kmercheck.h:
 
 grep.h:
 
