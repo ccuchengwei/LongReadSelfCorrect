@@ -31,8 +31,8 @@ struct PacBioSelfCorrectionParameters
 
 	int startKmerLen;
 	int scanKmerLen = 19;
-	std::array<int, 3> kmerOffset{0};
-	int kmerLenUpBound = 50;
+	std::array<int, 3> kmerOffset{{0}};
+	int kmerLenUpBound = 100;
 	int repeatDis = 100;
 	float hhRatio = 0.6;
 	
@@ -43,7 +43,7 @@ struct PacBioSelfCorrectionParameters
 	int maxLeaves;
     int idmerLen;
 	int minKmerLen;
-	std::array<int, 2> overlapKmerLen{5, 9};
+	std::array<int, 2> overlapKmerLen{{5, 9}};
 	
 	int mode;
 	std::set<int> kmerPool;
@@ -106,7 +106,7 @@ class PacBioSelfCorrectionProcess
 {
 	public:
 	
-		PacBioSelfCorrectionProcess(const PacBioSelfCorrectionParameters params):m_params(params){ }
+		PacBioSelfCorrectionProcess(const PacBioSelfCorrectionParameters& params):m_params(params){ }
 		~PacBioSelfCorrectionProcess(){ }
 		PacBioSelfCorrectionResult process(const SequenceWorkItem& workItem);
 
@@ -126,7 +126,7 @@ class PacBioSelfCorrectionProcess
 class PacBioSelfCorrectionPostProcess
 {
 	public:
-		PacBioSelfCorrectionPostProcess(std::string correctFile, std::string discardFile, const PacBioSelfCorrectionParameters params);
+		PacBioSelfCorrectionPostProcess(std::string correctFile, std::string discardFile, const PacBioSelfCorrectionParameters& params);
 		~PacBioSelfCorrectionPostProcess();
 		void process(const SequenceWorkItem& item, const PacBioSelfCorrectionResult& result);
 	

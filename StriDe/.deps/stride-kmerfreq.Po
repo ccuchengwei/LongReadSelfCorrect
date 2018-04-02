@@ -103,20 +103,28 @@ stride-kmerfreq.o: kmerfreq.cpp /usr/include/stdc-predef.h \
  /usr/include/c++/6/bits/locale_facets.tcc \
  /usr/include/c++/6/bits/basic_ios.tcc \
  /usr/include/c++/6/bits/ostream.tcc /usr/include/c++/6/istream \
- /usr/include/c++/6/bits/istream.tcc /usr/include/c++/6/map \
- /usr/include/c++/6/bits/stl_tree.h \
- /usr/include/c++/6/ext/aligned_buffer.h \
- /usr/include/c++/6/bits/stl_map.h /usr/include/c++/6/tuple \
- /usr/include/c++/6/utility /usr/include/c++/6/bits/stl_relops.h \
- /usr/include/c++/6/array /usr/include/c++/6/bits/uses_allocator.h \
- /usr/include/c++/6/bits/stl_multimap.h SGACommon.h ../Util/Util.h \
- /usr/include/c++/6/vector /usr/include/c++/6/bits/stl_construct.h \
+ /usr/include/c++/6/bits/istream.tcc /usr/include/c++/6/memory \
+ /usr/include/c++/6/bits/stl_construct.h \
  /usr/include/c++/6/bits/stl_uninitialized.h \
- /usr/include/c++/6/bits/stl_vector.h \
+ /usr/include/c++/6/bits/stl_tempbuf.h \
+ /usr/include/c++/6/bits/stl_raw_storage_iter.h \
+ /usr/include/c++/6/typeinfo /usr/include/c++/6/ext/concurrence.h \
+ /usr/include/c++/6/bits/uses_allocator.h /usr/include/c++/6/functional \
+ /usr/include/c++/6/tuple /usr/include/c++/6/utility \
+ /usr/include/c++/6/bits/stl_relops.h /usr/include/c++/6/array \
+ /usr/include/c++/6/bits/unique_ptr.h \
+ /usr/include/c++/6/bits/shared_ptr.h \
+ /usr/include/c++/6/bits/shared_ptr_base.h \
+ /usr/include/c++/6/bits/allocated_ptr.h \
+ /usr/include/c++/6/ext/aligned_buffer.h \
+ /usr/include/c++/6/bits/shared_ptr_atomic.h \
+ /usr/include/c++/6/bits/atomic_base.h \
+ /usr/include/c++/6/backward/auto_ptr.h SGACommon.h ../Util/Util.h \
+ /usr/include/c++/6/vector /usr/include/c++/6/bits/stl_vector.h \
  /usr/include/c++/6/bits/stl_bvector.h /usr/include/c++/6/bits/vector.tcc \
  /usr/include/c++/6/list /usr/include/c++/6/bits/stl_list.h \
- /usr/include/c++/6/bits/allocated_ptr.h /usr/include/c++/6/bits/list.tcc \
- /usr/include/c++/6/fstream /usr/include/c++/6/bits/codecvt.h \
+ /usr/include/c++/6/bits/list.tcc /usr/include/c++/6/fstream \
+ /usr/include/c++/6/bits/codecvt.h \
  /usr/include/x86_64-linux-gnu/c++/6/bits/basic_file.h \
  /usr/include/x86_64-linux-gnu/c++/6/bits/c++io.h \
  /usr/include/c++/6/bits/fstream.tcc /usr/include/c++/6/cassert \
@@ -153,8 +161,10 @@ stride-kmerfreq.o: kmerfreq.cpp /usr/include/stdc-predef.h \
  ../SuffixTools/STGlobals.h /usr/include/c++/6/algorithm \
  /usr/include/c++/6/bits/stl_algo.h \
  /usr/include/c++/6/bits/algorithmfwd.h \
- /usr/include/c++/6/bits/stl_heap.h /usr/include/c++/6/bits/stl_tempbuf.h \
+ /usr/include/c++/6/bits/stl_heap.h \
  /usr/include/c++/6/bits/uniform_int_dist.h /usr/include/c++/6/limits \
+ /usr/include/c++/6/map /usr/include/c++/6/bits/stl_tree.h \
+ /usr/include/c++/6/bits/stl_map.h /usr/include/c++/6/bits/stl_multimap.h \
  /usr/include/c++/6/set /usr/include/c++/6/bits/stl_set.h \
  /usr/include/c++/6/bits/stl_multiset.h ../Util/Alphabet.h \
  /usr/include/c++/6/iterator /usr/include/c++/6/bits/stream_iterator.h \
@@ -165,15 +175,14 @@ stride-kmerfreq.o: kmerfreq.cpp /usr/include/stdc-predef.h \
  ../Util/EncodedString.h ../Util/DNACodec.h ../Util/BWTCodec.h \
  ../Util/BWT4Codec.h ../Util/NoCodec.h ../SuffixTools/SuffixArray.h \
  ../SuffixTools/HitData.h ../Util/BitChar.h ../SuffixTools/BWTReader.h \
- ../SuffixTools/FMMarkers.h ../SuffixTools/RLUnit.h ../Util/Timer.h \
- /usr/include/x86_64-linux-gnu/sys/time.h ../SuffixTools/BWTAlgorithms.h \
- ../SuffixTools/BWTIndexSet.h ../SuffixTools/BWT.h \
- ../SuffixTools/BWTIntervalCache.h ../SuffixTools/BWTInterval.h \
- ../SuffixTools/SampledSuffixArray.h ../Util/ReadInfoTable.h \
- ../Bigraph/Bigraph.h ../Bigraph/GraphCommon.h ../Bigraph/Vertex.h \
- ../Util/QualityVector.h ../Util/SimpleAllocator.h ../Util/SimplePool.h \
- ../Bigraph/EdgeDesc.h ../Util/MultiOverlap.h ../Util/Match.h \
- ../Util/Pileup.h ../Bigraph/Edge.h ../Util/HashMap.h \
+ ../SuffixTools/FMMarkers.h ../SuffixTools/RLUnit.h \
+ ../SuffixTools/BWTAlgorithms.h ../SuffixTools/BWTIndexSet.h \
+ ../SuffixTools/BWT.h ../SuffixTools/BWTIntervalCache.h \
+ ../SuffixTools/BWTInterval.h ../SuffixTools/SampledSuffixArray.h \
+ ../Util/ReadInfoTable.h ../Bigraph/Bigraph.h ../Bigraph/GraphCommon.h \
+ ../Bigraph/Vertex.h ../Util/QualityVector.h ../Util/SimpleAllocator.h \
+ ../Util/SimplePool.h ../Bigraph/EdgeDesc.h ../Util/MultiOverlap.h \
+ ../Util/Match.h ../Util/Pileup.h ../Bigraph/Edge.h ../Util/HashMap.h \
  /usr/include/c++/6/unordered_map /usr/include/c++/6/bits/hashtable.h \
  /usr/include/c++/6/bits/hashtable_policy.h \
  /usr/include/c++/6/bits/unordered_map.h /usr/include/c++/6/unordered_set \
@@ -181,15 +190,6 @@ stride-kmerfreq.o: kmerfreq.cpp /usr/include/stdc-predef.h \
  /usr/local/include/google/sparse_hash_map \
  /usr/local/include/sparsehash/sparse_hash_map \
  /usr/local/include/sparsehash/internal/sparseconfig.h \
- /usr/include/c++/6/functional /usr/include/c++/6/typeinfo \
- /usr/include/c++/6/memory /usr/include/c++/6/bits/stl_raw_storage_iter.h \
- /usr/include/c++/6/ext/concurrence.h \
- /usr/include/c++/6/bits/unique_ptr.h \
- /usr/include/c++/6/bits/shared_ptr.h \
- /usr/include/c++/6/bits/shared_ptr_base.h \
- /usr/include/c++/6/bits/shared_ptr_atomic.h \
- /usr/include/c++/6/bits/atomic_base.h \
- /usr/include/c++/6/backward/auto_ptr.h \
  /usr/local/include/sparsehash/internal/libc_allocator_with_realloc.h \
  /usr/include/c++/6/stdlib.h \
  /usr/local/include/sparsehash/internal/sparsehashtable.h \
@@ -208,12 +208,8 @@ stride-kmerfreq.o: kmerfreq.cpp /usr/include/stdc-predef.h \
  ../Util/KmerDistribution.h /usr/include/c++/6/cstddef \
  /usr/include/c++/6/queue /usr/include/c++/6/deque \
  /usr/include/c++/6/bits/stl_deque.h /usr/include/c++/6/bits/deque.tcc \
- /usr/include/c++/6/bits/stl_queue.h \
- ../Concurrency/SequenceProcessFramework.h ../Concurrency/ThreadWorker.h \
- /usr/include/semaphore.h /usr/include/x86_64-linux-gnu/bits/semaphore.h \
- ../Concurrency/SequenceWorkItem.h ../Util/SeqReader.h \
- ../PacBio/KmerFreqProcess.h ../SuffixTools/BWTIndexSet.h \
- ../Concurrency/SequenceWorkItem.h
+ /usr/include/c++/6/bits/stl_queue.h ../PacBio/KmerFeature.h \
+ ../SuffixTools/BWTIndexSet.h ../PacBio/KmerThreshold.h
 
 /usr/include/stdc-predef.h:
 
@@ -495,13 +491,23 @@ stride-kmerfreq.o: kmerfreq.cpp /usr/include/stdc-predef.h \
 
 /usr/include/c++/6/bits/istream.tcc:
 
-/usr/include/c++/6/map:
+/usr/include/c++/6/memory:
 
-/usr/include/c++/6/bits/stl_tree.h:
+/usr/include/c++/6/bits/stl_construct.h:
 
-/usr/include/c++/6/ext/aligned_buffer.h:
+/usr/include/c++/6/bits/stl_uninitialized.h:
 
-/usr/include/c++/6/bits/stl_map.h:
+/usr/include/c++/6/bits/stl_tempbuf.h:
+
+/usr/include/c++/6/bits/stl_raw_storage_iter.h:
+
+/usr/include/c++/6/typeinfo:
+
+/usr/include/c++/6/ext/concurrence.h:
+
+/usr/include/c++/6/bits/uses_allocator.h:
+
+/usr/include/c++/6/functional:
 
 /usr/include/c++/6/tuple:
 
@@ -511,19 +517,27 @@ stride-kmerfreq.o: kmerfreq.cpp /usr/include/stdc-predef.h \
 
 /usr/include/c++/6/array:
 
-/usr/include/c++/6/bits/uses_allocator.h:
+/usr/include/c++/6/bits/unique_ptr.h:
 
-/usr/include/c++/6/bits/stl_multimap.h:
+/usr/include/c++/6/bits/shared_ptr.h:
+
+/usr/include/c++/6/bits/shared_ptr_base.h:
+
+/usr/include/c++/6/bits/allocated_ptr.h:
+
+/usr/include/c++/6/ext/aligned_buffer.h:
+
+/usr/include/c++/6/bits/shared_ptr_atomic.h:
+
+/usr/include/c++/6/bits/atomic_base.h:
+
+/usr/include/c++/6/backward/auto_ptr.h:
 
 SGACommon.h:
 
 ../Util/Util.h:
 
 /usr/include/c++/6/vector:
-
-/usr/include/c++/6/bits/stl_construct.h:
-
-/usr/include/c++/6/bits/stl_uninitialized.h:
 
 /usr/include/c++/6/bits/stl_vector.h:
 
@@ -534,8 +548,6 @@ SGACommon.h:
 /usr/include/c++/6/list:
 
 /usr/include/c++/6/bits/stl_list.h:
-
-/usr/include/c++/6/bits/allocated_ptr.h:
 
 /usr/include/c++/6/bits/list.tcc:
 
@@ -649,11 +661,17 @@ kmerfreq.h:
 
 /usr/include/c++/6/bits/stl_heap.h:
 
-/usr/include/c++/6/bits/stl_tempbuf.h:
-
 /usr/include/c++/6/bits/uniform_int_dist.h:
 
 /usr/include/c++/6/limits:
+
+/usr/include/c++/6/map:
+
+/usr/include/c++/6/bits/stl_tree.h:
+
+/usr/include/c++/6/bits/stl_map.h:
+
+/usr/include/c++/6/bits/stl_multimap.h:
 
 /usr/include/c++/6/set:
 
@@ -713,10 +731,6 @@ kmerfreq.h:
 
 ../SuffixTools/RLUnit.h:
 
-../Util/Timer.h:
-
-/usr/include/x86_64-linux-gnu/sys/time.h:
-
 ../SuffixTools/BWTAlgorithms.h:
 
 ../SuffixTools/BWTIndexSet.h:
@@ -773,28 +787,6 @@ kmerfreq.h:
 
 /usr/local/include/sparsehash/internal/sparseconfig.h:
 
-/usr/include/c++/6/functional:
-
-/usr/include/c++/6/typeinfo:
-
-/usr/include/c++/6/memory:
-
-/usr/include/c++/6/bits/stl_raw_storage_iter.h:
-
-/usr/include/c++/6/ext/concurrence.h:
-
-/usr/include/c++/6/bits/unique_ptr.h:
-
-/usr/include/c++/6/bits/shared_ptr.h:
-
-/usr/include/c++/6/bits/shared_ptr_base.h:
-
-/usr/include/c++/6/bits/shared_ptr_atomic.h:
-
-/usr/include/c++/6/bits/atomic_base.h:
-
-/usr/include/c++/6/backward/auto_ptr.h:
-
 /usr/local/include/sparsehash/internal/libc_allocator_with_realloc.h:
 
 /usr/include/c++/6/stdlib.h:
@@ -843,20 +835,8 @@ kmerfreq.h:
 
 /usr/include/c++/6/bits/stl_queue.h:
 
-../Concurrency/SequenceProcessFramework.h:
-
-../Concurrency/ThreadWorker.h:
-
-/usr/include/semaphore.h:
-
-/usr/include/x86_64-linux-gnu/bits/semaphore.h:
-
-../Concurrency/SequenceWorkItem.h:
-
-../Util/SeqReader.h:
-
-../PacBio/KmerFreqProcess.h:
+../PacBio/KmerFeature.h:
 
 ../SuffixTools/BWTIndexSet.h:
 
-../Concurrency/SequenceWorkItem.h:
+../PacBio/KmerThreshold.h:

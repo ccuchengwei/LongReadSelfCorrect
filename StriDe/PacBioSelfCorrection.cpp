@@ -26,6 +26,9 @@
 #include "CorrectionThresholds.h"
 #include "BWTIntervalCache.h"
 #include "KmerThreshold.h"
+
+static const std::map<int, int> order = { {5, 0}, {10, 1}, {100, 2} };
+static const int size[3] = { 17, 19, 21 };
 //
 // Getopt
 //
@@ -82,7 +85,6 @@ namespace opt
     static double ErrorRate=0.15;
 	
 	static int startKmerLen = 19;
-//	static int startKmerLen = 23;
 	static int numOfNextTarget = 1;
 	static int maxLeaves=32;
     static int idmerLen = 9;
@@ -188,27 +190,9 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	
 	if(!opt::Manual)
 	{
-		switch(opt::genome)
-		{
-			case 5:
-				ecParams.startKmerLen = 17;
-				ecParams.kmerOffset[2] = -2;
-				ecParams.kmerOffset[1] += opt::offset; // wait for delete
-				break;
-			case 10:
-				ecParams.startKmerLen = 19;
-			//	ecParams.startKmerLen = 23;
-				ecParams.kmerOffset[2] = -4;
-			//	ecParams.kmerOffset[2] = -8;
-			//	ecParams.kmerOffset[1] += 4; // wait for delete
-				ecParams.kmerOffset[1] += opt::offset; // wait for delete
-			//	ecParams.kmerOffset[2] += opt::offset; // wait for delete
-				break;
-			case 100:
-				ecParams.startKmerLen = 21;
-				ecParams.kmerOffset[2] = -6;
-				break;
-		}
+		ecParams.startKmerLen = size[order[opt::genome]];
+		ecParams.kmerOffset[1] = 2 * std::min(std::max((ecParams.PBcoverage/30 - 1), 0), (order[opt::genome] + 1));
+		ecParams.kmerOffset[2] = -2 * (order[opt::genome] + 1);
 	}
 	ecParams.mode = opt::mode;
 	
@@ -232,11 +216,10 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	
 	//Initialize KmerThreshold
 	KmerThreshold::Instance().set(
-			ecParams.startKmerLen,
+			*(ecParams.kmerPool.begin()),
 			ecParams.kmerLenUpBound,
 			ecParams.PBcoverage,
 			ecParams.directory);
-//	KmerThreshold::Instance().print();
 	
 	std::cerr
 	<< "\nCorrecting PacBio reads for " << opt::readsFile << " using--\n"
@@ -449,3 +432,4 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 	opt::discardFile = opt::directory + "discard.fa";
 	
 }
+

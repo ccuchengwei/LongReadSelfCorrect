@@ -251,7 +251,7 @@ bool PacBioSelfCorrectionProcess::correctByMSAlignment
 PacBioSelfCorrectionPostProcess::PacBioSelfCorrectionPostProcess(
 		std::string correctFile,
 		std::string discardFile,
-		const PacBioSelfCorrectionParameters params)
+		const PacBioSelfCorrectionParameters& params)
 :	m_params(params),
 	m_totalReadsLen(0),
 	m_correctedLen(0),
@@ -283,16 +283,16 @@ PacBioSelfCorrectionPostProcess::~PacBioSelfCorrectionPostProcess()
 		<< "CorrectedLen: " << m_correctedLen << ", ratio: " << (float)(m_correctedLen)/m_totalReadsLen << "\n"
 		<< "TotalSeedNum: " << m_totalSeedNum << "\n"
 		<< "TotalWalkNum: " << m_totalWalkNum << "\n"
-		<< "FMNum: " << m_FMNum << ", ratio: " << (float)(m_FMNum * 100)/m_totalWalkNum << "%\n"
-		<< "DPNum: " << m_DPNum << ", ratio: " << (float)(m_DPNum * 100)/m_totalWalkNum << "%\n"
-        << "OutcastNum: " << m_OutcastNum << ", ratio: " << (float)(m_OutcastNum * 100)/m_totalWalkNum << "%\n"
-		<< "HighErrorNum: " << m_highErrorNum << ", ratio: " << (float)(m_highErrorNum * 100)/(m_DPNum + m_OutcastNum) << "%\n"
-		<< "ExceedDepthNum: " << m_exceedDepthNum << ", ratio: " << (float)(m_exceedDepthNum * 100)/(m_DPNum + m_OutcastNum) << "%\n"
-		<< "ExceedLeaveNum: " << m_exceedLeaveNum << ", ratio: " << (float)(m_exceedLeaveNum * 100)/(m_DPNum + m_OutcastNum) << "%\n"
+		<< "FMNum: "        << m_FMNum      << ", ratio: " << (float)(m_FMNum      * 100)/m_totalWalkNum << "%\n"
+		<< "DPNum: "        << m_DPNum      << ", ratio: " << (float)(m_DPNum      * 100)/m_totalWalkNum << "%\n"
+        << "OutcastNum: "   << m_OutcastNum << ", ratio: " << (float)(m_OutcastNum * 100)/m_totalWalkNum << "%\n"
+		<< "HighErrorNum: "    << m_highErrorNum   << ", ratio: " << (float)(m_highErrorNum   * 100)/(m_DPNum + m_OutcastNum) << "%\n"
+		<< "ExceedDepthNum: "  << m_exceedDepthNum << ", ratio: " << (float)(m_exceedDepthNum * 100)/(m_DPNum + m_OutcastNum) << "%\n"
+		<< "ExceedLeaveNum: "  << m_exceedLeaveNum << ", ratio: " << (float)(m_exceedLeaveNum * 100)/(m_DPNum + m_OutcastNum) << "%\n"
 		<< "DisBetweenSeeds: " << m_seedDis/m_totalWalkNum << "\n"
         << "Time of searching Seeds: " << m_Timer_Seed  << "\n"
-        << "Time of searching FM: " << m_Timer_FM  << "\n"
-        << "Time of searching DP: " << m_Timer_DP  << "\n";
+        << "Time of searching FM: "    << m_Timer_FM  << "\n"
+        << "Time of searching DP: "    << m_Timer_DP  << "\n";
 	}
 	delete m_pCorrectWriter;
 	delete m_pDiscardWriter;

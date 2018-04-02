@@ -4,7 +4,7 @@
 #include "KmerThreshold.h"
 //The threshold table is for determining correct value to tell a kmer,
 //which is contributed from ChengWei Tsai & KuanWei Lee;
-//there are 3 type : 0->lowcov, 1->unique, 2->repeat.
+//there are 3 mode : 0->lowcov, 1->unique, 2->repeat.
 //Noted by KuanWeiLee 20180115
 static const float formula[3][6] =
 {
@@ -34,30 +34,32 @@ KmerThreshold::KmerThreshold():table{nullptr},pTableWriter(nullptr)
 
 KmerThreshold::~KmerThreshold()
 {
-	*pTableWriter << "Coverage : " << cov << "\n" << "size\tlowcov\tuique\trepeat\n";
-	write(*pTableWriter);
-	
+	if(pTableWriter != nullptr)
+	{
+		*pTableWriter << "Coverage : " << cov << "\n" << "size\tlowcov\tuique\trepeat\n";
+		write(*pTableWriter);
+	}
 	for(auto& iter : table)
 		delete iter;
 	delete pTableWriter;
 }
 
-void KmerThreshold::set(int _start, int _end, int _cov, std::string& dir)
+void KmerThreshold::set(int _start, int _end, int _cov, const std::string& dir)
 {
 	if(pTableWriter != nullptr) return;
-//	start = _start;
-	start = 15;
+	start = std::max(_start, 9);
 	end  = _end;
 	cov  = _cov;
-	pTableWriter = createWriter(dir + "threshold-table");
-	for(int type = 0; type <= 2; type++)
+	if(!dir.empty())
+		pTableWriter = createWriter(dir + "threshold-table");
+	for(int mode = 0; mode <= 2; mode++)
 	{
-		table[type] = new float[end + 2]{0};
-		float* value = table[type] + start;
+		table[mode] = new float[end + 2]{0};
+		float* value = table[mode] + start;
 		float cavity = std::numeric_limits<float>::max();
 		for(int ksize = start; ksize <= end; ksize++, value++)
 		{
-			cavity = std::min(cavity, calculate(type, cov, ksize));
+			cavity = std::min(cavity, calculate(mode, cov, ksize));
 			*value = cavity;
 		}
 	}

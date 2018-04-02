@@ -18,6 +18,7 @@
 #include "filter.h"
 #include "fm-merge.h"
 #include "kmercheck.h"
+#include "kmerfreq.h"
 #include "grep.h"
 #include "FMIndexWalk.h"
 #include "PacBioSelfCorrection.h"
@@ -53,6 +54,7 @@ static const char *STRIDE_USAGE_MESSAGE =
 "      assemble    generate contigs from an assembly graph\n"
 "      asmlong     generate contigs from an assembly graph for long reads\n"
 "      kmercheck   check kmer distribution and error condition\n"
+"      kmerfreq    check static & dynamic kmer frequency\n"
 "\nOther Commands:\n"
 "      merge	merge multiple BWT/FM-index files into a single index\n"
 "\nReport bugs to " PACKAGE_BUGREPORT "\n\n";
@@ -104,6 +106,8 @@ int main(int argc, char** argv)
             oviewMain(argc - 1, argv + 1);
         else if(command == "kmercheck")
             kmercheckMain(argc - 1, argv + 1);
+        else if(command == "kmerfreq")
+            kmerfreqMain(argc - 1, argv + 1);
         else if(command == "grep")
             grepMain(argc - 1, argv + 1);
         else if(command == "fmwalk")

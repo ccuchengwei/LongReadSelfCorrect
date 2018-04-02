@@ -39,6 +39,7 @@ stride_SOURCES = StriDe.cpp \
               fm-merge.cpp fm-merge.h \
               OverlapCommon.h OverlapCommon.cpp \
 		kmercheck.h kmercheck.cpp \
+		kmerfreq.h kmerfreq.cpp \
 		grep.h grep.cpp \
 		FMIndexWalk.h FMIndexWalk.cpp \
 		PacBioSelfCorrection.h PacBioSelfCorrection.cpp \

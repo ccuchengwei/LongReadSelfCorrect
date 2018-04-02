@@ -106,8 +106,8 @@ am_stride_OBJECTS = stride-StriDe.$(OBJEXT) stride-strideall.$(OBJEXT) \
 	stride-oview.$(OBJEXT) stride-preprocess.$(OBJEXT) \
 	stride-subgraph.$(OBJEXT) stride-filter.$(OBJEXT) \
 	stride-fm-merge.$(OBJEXT) stride-OverlapCommon.$(OBJEXT) \
-	stride-kmercheck.$(OBJEXT) stride-grep.$(OBJEXT) \
-	stride-FMIndexWalk.$(OBJEXT) \
+	stride-kmercheck.$(OBJEXT) stride-kmerfreq.$(OBJEXT) \
+	stride-grep.$(OBJEXT) stride-FMIndexWalk.$(OBJEXT) \
 	stride-PacBioSelfCorrection.$(OBJEXT) \
 	stride-PacBioHybridCorrection.$(OBJEXT) \
 	stride-asmlong.$(OBJEXT)
@@ -328,6 +328,7 @@ stride_SOURCES = StriDe.cpp \
               fm-merge.cpp fm-merge.h \
               OverlapCommon.h OverlapCommon.cpp \
 		kmercheck.h kmercheck.cpp \
+		kmerfreq.h kmerfreq.cpp \
 		grep.h grep.cpp \
 		FMIndexWalk.h FMIndexWalk.cpp \
 		PacBioSelfCorrection.h PacBioSelfCorrection.cpp \
@@ -434,6 +435,7 @@ include ./$(DEPDIR)/stride-fm-merge.Po
 include ./$(DEPDIR)/stride-grep.Po
 include ./$(DEPDIR)/stride-index.Po
 include ./$(DEPDIR)/stride-kmercheck.Po
+include ./$(DEPDIR)/stride-kmerfreq.Po
 include ./$(DEPDIR)/stride-overlap.Po
 include ./$(DEPDIR)/stride-oview.Po
 include ./$(DEPDIR)/stride-preprocess.Po
@@ -635,6 +637,20 @@ stride-kmercheck.obj: kmercheck.cpp
 #	$(AM_V_CXX)source='kmercheck.cpp' object='stride-kmercheck.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o stride-kmercheck.obj `if test -f 'kmercheck.cpp'; then $(CYGPATH_W) 'kmercheck.cpp'; else $(CYGPATH_W) '$(srcdir)/kmercheck.cpp'; fi`
+
+stride-kmerfreq.o: kmerfreq.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT stride-kmerfreq.o -MD -MP -MF $(DEPDIR)/stride-kmerfreq.Tpo -c -o stride-kmerfreq.o `test -f 'kmerfreq.cpp' || echo '$(srcdir)/'`kmerfreq.cpp
+	$(AM_V_at)$(am__mv) $(DEPDIR)/stride-kmerfreq.Tpo $(DEPDIR)/stride-kmerfreq.Po
+#	$(AM_V_CXX)source='kmerfreq.cpp' object='stride-kmerfreq.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o stride-kmerfreq.o `test -f 'kmerfreq.cpp' || echo '$(srcdir)/'`kmerfreq.cpp
+
+stride-kmerfreq.obj: kmerfreq.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT stride-kmerfreq.obj -MD -MP -MF $(DEPDIR)/stride-kmerfreq.Tpo -c -o stride-kmerfreq.obj `if test -f 'kmerfreq.cpp'; then $(CYGPATH_W) 'kmerfreq.cpp'; else $(CYGPATH_W) '$(srcdir)/kmerfreq.cpp'; fi`
+	$(AM_V_at)$(am__mv) $(DEPDIR)/stride-kmerfreq.Tpo $(DEPDIR)/stride-kmerfreq.Po
+#	$(AM_V_CXX)source='kmerfreq.cpp' object='stride-kmerfreq.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o stride-kmerfreq.obj `if test -f 'kmerfreq.cpp'; then $(CYGPATH_W) 'kmerfreq.cpp'; else $(CYGPATH_W) '$(srcdir)/kmerfreq.cpp'; fi`
 
 stride-grep.o: grep.cpp
 	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stride_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT stride-grep.o -MD -MP -MF $(DEPDIR)/stride-grep.Tpo -c -o stride-grep.o `test -f 'grep.cpp' || echo '$(srcdir)/'`grep.cpp
