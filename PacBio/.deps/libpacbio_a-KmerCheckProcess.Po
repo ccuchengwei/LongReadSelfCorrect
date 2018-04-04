@@ -208,7 +208,7 @@ libpacbio_a-KmerCheckProcess.o: KmerCheckProcess.cpp \
  ../SuffixTools/BWTIndexSet.h ../Bigraph/GraphCommon.h \
  /usr/include/c++/6/queue /usr/include/c++/6/deque \
  /usr/include/c++/6/bits/stl_deque.h /usr/include/c++/6/bits/deque.tcc \
- /usr/include/c++/6/bits/stl_queue.h
+ /usr/include/c++/6/bits/stl_queue.h KmerFeature.h
 
 /usr/include/stdc-predef.h:
 
@@ -833,3 +833,5 @@ KmerCheckProcess.h:
 /usr/include/c++/6/bits/deque.tcc:
 
 /usr/include/c++/6/bits/stl_queue.h:
+
+KmerFeature.h:
