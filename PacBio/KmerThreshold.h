@@ -7,7 +7,7 @@ class KmerThreshold
 		KmerThreshold(const KmerThreshold&) = delete;
 		void operator=(const KmerThreshold&) = delete;
 		
-		void set(int _start, int _end, int _cov, const std::string& dir);
+		void initialize(int _start, int _end, int _cov, const std::string& _dir);
 		void write(std::ostream& outfile = std::cout);
 		
 		inline static KmerThreshold& Instance()
@@ -33,6 +33,7 @@ class KmerThreshold
 		int cov;
 		float* table[3];
 		std::ostream* pTableWriter;
+		bool set;
 };
 
 #endif

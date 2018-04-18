@@ -5,7 +5,9 @@
 #include "KmerFeature.h"
 #include "KmerThreshold.h"
 
-thread_local ProbeParameters LongReadProbe::m_params;
+ProbeParameters LongReadProbe::m_params;
+
+thread_local std::string LongReadProbe::readid;
 
 // Search seeds with [static/dynamic] kmers. Noted by KuanWeiLee 20171027
 void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedFeature::SeedVector& seedVec)
@@ -86,7 +88,7 @@ void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedF
 	seedVec = removeHitchhikingSeeds(seedVec, attribute);
 	if(m_params.DebugSeed)
 	{
-		std::ostream* pSeedWriter = createWriter(m_params.directory + "seed/" + m_params.readid + ".seed");
+		std::ostream* pSeedWriter = createWriter(m_params.directory + "seed/" + readid + ".seed");
 		write(*pSeedWriter, seedVec);
 		delete pSeedWriter;
 	}
@@ -153,8 +155,6 @@ void LongReadProbe::getSeqAttribute(const std::string& seq, int* const attribute
 		}
 	}
 	
-//	if((float)repeatcount/seqLen >= 0.5 && (float)(leftmost + (seqLen -rightmost))/seqLen <= 0.1)
-//		std::fill_n(attribute, seqLen, 2);
 }
 
 //Kmer & Seed Hitchhike strategy would maitain seed-correctness, 
@@ -165,30 +165,29 @@ SeedFeature::SeedVector LongReadProbe::removeHitchhikingSeeds(SeedFeature::SeedV
 	if(initSeedVec.size() < 2) return initSeedVec;
 	
 	int ksize = m_params.startKmerLen + m_params.kmerOffset[2];
-	float overFreq = KmerThreshold::Instance().get(2, ksize)*5;
+	float overValue = KmerThreshold::Instance().get(2, ksize)*5;
 	
 	for(SeedFeature::SeedVector::iterator iterQuery = initSeedVec.begin(); (iterQuery + 1) != initSeedVec.end(); iterQuery++)
 	{
 		SeedFeature& query = *iterQuery;
-		SeedFeature::SeedVector::iterator iterTarget = iterQuery + 1;
+		SeedFeature::SeedVector::iterator iterSubject = iterQuery + 1;
 		//if(query.isHitchhiked) continue;
 		int queryMode = attribute[query.seedStartPos];
-		if(queryMode == 2 && query.maxFixedMerFreq >= overFreq) continue;
+		if(queryMode == 2 && query.maxFixedMerFreq >= overValue) continue;
 		
-		for(; iterTarget != initSeedVec.end(); iterTarget++)
+		for(; iterSubject != initSeedVec.end(); iterSubject++)
 		{
-			SeedFeature& target = *iterTarget;
-			//if(target.isHitchhiked) continue;
-			int	targetMode = attribute[target.seedStartPos];
-		//	int isBoundary = (queryMode >> 1) ^ (targetMode >> 1);
-		//	if((int)(target.seedStartPos - query.seedEndPos) > (m_params.repeatDis >> isBoundary)) break;
-			if((int)(target.seedStartPos - query.seedEndPos) > m_params.repeatDis) break;
-			if(targetMode == 2 && target.maxFixedMerFreq >= overFreq) continue;
-			float freqDiff = (float)target.maxFixedMerFreq/query.maxFixedMerFreq;
-			int isGiantRepeat = ((queryMode >> 1) & (targetMode >> 1)) + 1;
+			SeedFeature& subject = *iterSubject;
+			//if(subject.isHitchhiked) continue;
+			int	subjectMode = attribute[subject.seedStartPos];
+			if((int)(subject.seedStartPos - query.seedEndPos) > m_params.radius) break;
+			if(subjectMode == 2 && subject.maxFixedMerFreq >= overValue) continue;
 			
-			target.isHitchhiked = target.isHitchhiked || (query.isRepeat && freqDiff < (m_params.hhRatio/isGiantRepeat));	//HIGH --> LOW
-			query.isHitchhiked = query.isHitchhiked || (target.isRepeat && freqDiff > (isGiantRepeat/m_params.hhRatio));	//LOW  --> HIGH
+			float freqDiff = (float)subject.maxFixedMerFreq/query.maxFixedMerFreq;
+			int isGiantRepeat = ((queryMode >> 1) & (subjectMode >> 1)) + 1;
+			
+			subject.isHitchhiked = subject.isHitchhiked || (query.isRepeat && freqDiff < (m_params.hhRatio/isGiantRepeat));	//HIGH --> LOW
+			query.isHitchhiked = query.isHitchhiked || (subject.isRepeat && freqDiff > (isGiantRepeat/m_params.hhRatio));	//LOW  --> HIGH
 		}
 	}
 	
@@ -206,7 +205,7 @@ SeedFeature::SeedVector LongReadProbe::removeHitchhikingSeeds(SeedFeature::SeedV
 	
 	if(m_params.DebugSeed)
 	{
-		std::ostream* pOutcastSeedWriter = createWriter(m_params.directory + "seed/error/" + m_params.readid + ".seed");
+		std::ostream* pOutcastSeedWriter = createWriter(m_params.directory + "seed/error/" + readid + ".seed");
 		write(*pOutcastSeedWriter, outcastSeedVec);
 		delete pOutcastSeedWriter;
 	}

@@ -31,24 +31,8 @@ PacBioSelfCorrectionResult PacBioSelfCorrectionProcess::process(const SequenceWo
 		KmerFeature::kmerRec[iter] = std::unique_ptr<KmerFeature[]>(new KmerFeature[readSeqLen]);
 	
 	//Part 1: start searching seeds
-	LongReadProbe::m_params = 
-	ProbeParameters(
-			m_params.indices,
-			result.readid,
-			m_params.directory,
-			m_params.startKmerLen,
-			m_params.scanKmerLen,
-			m_params.kmerLenUpBound,
-			m_params.PBcoverage,
-			m_params.mode,
-			m_params.repeatDis,
-			m_params.hhRatio,
-			m_params.kmerOffset,
-			m_params.kmerPool,
-			m_params.DebugSeed,
-			m_params.Manual);
-	
     Timer* seedTimer = new Timer("Seed Time", true);
+	LongReadProbe::readid = result.readid;
 	LongReadProbe::searchSeedsWithHybridKmers(readSeq, seedVec);
 	result.totalSeedNum = seedVec.size();
 	result.Timer_Seed = seedTimer->getElapsedWallTime(); 
@@ -117,10 +101,6 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 					break;
 				case -3:
 					result.exceedLeaveNum++;
-					break;
-				case -4:
-					result.highErrorNum++;
-					firstFMExtensionType = -1;
 					break;
 				default:
 					std::cerr << "Does it really happen?\n";

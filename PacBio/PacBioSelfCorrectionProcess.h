@@ -32,8 +32,8 @@ struct PacBioSelfCorrectionParameters
 	int startKmerLen;
 	int scanKmerLen = 19;
 	std::array<int, 3> kmerOffset{{0}};
-	int kmerLenUpBound = 100;
-	int repeatDis = 100;
+	int kmerLenUpBound = 50;
+	int radius = 100;
 	float hhRatio = 0.6;
 	
 	// tree search parameters

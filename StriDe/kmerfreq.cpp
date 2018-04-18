@@ -72,7 +72,7 @@ int kmerfreqMain(int argc, char** argv)
 	BWTIndexSet indexSet;
 	indexSet.pBWT = pBWT.get();
 	indexSet.pRBWT = pRBWT.get();
-	KmerThreshold::Instance().set(-1, 100, opt::PBcoverage, "");
+	KmerThreshold::Instance().initialize(-1, 100, opt::PBcoverage, "");
 	
 	std::string query;
 	int staticSize;

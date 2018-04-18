@@ -17,6 +17,7 @@ libpacbio_a_SOURCES = \
 	PacBioSelfCorrectionProcess.h PacBioSelfCorrectionProcess.cpp \
 	PacBioHybridCorrectionProcess.h PacBioHybridCorrectionProcess.cpp \
         LongReadOverlap.h LongReadOverlap.cpp \
+        LongReadExtend.h LongReadExtend.cpp \
         LongReadProbe.h LongReadProbe.cpp \
 	PBOverlapTree.h PBOverlapTree.cpp \
 	ShortReadOverlapTree.h ShortReadOverlapTree.cpp \

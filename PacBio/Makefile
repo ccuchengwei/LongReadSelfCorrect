@@ -111,6 +111,7 @@ am_libpacbio_a_OBJECTS = libpacbio_a-SAIPBSelfCTree.$(OBJEXT) \
 	libpacbio_a-PacBioSelfCorrectionProcess.$(OBJEXT) \
 	libpacbio_a-PacBioHybridCorrectionProcess.$(OBJEXT) \
 	libpacbio_a-LongReadOverlap.$(OBJEXT) \
+	libpacbio_a-LongReadExtend.$(OBJEXT) \
 	libpacbio_a-LongReadProbe.$(OBJEXT) \
 	libpacbio_a-PBOverlapTree.$(OBJEXT) \
 	libpacbio_a-ShortReadOverlapTree.$(OBJEXT) \
@@ -308,6 +309,7 @@ libpacbio_a_SOURCES = \
 	PacBioSelfCorrectionProcess.h PacBioSelfCorrectionProcess.cpp \
 	PacBioHybridCorrectionProcess.h PacBioHybridCorrectionProcess.cpp \
         LongReadOverlap.h LongReadOverlap.cpp \
+        LongReadExtend.h LongReadExtend.cpp \
         LongReadProbe.h LongReadProbe.cpp \
 	PBOverlapTree.h PBOverlapTree.cpp \
 	ShortReadOverlapTree.h ShortReadOverlapTree.cpp \
@@ -374,6 +376,7 @@ include ./$(DEPDIR)/libpacbio_a-IntervalTreeInstantiation.Po
 include ./$(DEPDIR)/libpacbio_a-KmerFeature.Po
 include ./$(DEPDIR)/libpacbio_a-KmerThreshold.Po
 include ./$(DEPDIR)/libpacbio_a-LongReadCorrectByOverlap.Po
+include ./$(DEPDIR)/libpacbio_a-LongReadExtend.Po
 include ./$(DEPDIR)/libpacbio_a-LongReadOverlap.Po
 include ./$(DEPDIR)/libpacbio_a-LongReadProbe.Po
 include ./$(DEPDIR)/libpacbio_a-PBOverlapTree.Po
@@ -467,6 +470,20 @@ libpacbio_a-LongReadOverlap.obj: LongReadOverlap.cpp
 #	$(AM_V_CXX)source='LongReadOverlap.cpp' object='libpacbio_a-LongReadOverlap.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-LongReadOverlap.obj `if test -f 'LongReadOverlap.cpp'; then $(CYGPATH_W) 'LongReadOverlap.cpp'; else $(CYGPATH_W) '$(srcdir)/LongReadOverlap.cpp'; fi`
+
+libpacbio_a-LongReadExtend.o: LongReadExtend.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-LongReadExtend.o -MD -MP -MF $(DEPDIR)/libpacbio_a-LongReadExtend.Tpo -c -o libpacbio_a-LongReadExtend.o `test -f 'LongReadExtend.cpp' || echo '$(srcdir)/'`LongReadExtend.cpp
+	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-LongReadExtend.Tpo $(DEPDIR)/libpacbio_a-LongReadExtend.Po
+#	$(AM_V_CXX)source='LongReadExtend.cpp' object='libpacbio_a-LongReadExtend.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-LongReadExtend.o `test -f 'LongReadExtend.cpp' || echo '$(srcdir)/'`LongReadExtend.cpp
+
+libpacbio_a-LongReadExtend.obj: LongReadExtend.cpp
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-LongReadExtend.obj -MD -MP -MF $(DEPDIR)/libpacbio_a-LongReadExtend.Tpo -c -o libpacbio_a-LongReadExtend.obj `if test -f 'LongReadExtend.cpp'; then $(CYGPATH_W) 'LongReadExtend.cpp'; else $(CYGPATH_W) '$(srcdir)/LongReadExtend.cpp'; fi`
+	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-LongReadExtend.Tpo $(DEPDIR)/libpacbio_a-LongReadExtend.Po
+#	$(AM_V_CXX)source='LongReadExtend.cpp' object='libpacbio_a-LongReadExtend.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-LongReadExtend.obj `if test -f 'LongReadExtend.cpp'; then $(CYGPATH_W) 'LongReadExtend.cpp'; else $(CYGPATH_W) '$(srcdir)/LongReadExtend.cpp'; fi`
 
 libpacbio_a-LongReadProbe.o: LongReadProbe.cpp
 	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-LongReadProbe.o -MD -MP -MF $(DEPDIR)/libpacbio_a-LongReadProbe.Tpo -c -o libpacbio_a-LongReadProbe.o `test -f 'LongReadProbe.cpp' || echo '$(srcdir)/'`LongReadProbe.cpp

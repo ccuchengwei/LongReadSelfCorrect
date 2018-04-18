@@ -113,6 +113,7 @@ class KmerFeature
 		}
 		inline void shrink(int len, bool update = false)
 		{
+			assert(len < size);
 			size -= len;
 			for(std::string::iterator iter = (word.begin() + size); iter != word.end(); iter++)
 				count[DNA_ALPHABET::getIdx(*iter)]--;

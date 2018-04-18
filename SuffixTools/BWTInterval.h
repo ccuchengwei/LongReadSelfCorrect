@@ -23,8 +23,20 @@ struct BWTInterval
     BWTInterval(int64_t l, int64_t u) : lower(l), upper(u) {}
 
     inline bool isValid() const { return lower <= upper; }
+	
     inline int64_t size() const { return upper - lower + 1; }
+	
 	inline int64_t getFreq() const { return (isValid() ? size() : 0); }
+	
+	inline bool isOverlapping(const BWTInterval& other) const
+	{
+		return this->isValid() && other.isValid() && this->lower >= other.lower && this->upper <= other.upper;
+	}
+	
+	inline bool isContained(const BWTInterval& other) const
+	{
+		return this->isValid() && other.isValid() && this->lower <= other.lower && this->upper >= other.upper;
+	}
 
     static inline bool compare(const BWTInterval& a, const BWTInterval& b)
     {
@@ -69,10 +81,22 @@ struct BWTInterval
 };
 struct BiBWTInterval
 {
+	inline bool isValid() const { return fwdInterval.isValid() && rvcInterval.isValid(); }
+	
+	inline int64_t getFreq() const { return fwdInterval.getFreq() + rvcInterval.getFreq(); }
+	
+	inline bool isOverlapping(const BiBWTInterval& other) const
+	{
+		return this->fwdInterval.isOverlapping(other.fwdInterval) || this->rvcInterval.isOverlapping(other.rvcInterval);
+	}
+	
+	inline bool isContained(const BiBWTInterval& other) const
+	{
+		return this->fwdInterval.isContained(other.fwdInterval) || this->rvcInterval.isContained(other.rvcInterval);
+	}
+	
 	BWTInterval fwdInterval;
 	BWTInterval rvcInterval;
-	inline bool isValid() const { return fwdInterval.isValid() && rvcInterval.isValid(); }
-	inline int64_t getFreq() const { return fwdInterval.getFreq() + rvcInterval.getFreq(); }
 };
 // A pair of intervals, used for bidirectional searching a bwt/revbwt in lockstep
 struct BWTIntervalPair

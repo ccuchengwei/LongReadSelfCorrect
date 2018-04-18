@@ -16,16 +16,13 @@
 #include "SuffixArray.h"
 #include "BWT.h"
 #include "SGACommon.h"
-#include "OverlapCommon.h"
 #include "Timer.h"
 #include "BWTAlgorithms.h"
-#include "ASQG.h"
-#include "gzstream.h"
 #include "SequenceProcessFramework.h"
 #include "PacBioSelfCorrectionProcess.h"
-#include "CorrectionThresholds.h"
 #include "BWTIntervalCache.h"
 #include "KmerThreshold.h"
+#include "LongReadProbe.h"
 
 static const std::map<int, int> order = { {5, 0}, {10, 1}, {100, 2} };
 static const int size[3] = { 17, 19, 21 };
@@ -193,6 +190,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 		ecParams.startKmerLen = size[order[opt::genome]];
 		ecParams.kmerOffset[1] = 2 * std::min(std::max((ecParams.PBcoverage/30 - 1), 0), (order[opt::genome] + 1));
 		ecParams.kmerOffset[2] = -2 * (order[opt::genome] + 1);
+		ecParams.kmerOffset[2] += opt::offset;
 	}
 	ecParams.mode = opt::mode;
 	
@@ -214,8 +212,25 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 		//	opt::DebugExtend);
 	ecParams.FM_params = FM_params;
 	
+	
+	LongReadProbe::m_params = 
+	ProbeParameters(
+			ecParams.indices,
+			ecParams.directory,
+			ecParams.startKmerLen,
+			ecParams.scanKmerLen,
+			ecParams.kmerLenUpBound,
+			ecParams.PBcoverage,
+			ecParams.mode,
+			ecParams.radius,
+			ecParams.hhRatio,
+			ecParams.kmerOffset,
+			ecParams.kmerPool,
+			ecParams.DebugSeed,
+			ecParams.Manual);
+	
 	//Initialize KmerThreshold
-	KmerThreshold::Instance().set(
+	KmerThreshold::Instance().initialize(
 			*(ecParams.kmerPool.begin()),
 			ecParams.kmerLenUpBound,
 			ecParams.PBcoverage,

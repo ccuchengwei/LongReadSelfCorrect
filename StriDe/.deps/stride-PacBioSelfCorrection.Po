@@ -207,10 +207,7 @@ stride-PacBioSelfCorrection.o: PacBioSelfCorrection.cpp \
  /usr/include/c++/6/queue /usr/include/c++/6/deque \
  /usr/include/c++/6/bits/stl_deque.h /usr/include/c++/6/bits/deque.tcc \
  /usr/include/c++/6/bits/stl_queue.h ../SuffixTools/SuffixArray.h \
- SGACommon.h OverlapCommon.h overlap.h ../Algorithm/OverlapAlgorithm.h \
- ../Algorithm/OverlapBlock.h ../SuffixTools/BWTInterval.h \
- ../Algorithm/SearchHistory.h ../Algorithm/SearchSeed.h ../Util/Timer.h \
- /usr/include/x86_64-linux-gnu/sys/time.h ../SQG/ASQG.h ../SQG/SQG.h \
+ SGACommon.h ../Util/Timer.h /usr/include/x86_64-linux-gnu/sys/time.h \
  ../Concurrency/SequenceProcessFramework.h ../Concurrency/ThreadWorker.h \
  /usr/include/semaphore.h /usr/include/x86_64-linux-gnu/bits/semaphore.h \
  ../Concurrency/SequenceWorkItem.h ../Util/SeqReader.h \
@@ -219,8 +216,8 @@ stride-PacBioSelfCorrection.o: PacBioSelfCorrection.cpp \
  ../SuffixTools/SampledSuffixArray.h ../PacBio/SeedFeature.h \
  ../PacBio/LongReadCorrectByOverlap.h ../FMIndexWalk/SAINode.h \
  ../PacBio/IntervalTree.h ../PacBio/HashtableSearch.h \
- ../Util/CorrectionThresholds.h ../SuffixTools/BWTIntervalCache.h \
- ../PacBio/KmerThreshold.h
+ ../SuffixTools/BWTIntervalCache.h ../PacBio/KmerThreshold.h \
+ ../PacBio/LongReadProbe.h
 
 /usr/include/stdc-predef.h:
 
@@ -846,27 +843,9 @@ PacBioSelfCorrection.h:
 
 SGACommon.h:
 
-OverlapCommon.h:
-
-overlap.h:
-
-../Algorithm/OverlapAlgorithm.h:
-
-../Algorithm/OverlapBlock.h:
-
-../SuffixTools/BWTInterval.h:
-
-../Algorithm/SearchHistory.h:
-
-../Algorithm/SearchSeed.h:
-
 ../Util/Timer.h:
 
 /usr/include/x86_64-linux-gnu/sys/time.h:
-
-../SQG/ASQG.h:
-
-../SQG/SQG.h:
 
 ../Concurrency/SequenceProcessFramework.h:
 
@@ -898,8 +877,8 @@ overlap.h:
 
 ../PacBio/HashtableSearch.h:
 
-../Util/CorrectionThresholds.h:
-
 ../SuffixTools/BWTIntervalCache.h:
 
 ../PacBio/KmerThreshold.h:
+
+../PacBio/LongReadProbe.h:

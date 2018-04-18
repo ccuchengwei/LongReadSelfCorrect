@@ -11,28 +11,26 @@ struct ProbeParameters
 	
 	ProbeParameters(
 			BWTIndexSet _indices,
-			std::string _readid,
 			std::string _directory,
 			int _startKmerLen,
 			int _scanKmerLen,
 			int _kmerLenUpBound,
 			int _PBcoverage,
 			int _mode,
-			int _repeatDis,
+			int _radius,
 			float _hhRatio,
 			std::array<int, 3> _kmerOffset,
 			std::set<int> _kmerPool,
 			bool _DebugSeed,
 			bool _Manual)
 	:	indices(_indices),
-		readid(_readid),
 		directory(_directory),
 		startKmerLen(_startKmerLen),
 		scanKmerLen(_scanKmerLen),
 		kmerLenUpBound(_kmerLenUpBound),
 		PBcoverage(_PBcoverage),
 		mode(_mode),
-		repeatDis(_repeatDis),
+		radius(_radius),
 		hhRatio(_hhRatio),
 		kmerOffset(_kmerOffset),
 		kmerPool(_kmerPool),
@@ -40,14 +38,13 @@ struct ProbeParameters
 		Manual(_Manual){ }
 		
 	BWTIndexSet indices;
-	std::string readid;
 	std::string directory;
 	int startKmerLen;
 	int scanKmerLen;
 	int kmerLenUpBound;
 	int PBcoverage;
 	int mode;
-	int repeatDis;
+	int radius;
 	float hhRatio;
 	std::array<int, 3> kmerOffset;
 	std::set<int> kmerPool;
@@ -57,7 +54,8 @@ struct ProbeParameters
 
 namespace LongReadProbe
 {
-	extern thread_local ProbeParameters m_params;
+	extern ProbeParameters m_params;
+	extern thread_local std::string readid;
 	void searchSeedsWithHybridKmers(const std::string& readSeq, SeedFeature::SeedVector& seedVec);
 	void getSeqAttribute(const std::string& seq, int* const type);
 	SeedFeature::SeedVector removeHitchhikingSeeds(SeedFeature::SeedVector initSeedVec, int const *type);

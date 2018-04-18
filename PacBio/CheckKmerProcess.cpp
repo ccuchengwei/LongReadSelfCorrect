@@ -40,6 +40,7 @@ void CheckKmerProcess::scan(int ksize, const CodeBlock& block, const std::string
 	{
 		KmerFeature curr(m_params.indices, seq, pos, ksize);
 		assert(!curr.getPseudo());
+		assert(curr.getFreq() != 0);
 		if(curr.getFreq() == 1) continue;
 		bool find = validate(pos, ksize, block, seq);
 		if(find)
