@@ -74,15 +74,8 @@ namespace DNA_ALPHABET
     }
 	
 	inline int getIdx(char b)
-	{	
-		if(_ALPHABET.empty())
-		{
-			_ALPHABET['A'] = 0;
-			_ALPHABET['C'] = 1;
-			_ALPHABET['G'] = 2;
-			_ALPHABET['T'] = 3;
-			_ALPHABET['$'] = 4;
-		}
+	{
+		assert(_ALPHABET.find(b) != _ALPHABET.end());
 		return _ALPHABET[b];
 	}
 
@@ -123,15 +116,8 @@ namespace BWT_ALPHABET
     }
 	
 	inline int getIdx(char b)
-	{	
-		if(_RANK_ALPHABET.empty())
-		{
-			_RANK_ALPHABET['$'] = 0;
-			_RANK_ALPHABET['A'] = 1;
-			_RANK_ALPHABET['C'] = 2;
-			_RANK_ALPHABET['G'] = 3;
-			_RANK_ALPHABET['T'] = 4;
-		}
+	{
+		assert(_RANK_ALPHABET.find(b) != _RANK_ALPHABET.end());
 		return _RANK_ALPHABET[b];
 	}
 };

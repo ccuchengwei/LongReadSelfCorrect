@@ -18,8 +18,8 @@ class KmerDistribution
 {
     public:
 		
-        KmerDistribution(std::string name = ""):m_readid(name){};
-        ~KmerDistribution(){};
+        KmerDistribution(std::string name = ""):m_readid(name){ }
+        ~KmerDistribution(){ }
 		void operator+=(const KmerDistribution& temp);
         inline void add(int kmerFreqs){m_data[kmerFreqs]++; m_total++;};
 		inline void setID(std::string name){m_readid = name;};
@@ -52,7 +52,7 @@ class KmerDistribution
 		//compute quartiles ,mode and stdev
 		void computeKDAttributes(float censor = 0.0f);
 		//Write data to file
-        enum TYPE {DATA,ATTRIBUTE,SPLIT};
+        enum TYPE {DATA,ATTRIBUTE};
 		void write(std::ostream& outfile,TYPE mode = DATA) const;
 		
 		

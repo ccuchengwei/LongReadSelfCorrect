@@ -53,75 +53,6 @@ IntervalTree<T,K>::IntervalTree(
 		if (!rights.empty())
 			right = std::unique_ptr<intervalTree>(new intervalTree(rights, depth, minbucket, centerp, rightp));
 	}
-	
-	/*
-	--depth;
-	IntervalStartSorter<T,K> intervalStartSorter;
-	if (depth == 0 || ivals.size() < minbucket )
-	{
-		std::sort(ivals.begin(), ivals.end(), intervalStartSorter);
-		intervals = ivals;
-	} 
-	else
-	{
-		if (leftextent == 0 && rightextent == 0)
-		{
-			// sort intervals by start
-			std::sort(ivals.begin(), ivals.end(), intervalStartSorter);
-		}
-
-		K leftp = 0;
-		K rightp = 0;
-		K centerp = 0;
-
-		if (leftextent || rightextent)
-		{
-			leftp = leftextent;
-			rightp = rightextent;
-		}
-		else
-		{
-			leftp = ivals.front().start;
-			std::vector<K> stops;
-			stops.resize(ivals.size());
-			transform(ivals.begin(), ivals.end(), stops.begin(), intervalStop<T,K>);
-			rightp = *max_element(stops.begin(), stops.end());
-		}
-
-		//centerp = ( leftp + rightp ) / 2;
-		centerp = ivals.at(ivals.size() / 2).start;
-		center = centerp;
-
-		intervalVector lefts;
-		intervalVector rights;
-
-		for (typename intervalVector::const_iterator i = ivals.begin(); i != ivals.end(); ++i)
-		{
-			const interval& interval = *i;
-			if(interval.stop < center)
-			{
-				lefts.push_back(interval);
-			}
-			else if(interval.start > center)
-			{
-				rights.push_back(interval);
-			}
-			else
-			{
-				intervals.push_back(interval);
-			}
-		}
-
-		if (!lefts.empty())
-		{
-			left = std::unique_ptr<intervalTree>(new intervalTree(lefts, depth, minbucket, leftp, centerp));
-		}
-		if (!rights.empty())
-		{
-			right = std::unique_ptr<intervalTree>(new intervalTree(rights, depth, minbucket, centerp, rightp));
-		}
-	}
-	*/
 }
 
 template <class T, typename K>
@@ -135,7 +66,9 @@ IntervalTree<T,K>::operator=
 	right = other.right ? copyTree(*other.right) : nullptr;
 	return *this;
 }
-
+//Theorectically speaking, one bi(fwd/rvc) interval would (overlap/be contained in) another,
+//if these two strings have common (prefix/suffix); it's impossible to find two realistic intervals
+//'interleave' each other. Noted by KuanWeiLee 18/4/10
 template <class T, typename K>
 typename IntervalTree<T,K>::intervalVector
 IntervalTree<T,K>::findOverlapping
@@ -156,7 +89,7 @@ IntervalTree<T,K>::findOverlapping
 		for(typename intervalVector::const_iterator i = intervals.begin(); i != intervals.end(); ++i)
 		{
 			const interval& interval = *i;
-			if (interval.stop >= start && interval.start <= stop)
+			if (interval.start <= start && interval.stop >= stop)
 				overlapping.push_back(interval);
 		}
 	}

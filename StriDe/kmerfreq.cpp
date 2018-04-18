@@ -2,16 +2,15 @@
 // kmerfreq - get sequences kmer frequency
 //
 #include <iostream>
-#include <map>
+#include <memory>
 #include "SGACommon.h"
 #include "Util.h"
 #include "kmerfreq.h"
 #include "SuffixArray.h"
 #include "BWT.h"
-#include "Timer.h"
 #include "BWTAlgorithms.h"
-#include "SequenceProcessFramework.h"
-#include "KmerFreqProcess.h"
+#include "KmerFeature.h"
+#include "KmerThreshold.h"
 //
 // Getopt
 //
@@ -22,142 +21,84 @@ SUBPROGRAM " Version " PACKAGE_VERSION "\n"
 "\n";
 
 static const char *KMERFREQ_USAGE_MESSAGE =
-"Usage: " PACKAGE_NAME " " SUBPROGRAM " [OPTION] ... READSFILE\n"
+"Usage: " PACKAGE_NAME " " SUBPROGRAM " [OPTION]\n"
 "Get sequences kmer frequency\n"
 "  -p, --prefix=PREFIX       Use PREFIX for the names of the index files\n"
-"  -o, --directory=PATH      Put results in the directory\n"
-"  -t, --threads=NUM         Use NUM threads for the computation (default: 1)\n"
-"  -r, --reference=SEQ       The reference file\n"
-"  -a, --align=PATH          Get alignment files in the directory\n"
+"  -c, --PBcoverage=N        Coverage of PacBio reads (default: 90)\n"
 "  -v, --verbose             Display verbose output\n"
 "      --help                Display this help and exit\n"
 "      --version             Display version\n";
 
-static const char* PROGRAM_IDENT =
-PACKAGE_NAME "::" SUBPROGRAM;
-
 namespace opt
 {
     static unsigned int verbose;
-    static std::string prefix;
-	static std::string directory;
-	static int numThreads = 1;
-	static std::string reference;
-	static std::string align;
-	
-	static int kmerSizeLb = 15;
-	static int kmerSizeUb = 15;	
-	static std::string readsFile;
+	static std::string prefix;
+	static int PBcoverage = 90;
     static int sampleRate = BWT::DEFAULT_SAMPLE_RATE_SMALL;
 }
 
-static const char* shortopts = "p:o:t:r:a:v";
+static const char* shortopts = "p:c:v";
 
-enum { OPT_ALIGN, OPT_HELP = 1, OPT_VERSION };
+enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
-	{ "prefix",      required_argument, NULL, 'p' },
-	{ "directory",   required_argument, NULL, 'o' },
-	{ "threads",     required_argument, NULL, 't' },
-	{ "reference",   required_argument, NULL, 'r' },
-	{ "align",       required_argument, NULL, 'a' },
-    { "verbose",     no_argument,       NULL, 'v' },
-    { "help",        no_argument,       NULL, OPT_HELP },
-    { "version",     no_argument,       NULL, OPT_VERSION },
-    { NULL, 0, NULL, 0 }
+	{ "prefix",      required_argument, nullptr, 'p' },
+	{ "PBcoverage",  required_argument, nullptr, 'c' },
+    { "verbose",     no_argument,       nullptr, 'v' },
+    { "help",        no_argument,       nullptr, OPT_HELP },
+    { "version",     no_argument,       nullptr, OPT_VERSION },
+    { nullptr, 0, nullptr, 0 }
 };
 
 int kmerfreqMain(int argc, char** argv)
 {
 	parseKMERFREQOptions(argc, argv);
 	
-	BWT *pBWT, *pRBWT;
+	std::unique_ptr<BWT> pBWT, pRBWT;
 	// Load indices
 	#pragma omp parallel
 	{
 		#pragma omp single nowait
 		{	//Initialization of large BWT takes some time, pass the disk to next job
-			std::cout << "Loading BWT: " << opt::prefix + BWT_EXT << "\n";
-			pBWT = new BWT(opt::prefix + BWT_EXT, opt::sampleRate);
+			std::cerr << "Loading BWT: " << opt::prefix + BWT_EXT << "\n";
+			pBWT = std::unique_ptr<BWT>(new BWT(opt::prefix + BWT_EXT, opt::sampleRate));
 		}
 		#pragma omp single nowait
 		{
-			std::cout << "Loading RBWT: " << opt::prefix + RBWT_EXT << "\n";
-			pRBWT = new BWT(opt::prefix + RBWT_EXT, opt::sampleRate);
+			std::cerr << "Loading RBWT: " << opt::prefix + RBWT_EXT << "\n";
+			pRBWT = std::unique_ptr<BWT>(new BWT(opt::prefix + RBWT_EXT, opt::sampleRate));
 		}
 	}
 	BWTIndexSet indexSet;
-	indexSet.pBWT = pBWT;
-	indexSet.pRBWT = pRBWT;
-		
-	//Set the kmer freq parameters
-	//Load reference sequences
-	std::map<std::string,std::string>refMap;
+	indexSet.pBWT = pBWT.get();
+	indexSet.pRBWT = pRBWT.get();
+	KmerThreshold::Instance().initialize(-1, 100, opt::PBcoverage, "");
+	
+	std::string query;
+	int staticSize;
+	int mode;
+	std::cerr << "Please enter query sequence, kmer size and mode:\n";
+	while (std::cin >> query >> staticSize >> mode) 
 	{
-		SeqReader reader(opt::reference);
-		WorkItemGenerator<SequenceWorkItem> generator(&reader);
-		SequenceWorkItem workItem;
-		std::string id,seq;
-		while(generator.generate(workItem))
+		KmerFeature* prev = nullptr;
+		int queryLen = query.length();
+		int dynamicSize = staticSize;
+		for(int pos = 0; pos <= (queryLen - staticSize); pos++)
 		{
-			id = workItem.read.id;
-			seq = workItem.read.seq.toString();
-			refMap[id] = seq;
+			KmerFeature staticKmer(indexSet, query, pos, staticSize);
+			KmerFeature* dynamicKmer = new KmerFeature(indexSet, query, 0, dynamicSize++, prev);
+			std::cout << pos << '\t'
+			<< staticKmer.getWord() << '\t' << staticKmer.getFreq()
+			<< " <-> " << KmerThreshold::Instance().get(mode, staticSize) << '\t'
+			<< dynamicKmer->getWord() << '\t' << dynamicKmer->getFreq()
+			<< " <-> " << KmerThreshold::Instance().get(mode, dynamicKmer->getSize()) << '\n';
+			delete prev;
+			prev = dynamicKmer;
 		}
+		std::cout << "-\n";
+		delete prev;
 	}
-	KmerFreqParameters kfParams(refMap);
-	kfParams.indices = indexSet;
-	kfParams.directory = opt::directory;
-	kfParams.align = opt::align;
-	kfParams.kmerSize.first = opt::kmerSizeLb;
-	kfParams.kmerSize.second = opt::kmerSizeUb;
-	
-	std::cerr << "Using kmer size : " << kfParams.kmerSize.first << " - " << kfParams.kmerSize.second << "\n";
-
-	Timer* pTimer = new Timer(PROGRAM_IDENT);
-	
-	KmerFreqPostProcess* pPostProcessor = new KmerFreqPostProcess(kfParams);
-	
-	if(opt::numThreads <= 1)
-	{
-		// Serial mode
-		
-		KmerFreqProcess* pProcessor = new KmerFreqProcess(kfParams);
-
-		SequenceProcessFramework::processSequencesSerial<SequenceWorkItem,
-		KmerFreqResult,
-		KmerFreqProcess,
-		KmerFreqPostProcess>(opt::readsFile, pProcessor, pPostProcessor);
-		delete pProcessor;
-		
-	}
-	else
-	{
-		// Parallel mode
-		
-		std::vector<KmerFreqProcess*> pProcessorVector;
-		for(int i = 0; i < opt::numThreads; ++i)
-			pProcessorVector.push_back(new KmerFreqProcess(kfParams));
-
-		SequenceProcessFramework::processSequencesParallel<SequenceWorkItem,
-		KmerFreqResult,
-		KmerFreqProcess,
-		KmerFreqPostProcess>(opt::readsFile, pProcessorVector, pPostProcessor);
-		
-		while(!pProcessorVector.empty())
-		{
-			delete pProcessorVector.back();
-			pProcessorVector.pop_back();
-		}
-		
-	}
-	delete pPostProcessor;
-	
-	delete pBWT;
-	delete pRBWT;
-
-	delete pTimer;
-	
+	std::cerr << "Exit successfully!\n";
     return 0;
 }
 
@@ -166,20 +107,16 @@ int kmerfreqMain(int argc, char** argv)
 //
 void parseKMERFREQOptions(int argc, char** argv)
 {
-	optind = 1;
     bool die = false;
-    for (char c; (c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1;) 
+    for (char c; (c = getopt_long(argc, argv, shortopts, longopts, nullptr)) != -1;) 
     {
-        std::istringstream arg(optarg != NULL ? optarg : "");
+        std::istringstream arg(optarg != nullptr ? optarg : "");
         switch (c) 
         {
 			case 'p': arg >> opt::prefix; break;
-			case 'o': arg >> opt::directory; break;
-			case 't': arg >> opt::numThreads; break;
-			case 'r': arg >> opt::reference; break;
-			case 'a': arg >> opt::align; break;
-			case 'v': opt::verbose++; break;
-			case '?': die = true; break;
+			case 'c': arg >> opt::PBcoverage; break;
+            case '?': die = true; break;
+            case 'v': opt::verbose++; break;
             case OPT_HELP:
                 std::cout << KMERFREQ_USAGE_MESSAGE;
                 exit(EXIT_SUCCESS);
@@ -188,72 +125,23 @@ void parseKMERFREQOptions(int argc, char** argv)
                 exit(EXIT_SUCCESS);
         }
     }
-
-    if (argc - optind < 1) 
-    {
-        std::cerr << SUBPROGRAM ": missing arguments\n";
-        die = true;
-    } 
-    else if (argc - optind > 1) 
-    {
-        std::cerr << SUBPROGRAM ": too many arguments\n";
-        die = true;
-    }
-
+	
 	if(opt::prefix.empty())
 	{
 		std::cerr << SUBPROGRAM << ": no prefix\n";
 		die = true;
 	}
 	
-	if(opt::directory.empty())
+	if(opt::PBcoverage <= 0)
 	{
-		std::cerr << SUBPROGRAM << ": no directory\n";
+		std::cerr << SUBPROGRAM ": invalid number of coverage: " << opt::PBcoverage << ", must be greater than zero\n";
 		die = true;
 	}
-	else
-	{		
-		opt::directory += "/";
-		if( system(("mkdir -p " + opt::directory + "split/").c_str()) != 0)
-		{
-			std::cerr << SUBPROGRAM << ": something wrong in directory: " << opt::directory << "\n";
-			die = true;
-		}
-	}
-	
-	if(opt::numThreads <= 0)
-	{
-		std::cerr << SUBPROGRAM ": invalid number of threads: " << opt::numThreads << "\n";
-		die = true;
-	}
-	
-	if(opt::reference.empty())
-	{
-		std::cerr << SUBPROGRAM << ": no reference\n";
-		die = true;
-	}
-	
-	if(opt::align.empty())
-	{
-		std::cerr << SUBPROGRAM << ": no alignments\n";
-		die = true;
-	}
-	else
-		opt::align += "/";
 	
     if (die) 
     {
         std::cout << "\n" << KMERFREQ_USAGE_MESSAGE;
         exit(EXIT_FAILURE);
     }
-	//Enter start and end kmersize
-	while(true)
-	{
-		std::cout << "Please enter start and end kmer size\n";
-		std::cin >> opt::kmerSizeLb >> opt::kmerSizeUb;
-		if	(opt::kmerSizeLb >= 10 && opt::kmerSizeLb <= opt::kmerSizeUb)
-			break;
-		std::cout << "Illegal values\n";
-	}
-	opt::readsFile = argv[optind++];
+
 }

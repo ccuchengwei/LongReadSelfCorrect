@@ -89,7 +89,7 @@ size_t processSequencesSerial(const std::string& readsFile, Processor* pProcesso
 // This version is based on pthreads.
 template<class Input, class Output, class Generator, class Processor, class PostProcessor>
 size_t processWorkParallelPthread(Generator& generator,
-                                  std::vector<Processor*>& pProcessorVector,
+                                  std::vector<Processor*>& pProcessorVec,
                                   PostProcessor* pPostProcessor,
                                   size_t n = -1)
 {
@@ -97,23 +97,23 @@ size_t processWorkParallelPthread(Generator& generator,
 
     // Helpful typedefs
     typedef ThreadWorker<Input, Output, Processor> Thread;
-    typedef std::vector<Thread*> pThreadVector;
+    typedef std::vector<Thread*> ThreadPtrVector;
 
-    typedef std::vector<Input> InputItemVector;
-    typedef std::vector<InputItemVector*> InputBufferVector;
+    typedef std::vector<Input> InputVector;
+    typedef std::vector<InputVector*> InputBufferVector;
 
     typedef std::vector<Output> OutputVector;
     typedef std::vector<OutputVector*> OutputBufferVector;
-    typedef std::vector<sem_t*> pSemaphoreVector;
+    typedef std::vector<sem_t*> SemaphorePtrVector;
 
 
     // Initialize threads, one thread per processor that was passed in
-    int numThreads = pProcessorVector.size();
+    int numThreads = pProcessorVec.size();
 
-    pThreadVector threadVec(numThreads);
+    ThreadPtrVector threadVec(numThreads);
     InputBufferVector inputBuffers(numThreads);
     OutputBufferVector outputBuffers(numThreads);
-    pSemaphoreVector semVec(numThreads);
+    SemaphorePtrVector semVec(numThreads);
 
     // Create the threads
     for(int i = 0; i < numThreads; ++i)
@@ -128,10 +128,10 @@ size_t processWorkParallelPthread(Generator& generator,
         }
 
         // Create and start the thread
-        threadVec[i] = new Thread(semVec[i], pProcessorVector[i], BUFFER_SIZE);
+        threadVec[i] = new Thread(semVec[i], pProcessorVec[i], BUFFER_SIZE);
         threadVec[i]->start();
 
-        inputBuffers[i] = new InputItemVector;
+        inputBuffers[i] = new InputVector;
         inputBuffers[i]->reserve(BUFFER_SIZE);
 
         outputBuffers[i] = new OutputVector;
@@ -154,12 +154,12 @@ size_t processWorkParallelPthread(Generator& generator,
             
            inputBuffers[next_thread]->push_back(workItem);
            numWorkItemsRead += 1;
-			
-			if(inputBuffers[numThreads-1]->size() == BUFFER_SIZE)
+		
+			next_thread = (next_thread+1)% numThreads; 	
+			if(inputBuffers.back()->size() == BUFFER_SIZE)
 				num_buffers_full = numThreads;
 		
         }
-		next_thread = (next_thread+1)% numThreads; 
         
 		done = !valid || generator.getNumConsumed() == n;
 
@@ -246,7 +246,7 @@ size_t processWorkParallelPthread(Generator& generator,
 // This version is based on OpenMP.
 template<class Input, class Output, class Generator, class Processor, class PostProcessor>
 size_t processWorkParallelOpenMP(Generator& generator,
-                                 std::vector<Processor*>& pProcessorVector,
+                                 std::vector<Processor*>& pProcessorVec,
                                  PostProcessor* pPostProcessor,
                                  size_t n = -1)
 {
@@ -262,7 +262,7 @@ size_t processWorkParallelOpenMP(Generator& generator,
 
     size_t numWorkItemsRead = 0;
     size_t numWorkItemsWrote = 0;
-    size_t numThreads = pProcessorVector.size();
+    size_t numThreads = pProcessorVec.size();
 
     omp_set_num_threads(numThreads);
 
@@ -291,7 +291,7 @@ size_t processWorkParallelOpenMP(Generator& generator,
             {
                 // Dispatch the work to a processor and write the output to the output buffer
                 size_t tid = omp_get_thread_num();
-                outputBuffer[i] = pProcessorVector[tid]->process(inputBuffer[i]);
+                outputBuffer[i] = pProcessorVec[tid]->process(inputBuffer[i]);
             }
 			
 			// Process the output with a single thread
@@ -321,7 +321,7 @@ size_t processWorkParallelOpenMP(Generator& generator,
 
 	#else // NO OPENMP
     (void)generator;
-    (void)pProcessorVector;
+    (void)pProcessorVec;
     (void)pPostProcessor;
     (void)n;
     printf("Error: threading enabled but you did not compile with OpenMP\n");
@@ -332,7 +332,7 @@ size_t processWorkParallelOpenMP(Generator& generator,
 
 // Wrapper function for operating over a file of sequences
 template<class Input, class Output, class Processor, class PostProcessor>
-size_t processSequencesParallel(const std::string& readsFile, std::vector<Processor*>& pProcessorVector, PostProcessor* pPostProcessor)
+size_t processSequencesParallel(const std::string& readsFile, std::vector<Processor*>& pProcessorVec, PostProcessor* pPostProcessor)
 {
     SeqReader reader(readsFile);
 	WorkItemGenerator<Input> generator(&reader);
@@ -340,13 +340,12 @@ size_t processSequencesParallel(const std::string& readsFile, std::vector<Proces
                                       Output,
                                       WorkItemGenerator<Input>,
                                       Processor,
-                                      PostProcessor>(generator, pProcessorVector, pPostProcessor);
-    //return processSequencesParallel<Input, Output, Processor, PostProcessor>(reader, pProcessorVector, pPostProcessor);
+                                      PostProcessor>(generator, pProcessorVec, pPostProcessor);
 }
 
 // Wrapper function for operating over a file of sequences
 template<class Input, class Output, class Processor, class PostProcessor>
-size_t processSequencesParallelOpenMP(const std::string& readsFile, std::vector<Processor*>& pProcessorVector, PostProcessor* pPostProcessor)
+size_t processSequencesParallelOpenMP(const std::string& readsFile, std::vector<Processor*>& pProcessorVec, PostProcessor* pPostProcessor)
 {
     SeqReader reader(readsFile);
 	WorkItemGenerator<Input> generator(&reader);
@@ -354,8 +353,7 @@ size_t processSequencesParallelOpenMP(const std::string& readsFile, std::vector<
                                       Output,
                                       WorkItemGenerator<Input>,
                                       Processor,
-                                      PostProcessor>(generator, pProcessorVector, pPostProcessor);
-    //return processSequencesParallelOpenMP<Input, Output, Processor, PostProcessor>(reader, pProcessorVector, pPostProcessor);
+                                      PostProcessor>(generator, pProcessorVec, pPostProcessor);
 }
 
 

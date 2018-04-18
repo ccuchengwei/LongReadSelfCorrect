@@ -17,6 +17,7 @@
 #include "subgraph.h"
 #include "filter.h"
 #include "fm-merge.h"
+#include "checkkmer.h"
 #include "kmerfreq.h"
 #include "grep.h"
 #include "FMIndexWalk.h"
@@ -52,7 +53,8 @@ static const char *STRIDE_USAGE_MESSAGE =
 "      overlap     compute overlaps between reads\n"
 "      assemble    generate contigs from an assembly graph\n"
 "      asmlong     generate contigs from an assembly graph for long reads\n"
-"      kmerfreq    check kmer distribution and error condition\n"
+"      checkkmer   check kmer distribution and error condition\n"
+"      kmerfreq    check static & dynamic kmer frequency\n"
 "\nOther Commands:\n"
 "      merge	merge multiple BWT/FM-index files into a single index\n"
 "\nReport bugs to " PACKAGE_BUGREPORT "\n\n";
@@ -102,6 +104,8 @@ int main(int argc, char** argv)
             subgraphMain(argc - 1, argv + 1);
         else if(command == "oview")
             oviewMain(argc - 1, argv + 1);
+        else if(command == "checkkmer")
+            checkkmerMain(argc - 1, argv + 1);
         else if(command == "kmerfreq")
             kmerfreqMain(argc - 1, argv + 1);
         else if(command == "grep")

@@ -11,18 +11,13 @@
 #define PACBIOSELFCORRECTIONPROCESS_H
 
 #include <set>
-#include "HashMap.h"
 #include "Util.h"
-#include "SequenceProcessFramework.h"
 #include "SequenceWorkItem.h"
-#include "Metrics.h"
 #include "BWTIndexSet.h"
 #include "SampledSuffixArray.h"
 #include "BWTAlgorithms.h"
-#include "KmerDistribution.h"
-#include "LongReadCorrectByOverlap.h"
 #include "SeedFeature.h"
-#include "Kmer.h"
+#include "LongReadCorrectByOverlap.h"
 
 // Parameter object for the error corrector
 struct PacBioSelfCorrectionParameters
@@ -34,11 +29,11 @@ struct PacBioSelfCorrectionParameters
 	int PBcoverage;
     double ErrorRate;
 
-	int startKmerLength;
-	int scanKmerLength = 19;
-	int kmerOffset[3]{0};
-	int kmerLengthUpperBound = 50;
-	int repeatDistance = 100;
+	int startKmerLen;
+	int scanKmerLen = 19;
+	std::array<int, 3> kmerOffset{{0}};
+	int kmerLenUpBound = 50;
+	int radius = 100;
 	float hhRatio = 0.6;
 	
 	// tree search parameters
@@ -46,12 +41,12 @@ struct PacBioSelfCorrectionParameters
 //	int maxOverlap;
 	int numOfNextTarget;
 	int maxLeaves;
-    int idmerLength;
-	int minKmerLength;
-	int overlapKmerLength[2] = {5, 9};
+    int idmerLen;
+	int minKmerLen;
+	std::array<int, 2> overlapKmerLen{{5, 9}};
 	
 	int mode;
-	std::set<int> kmerSet;
+	std::set<int> kmerPool;
     
 	bool Manual;
 	bool Split;
@@ -86,7 +81,6 @@ struct PacBioSelfCorrectionResult
 		Timer_DP(0){ }
 
 	std::string readid;
-	KmerDistribution kd;
 	
 	bool merge;
 	
@@ -112,33 +106,24 @@ class PacBioSelfCorrectionProcess
 {
 	public:
 	
-		PacBioSelfCorrectionProcess(const PacBioSelfCorrectionParameters params):m_params(params){ }
+		PacBioSelfCorrectionProcess(const PacBioSelfCorrectionParameters& params):m_params(params){ }
 		~PacBioSelfCorrectionProcess(){ }
 		PacBioSelfCorrectionResult process(const SequenceWorkItem& workItem);
 
 	private:
-		typedef std::vector<SeedFeature> SeedVector;
 		const PacBioSelfCorrectionParameters m_params;
 	
-		//search seeds
-		void searchSeedsWithHybridKmers(const std::string& readSeq, SeedVector& seedVec, PacBioSelfCorrectionResult &result);
-		void getSeqAttribute(const std::string& seq, int* const type);
-		SeedVector removeHitchhikingSeeds(SeedVector initSeedVec, int const *type, PacBioSelfCorrectionResult& result);
-		void write(std::ostream& outfile, const SeedVector& seedVec) const;
 		//correct sequence
-		void initCorrect(std::string& readSeq, const SeedVector& seeds, SeedVector& pacbioCorrectedStrs, PacBioSelfCorrectionResult& result);
-		int correctByFMExtension
-		(const SeedFeature& source, const SeedFeature& target, const std::string& in, std::string& out, PacBioSelfCorrectionResult& result, debugExtInfo& debug);
-		bool correctByMSAlignment
-		(const SeedFeature& source, const SeedFeature& target, const std::string& in, std::string& out, PacBioSelfCorrectionResult& result);
-	
+		void initCorrect(std::string& readSeq, const SeedFeature::SeedVector& seedVec, SeedFeature::SeedVector& pieceVec, PacBioSelfCorrectionResult& result);
+		int correctByFMExtension(const SeedFeature& source, const SeedFeature& target, const std::string& in, std::string& out, PacBioSelfCorrectionResult& result, debugExtInfo& debug);
+		bool correctByMSAlignment(const SeedFeature& source, const SeedFeature& target, const std::string& in, std::string& out, PacBioSelfCorrectionResult& result);
 };
 
 //postprocess
 class PacBioSelfCorrectionPostProcess
 {
 	public:
-		PacBioSelfCorrectionPostProcess(std::string correctFile, std::string discardFile, const PacBioSelfCorrectionParameters params);
+		PacBioSelfCorrectionPostProcess(std::string correctFile, std::string discardFile, const PacBioSelfCorrectionParameters& params);
 		~PacBioSelfCorrectionPostProcess();
 		void process(const SequenceWorkItem& item, const PacBioSelfCorrectionResult& result);
 	
@@ -148,7 +133,6 @@ class PacBioSelfCorrectionPostProcess
 		std::ostream* m_pDiscardWriter;
 		std::ostream* m_pKdWriter;
 		PacBioSelfCorrectionParameters m_params;
-		KmerDistribution m_kd;
 	
 		int64_t m_totalReadsLen;
 		int64_t m_correctedLen;
