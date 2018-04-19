@@ -75,8 +75,8 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap
 	}
 
 	// PacBio reads are longer than real length due to insertions
-		m_maxLength = (1.2*(m_disBetweenSrcTarget+10))+2*m_initkmersize;
-		m_minLength = (0.8*(m_disBetweenSrcTarget-20))+2*m_initkmersize;
+		m_maxLength =          (1.2*(m_disBetweenSrcTarget+10))+2*m_initkmersize     ;
+		m_minLength = std::max((0.8*(m_disBetweenSrcTarget-20))+2*m_initkmersize,0.0);
 
 	// initialize the ending SA intervals with kmer length = m_minOverlap
 		for(size_t i =0 ;i <= m_targetSeed.length()-m_minOverlap; i++)
@@ -242,7 +242,7 @@ void LongReadSelfCorrectByOverlap::extendLeaves(leafList& newLeaves)
 	if(m_currentKmerSize > m_maxOverlap)
 		refineSAInterval(m_leaves, m_maxOverlap);
 
-	attempToExtend(newLeaves,1);
+	attempToExtend(newLeaves,true);
 
 	if(newLeaves.empty() ) //level 1 reduce size
 	{
@@ -256,7 +256,7 @@ void LongReadSelfCorrectByOverlap::extendLeaves(leafList& newLeaves)
 		if( newLeaves.empty() )//level 2 reduce threshold
 		{
 			m_min_SA_threshold--;
-			attempToExtend(newLeaves,0);
+			attempToExtend(newLeaves,false);
 			m_min_SA_threshold++;
 		}
 	}
@@ -370,7 +370,7 @@ void LongReadSelfCorrectByOverlap::refineSAInterval(leafList& leaves, const size
 
 // Keep the leaves whose highly-correct rates are relative to the others.
 // And attempt to extend those leaves.
-void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves,bool isSuccessToReduce)
+void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves, const bool isSuccessToReduce)
 {
 	double minimumErrorRate = 1;
 	m_maxfreqs = 0;
@@ -409,13 +409,14 @@ void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves,bool isSuc
 		extArray extensions;
 		int count = 0;
 		SAIOverlapNode3* leaf = (*iter).leafNodePtr;
+		bool isReduced = isSuccessToReduce;
 		while(count < 2)
 		{
 			if	( count == 1
 			&& !(leaf->LocalErrorRateRecord.back() == minimumErrorRate && m_leaves.size() > 1))
 				break;
 
-			if (m_Debug.isDebug && isSuccessToReduce)
+			if (m_Debug.isDebug && isReduced)
 			{
 				int kmer_freq = leaf->fwdInterval.size() + leaf->rvcInterval.size();
 
@@ -432,13 +433,14 @@ void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves,bool isSuc
 										<< "|" << m_leaves.size()
 										<< "&" << currLeavesNum       << "|" << ((*iter).lastLeafID)
 										<< "&" << m_currentKmerSize   << "|" <<  kmer_freq
-										<< "|" << std::fixed          << std::setprecision(2)
-										<< 100*(leaf ->LocalErrorRateRecord.back()) << "&" ;
+										<< "|" << std::fixed          << std::setprecision(5)
+										<< 100*(leaf ->LocalErrorRateRecord.back() ) << "&" 
+										<< 100*(leaf ->GlobalErrorRateRecord.back()) << "&";
 			}
 
-			extensions = getFMIndexExtensions(*iter,isSuccessToReduce);
+			extensions = getFMIndexExtensions(*iter,isReduced);
 
-			if (m_Debug.isDebug && isSuccessToReduce)
+			if (m_Debug.isDebug && isReduced)
 			{
 				*(m_Debug.debug_file) << leaf -> getFullString() << "\n";
 			}
@@ -448,7 +450,7 @@ void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves,bool isSuc
 				updateLeaves(newLeaves, extensions, *iter,currLeavesNum);
 				break;
 			}
-			isSuccessToReduce = false;
+			isReduced = false;
 			m_min_SA_threshold--;
 			count++;
 		}

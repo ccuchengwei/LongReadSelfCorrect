@@ -268,7 +268,7 @@ class LongReadSelfCorrectByOverlap
 			void buildOverlapbyFMindex(IntervalTree<size_t>& fwdIntervalTree,IntervalTree<size_t>& rvcIntervalTree,const int& overlapSize);
 
 			void extendLeaves(leafList& newLeaves);
-			void attempToExtend(leafList& newLeaves,bool isSuccessToReduce);
+			void attempToExtend(leafList& newLeaves, const bool isSuccessToReduce);
 			void updateLeaves(leafList& newLeaves,extArray& extensions,leafInfo& leaf,size_t currLeavesNum);
 
 			void refineSAInterval(leafList& leaves, const size_t newKmerSize);

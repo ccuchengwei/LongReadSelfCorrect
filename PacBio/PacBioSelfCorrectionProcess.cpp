@@ -25,25 +25,25 @@ PacBioSelfCorrectionResult PacBioSelfCorrectionProcess::process(const SequenceWo
 	std::string readSeq = workItem.read.seq.toString();
 	const size_t readSeqLen = readSeq.length();
 	SeedFeature::SeedVector seedVec, pieceVec;
-	
+
 	//allocate space for kmers on each position
 	for(auto& iter : m_params.kmerPool)
 		KmerFeature::kmerRec[iter] = std::unique_ptr<KmerFeature[]>(new KmerFeature[readSeqLen]);
-	
+
 	//Part 1: start searching seeds
     Timer* seedTimer = new Timer("Seed Time", true);
 	LongReadProbe::readid = result.readid;
 	LongReadProbe::searchSeedsWithHybridKmers(readSeq, seedVec);
 	result.totalSeedNum = seedVec.size();
-	result.Timer_Seed = seedTimer->getElapsedWallTime(); 
+	result.Timer_Seed = seedTimer->getElapsedWallTime();
 	delete seedTimer;
-	
+
 	//Part 2:start correcting sequence
     initCorrect(readSeq, seedVec, pieceVec, result);
-	
+
 	//free space for kmers on each position
 	KmerFeature::kmerRec.clear();
-	
+
 	result.merge = !pieceVec.empty();
 	result.totalReadsLen = readSeq.length();
 	for(const auto& iter : pieceVec)
@@ -57,7 +57,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 	std::ostream* pDpWriter = nullptr;
 	std::ostream* pExtDebugFile = nullptr;
 	if(m_params.OnlySeed || seedVec.size() < 2) return;
-	
+
 	//push first seed into vector and reserve space for fast expansion
 	pieceVec.push_back(seedVec[0]);
 	pieceVec.back().seedStr.reserve(readSeq.length());
@@ -65,9 +65,11 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 	{
 		pExtWriter    = createWriter(m_params.directory + "extend/" + result.readid + ".ext");
 		pDpWriter     = createWriter(m_params.directory + "extend/" + result.readid + ".dp");
-	//	pExtDebugFile = createWriter(m_params.directory + "extend/" + result.readid + ".fa");
 	}
-	
+/*
+	if(m_params.DebugExtend)
+		pExtDebugFile = createWriter(m_params.directory + "extensionFile/" + result.readid + ".fa");
+//*/
 	int case_number = 1;
 	for(SeedFeature::SeedVector::const_iterator iterTarget = seedVec.begin() + 1; iterTarget != seedVec.end(); iterTarget++, case_number++)
 	{
@@ -119,10 +121,10 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 					std::cerr << "Does it really happen?\n";
 					exit(EXIT_FAILURE);
 			}
-			
+
 			if(m_params.DebugSeed)
 				*pExtWriter << source.seedStartPos << "\t" << target.seedStartPos << "\t" << (firstFMExtensionType + 4) << "\n";
-			
+
 			result.totalWalkNum++;
 			bool isMSAlignmentSuccess = correctByMSAlignment(source, target, readSeq, mergedSeq, result);
 			if(isMSAlignmentSuccess)
@@ -131,7 +133,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 			{
 				if(m_params.DebugSeed)
 					*pDpWriter << source.seedStartPos << "\t" << target.seedStartPos << "\n";
-				
+
 				if(m_params.Split)
 					pieceVec.push_back(target);
 				else

@@ -77,21 +77,21 @@ namespace opt
 	static std::string correctFile;
 	static std::string discardFile;
 	static int sampleRate = BWT::DEFAULT_SAMPLE_RATE_SMALL;
-	
+
     static size_t PBcoverage = 90; // PB seed searh depth
     static double ErrorRate=0.15;
-	
+
 	static int startKmerLen = 19;
 	static int numOfNextTarget = 1;
 	static int maxLeaves=32;
     static int idmerLen = 9;
 	static int minKmerLen = 13;
-	
+
 	static int genome = 10;
 	static int mode = 1;
 	static int offset = 0; // wait for delete
 	static int verbose = 0;
-	
+
 	static bool Manual = false;
 	static bool Split = false;
     static bool DebugExtend = false;
@@ -142,7 +142,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	PacBioSelfCorrectionParameters ecParams;
 	BWT *pBWT, *pRBWT;
 	SampledSuffixArray* pSSA;
-	
+
 	// Load indices
 	#pragma omp parallel
 	{
@@ -162,7 +162,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 			pSSA = new SampledSuffixArray(opt::prefix + SAI_EXT, SSA_FT_SAI);
 		}
 	}
-	
+
 	BWTIndexSet indexSet;
 	indexSet.pBWT = pBWT;
 	indexSet.pRBWT = pRBWT;
@@ -177,14 +177,14 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	ecParams.maxLeaves = opt::maxLeaves;
     ecParams.idmerLen = opt::idmerLen;
 	ecParams.minKmerLen = opt::minKmerLen;
-	
+
 	ecParams.Manual = opt::Manual;
 	ecParams.Split = opt::Split;
     ecParams.DebugExtend = opt::DebugExtend;
     ecParams.DebugSeed = opt::DebugSeed;
 	ecParams.OnlySeed = opt::OnlySeed;
 	ecParams.NoDp = opt::NoDp;
-	
+
 	if(!opt::Manual)
 	{
 		ecParams.startKmerLen = size[order[opt::genome]];
@@ -193,7 +193,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 		ecParams.kmerOffset[2] += opt::offset;
 	}
 	ecParams.mode = opt::mode;
-	
+
 	//Insert kmer sizes in pool for future usage. Noted by KuanWeiLee 18/3/12
 	ecParams.kmerPool.insert(ecParams.startKmerLen);
 	ecParams.kmerPool.insert(ecParams.scanKmerLen);
@@ -201,7 +201,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 		ecParams.kmerPool.insert(ecParams.startKmerLen + iter);
 	for(auto& iter : ecParams.overlapKmerLen)
 		ecParams.kmerPool.insert(iter);
-	
+
 	FMextendParameters FM_params(
 			indexSet,opt::idmerLen,
 			opt::maxLeaves,
@@ -209,9 +209,9 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 			opt::PBcoverage,
 			opt::ErrorRate);
 	ecParams.FM_params = FM_params;
-	
-	
-	LongReadProbe::m_params = 
+
+
+	LongReadProbe::m_params =
 	ProbeParameters(
 			ecParams.indices,
 			ecParams.directory,
@@ -226,28 +226,28 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 			ecParams.kmerPool,
 			ecParams.DebugSeed,
 			ecParams.Manual);
-	
+
 	//Initialize KmerThreshold
 	KmerThreshold::Instance().initialize(
 			*(ecParams.kmerPool.begin()),
 			ecParams.kmerLenUpBound,
 			ecParams.PBcoverage,
 			ecParams.directory);
-	
+
 	std::cerr
 	<< "\nCorrecting PacBio reads for " << opt::readsFile << " using--\n"
 	<< "number of threads:\t" << opt::numThreads << "\n"
 	<< "PB reads coverage:\t" << ecParams.PBcoverage << "\n"
 	<< "num of next Targets:\t" << ecParams.numOfNextTarget << "\n"
-	<< "large kmer size:\t" << ecParams.startKmerLen << "\n" 
+	<< "large kmer size:\t" << ecParams.startKmerLen << "\n"
 	<< "small kmer size:\t" << ecParams.minKmerLen << "\n"
 	<< "max leaves:\t" << ecParams.maxLeaves  << "\n"
 	<< "max depth:\t1.2~0.8* (length between two seeds +- 20)" << "\n";
 
-	
+
 	// Start a timer
 	Timer* pTimer = new Timer(PROGRAM_IDENT);
-	
+
 	// Setup post-processor
 	PacBioSelfCorrectionPostProcess* pPostProcessor = new PacBioSelfCorrectionPostProcess(opt::correctFile, opt::discardFile, ecParams);
 
@@ -278,7 +278,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	//	PacBioSelfCorrectionResult,
 	//	PacBioSelfCorrectionProcess,
 	//	PacBioSelfCorrectionPostProcess>(opt::readsFile, pProcessorVec, pPostProcessor);
-		
+
 		for(auto& iter : pProcessorVec)
 			delete iter;
 	}
@@ -354,14 +354,14 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 		std::cerr << SUBPROGRAM << ": no prefix\n";
 		die = true;
 	}
-	
+
 	if(opt::directory.empty())
 	{
 		std::cerr << SUBPROGRAM << ": no directory\n";
 		die = true;
 	}
 	else
-	{		
+	{
 		opt::directory += "/";
 		std::string workingDir = opt::directory + (opt::DebugSeed ? "seed/error/" : "");
 		if( system(("mkdir -p " + workingDir).c_str()) != 0)
@@ -375,6 +375,12 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 			std::cerr << SUBPROGRAM << ": something wrong in directory: " << opt::directory << "\n";
 			die = true;
 		}
+		workingDir = opt::directory + (opt::DebugExtend ? "extensionFile/" : "");
+		if( system(("mkdir -p " + workingDir).c_str()) != 0)
+		{
+			std::cerr << SUBPROGRAM << ": something wrong in directory: " << opt::directory << "\n";
+			die = true;
+		}
 	}
 
 	if(opt::PBcoverage <=0)
@@ -382,67 +388,67 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 		std::cerr << SUBPROGRAM ": invalid number of coverage: " << opt::PBcoverage << ", must be greater than zero\n";
 		die = true;
 	}
-	
+
 	if(opt::ErrorRate < 0 || opt::ErrorRate > 1)
 	{
 		std::cerr <<SUBPROGRAM ":invalid error rate: " << opt::ErrorRate << ", must be 0 ~ 1\n";
 		die = true;
 	}
-	
+
 	if(opt::startKmerLen <= 0)
 	{
 		std::cerr << SUBPROGRAM ": invalid start kmer length: " << opt::startKmerLen << ", must be greater than zero\n";
 		die = true;
 	}
-	
+
 	if(opt::numOfNextTarget <=0)
 	{
 		std::cerr << SUBPROGRAM ": invalid number of next target: " << opt::numOfNextTarget << ", must be greater than zero\n";
 		die = true;
 	}
-	
+
 	if(opt::maxLeaves <= 0)
 	{
 		std::cerr << SUBPROGRAM ":invalid number of max leaves:" << opt::maxLeaves << ", must be greater than zero\n";
 		die = true;
 	}
-	
+
 	if(opt::idmerLen <= 0)
 	{
 		std::cerr << SUBPROGRAM ":invalid kmer length to identify similar reads" << opt::idmerLen << ", must be greater than zero\n";
 		die = true;
 	}
-	
+
 	if(opt::minKmerLen <= 0)
 	{
 		std::cerr << SUBPROGRAM ":invalid min kmer length:" << opt::minKmerLen << ", must be greater than zero\n";
 		die = true;
 	}
-	
+
 	if(opt::genome != 5 && opt::genome != 10 && opt::genome != 100)
 	{
 		std::cerr << SUBPROGRAM ": invalid genome size: " << opt::genome << ", must be (5/10/100)[m]\n";
 		die = true;
 	}
-	
+
 	if(opt::mode != 0 && opt::mode != 1 && opt::mode != 2)
 	{
 		std::cerr << SUBPROGRAM ": invalid mode: " << opt::mode << ", must be (0/1/2)\n";
 		die = true;
 	}
-	
+
 	if(die)
 	{
 		std::cerr << "\n" << CORRECT_USAGE_MESSAGE;
 		exit(EXIT_FAILURE);
 	}
-	
+
 	opt::readsFile = argv[optind++];
 	//std::string out_prefix = stripFilename(opt::readsFile);
 	//opt::correctFile = opt::directory + out_prefix + ".correct.fa";
 	//opt::discardFile = opt::directory + out_prefix + ".discard.fa";
 	opt::correctFile = opt::directory + "correct.fa";
 	opt::discardFile = opt::directory + "discard.fa";
-	
+
 }
 
