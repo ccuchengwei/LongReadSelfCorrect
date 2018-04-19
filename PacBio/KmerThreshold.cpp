@@ -1,5 +1,7 @@
 #include <iostream>
 #include <limits>
+#include <cmath>
+#include <algorithm>
 #include "Util.h"
 #include "KmerThreshold.h"
 //The threshold table is for determining correct value to tell a kmer,

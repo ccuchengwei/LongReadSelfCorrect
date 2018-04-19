@@ -10,9 +10,6 @@ template <class T, typename K = std::size_t>
 class TreeInterval
 {
 	public:
-		K start;
-	    K stop;
-	    T value;
 	    TreeInterval(
 				K s,
 				K e,
@@ -20,6 +17,9 @@ class TreeInterval
 		:	start(s),
 			stop(e),
 			value(v){ }
+		K start;
+		K stop;
+		T value;
 };
 
 template <class T, typename K>
