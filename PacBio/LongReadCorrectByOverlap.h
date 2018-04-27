@@ -16,6 +16,7 @@
 #include "SAINode.h"
 #include "IntervalTree.h"
 #include "HashtableSearch.h"
+#include "SeedFeature.h"
 
 
 struct FMWalkResult2
@@ -46,57 +47,82 @@ struct FMextendParameters
 
 };
 
+struct simpleSeedFeature
+{
+	public:
+		simpleSeedFeature(const SeedFeature& seed, bool isHead):
+			seq     (seed.seedStr),
+			end     (seed.seedEndPos),
+			isRepeat(seed.isRepeat) 
+			{
+				if (isHead)
+					start = seed.seedEndPos - seed.seedLen+1;
+				else
+					start = seed.seedStartPos;
+			};
+
+		std::string seq;
+		size_t start;
+		size_t end;
+		bool   isRepeat;
+};
+
+struct seedPair
+{
+	public:
+		seedPair(
+					const SeedFeature& source,
+					const SeedFeature& target,
+					bool isPosStrand = true
+				):
+					source(source,true),
+					target(target,false),
+					isPosStrand(isPosStrand) {};
+
+		void reverseSeed()
+			{
+				std::swap(source,target);
+				source.seq = reverseComplement(source.seq);
+				target.seq = reverseComplement(target.seq);
+				isPosStrand = !isPosStrand;
+			}
+
+		void reduceSourceBy(size_t length)
+			{
+				source.seq = source.seq.substr(length);
+				if (isPosStrand)
+				{
+					source.start = source.start + length;
+				}
+				else
+				{
+					source.end   = source.end   - length;
+				}
+			}
+
+		simpleSeedFeature  source;
+		simpleSeedFeature  target;
+		bool    isPosStrand;
+};
+
 struct debugExtInfo
 {
 	public:
-		debugExtInfo  (
+		debugExtInfo(
 						bool isDebug = false,
 						std::ostream* debug_file = NULL,
 						std::string readID = "",
-						int  caseNum = 0,
-						int  sourceStart = 0,
-						int  sourceEnd   = 0,
-						int  targetStart = 0,
-						int  targetEnd   = 0,
-						bool isPosStrand = true
+						int  caseNum = 0
 					):
 						isDebug(isDebug),
 						debug_file(debug_file),
 						readID(readID),
-						caseNum(caseNum),
-						sourceStart(sourceStart),
-						sourceEnd(sourceEnd),
-						targetStart(targetStart),
-						targetEnd(targetEnd),
-						isPosStrand(isPosStrand){};
-
-		void reverseStrand()
-			{
-				std::swap(sourceStart,targetStart);
-				std::swap(sourceEnd  ,targetEnd  );
-				isPosStrand = !isPosStrand;
-			}
-		void sourceReduceSize(size_t startLoc)
-			{
-				if (isPosStrand)
-				{
-					sourceStart = sourceStart + startLoc;
-				}
-				else
-				{
-					sourceEnd   = sourceEnd   - startLoc;
-				}
-			}
+						caseNum(caseNum){};
 
 		const bool isDebug;
 		std::ostream* debug_file;
 		std::string   readID;
 		size_t  caseNum;
-		size_t  sourceStart;
-		size_t  sourceEnd;
-		size_t  targetStart;
-		size_t  targetEnd;
-		bool isPosStrand;
 };
 
 struct FMidx
@@ -222,9 +248,8 @@ class LongReadSelfCorrectByOverlap
 	public:
 		LongReadSelfCorrectByOverlap();
 		LongReadSelfCorrectByOverlap(
-										const std::string& sourceSeed,
+										const seedPair& extSeeds,
 										const std::string& strBetweenSrcTarget,
-										const std::string& targetSeed,
 										int m_disBetweenSrcTarget,
 										size_t initkmersize,
 										size_t maxOverlap,
@@ -293,6 +318,7 @@ class LongReadSelfCorrectByOverlap
 		//
 		// Data
 		//
+			seedPair m_extSeeds;
 			const std::string m_sourceSeed;
 			const std::string m_strBetweenSrcTarget;
 			const std::string m_targetSeed;

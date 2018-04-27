@@ -9,6 +9,7 @@
 //
 #include <iomanip>
 #include "LongReadCorrectByOverlap.h"
+#include "KmerFeature.h"
 #include "BWTAlgorithms.h"
 #include "stdaln.h"
 #include "LongReadOverlap.h"
@@ -16,9 +17,8 @@
 // Class: SAIOverlapTree
 LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap
 				(
-					const std::string& sourceSeed,
+					const seedPair& extSeeds,
 					const std::string& strBetweenSrcTarget,
-					const std::string& targetSeed,
 					int disBetweenSrcTarget,
 					size_t initkmersize,
 					size_t maxOverlap,
@@ -29,9 +29,10 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap
 					size_t repeatFreq,
 					size_t localSimilarlykmerSize
 				):
-					m_sourceSeed(sourceSeed),
+					m_extSeeds(extSeeds),
+					m_sourceSeed(extSeeds.source.seq),
+					m_targetSeed(extSeeds.target.seq),
 					m_strBetweenSrcTarget(strBetweenSrcTarget),
-					m_targetSeed(targetSeed),
 					m_disBetweenSrcTarget(disBetweenSrcTarget),
 					m_initkmersize(initkmersize),
 					m_minOverlap(params.minKmerLength),
@@ -48,8 +49,7 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap
 					m_PacBioErrorRate(params.ErrorRate),
 					m_Debug(debug)
 {
-	std::string beginningkmer = m_sourceSeed.substr(m_sourceSeed.length()-m_initkmersize);
-		m_Debug.sourceReduceSize(m_sourceSeed.length()-m_initkmersize);
+	m_extSeeds.reduceSourceBy(m_sourceSeed.length()-m_initkmersize);
 
 	//if distance < 100 ,use const indel size
 		if (m_disBetweenSrcTarget > 100)
@@ -58,7 +58,7 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap
 			m_maxIndelSize  =  20;
 
 	//initialRootNode
-		initialRootNode(beginningkmer);
+		initialRootNode(m_extSeeds.source.seq);
 
 	// push new node into roots and leaves vector
 		m_RootNodes.push_back(m_pRootNode);
@@ -71,7 +71,11 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap
 
 	if(m_Debug.isDebug)
 	{
-		std::cout << m_Debug.caseNum << "\tBE: " << beginningkmer << " " << m_targetSeed << " "<< m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size() << "|" << disBetweenSrcTarget <<"\n";
+		std::cout   << m_Debug.caseNum << "\tBE: " 
+					<< m_extSeeds.source.seq << " " 
+					<< m_extSeeds.target.seq << " "
+					<< m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size() << "|" 
+					<< disBetweenSrcTarget <<"\n";
 	}
 
 	// PacBio reads are longer than real length due to insertions
@@ -87,7 +91,7 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap
 			m_rvcTerminatedInterval.push_back(BWTAlgorithms::findInterval(m_pBWT, reverseComplement(endingkmer)));
 		}
     // build overlap tree
-		m_query = beginningkmer + m_strBetweenSrcTarget + m_targetSeed;
+		m_query = m_extSeeds.source.seq + m_strBetweenSrcTarget + m_targetSeed;
 		// build overlap tree to determine the error rate
 			buildOverlapbyFMindex(m_fwdIntervalTree ,m_rvcIntervalTree ,m_seedSize);
 		// build overlap tree to match 5-mer
@@ -421,20 +425,21 @@ void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves, const boo
 				int kmer_freq = leaf->fwdInterval.size() + leaf->rvcInterval.size();
 
 				char strand;
-				if(m_Debug.isPosStrand)
+				if(m_extSeeds.isPosStrand)
 					strand = '+';
 				else
 					strand = '-';
 
 				*(m_Debug.debug_file)   << ">" << m_Debug.readID
-										<< "|" << m_Debug.sourceStart << "|" << m_Debug.sourceEnd
+										<< "|" << m_extSeeds.source.start 
+										<< "|" << m_extSeeds.source.end
 										<< "|" << strand
 										<< "&" << m_Debug.caseNum     << "|" << m_step_number
 										<< "|" << m_leaves.size()
 										<< "&" << currLeavesNum       << "|" << ((*iter).lastLeafID)
 										<< "&" << m_currentKmerSize   << "|" <<  kmer_freq
 										<< "|" << std::fixed          << std::setprecision(5)
-										<< 100*(leaf ->LocalErrorRateRecord.back() ) << "&" 
+										<< 100*(leaf ->LocalErrorRateRecord.back() ) << "|" 
 										<< 100*(leaf ->GlobalErrorRateRecord.back()) << "&";
 			}
 
@@ -718,10 +723,7 @@ extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const leafInfo& curr
 		totalExt.push_back(currExt);
 
 	}// end of ACGT
-/*
-	if(totalcount > 1024)  // filter low complex repeat e.g. AAAAAAAAAAAA
-		return output;
-/**/
+
 	m_maxfreqs = std::max(m_maxfreqs,totalcount);
 
 	for(int i = 1; i < BWT_ALPHABET::size; ++i)

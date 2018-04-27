@@ -81,16 +81,12 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 		{
 			const SeedFeature& target = *(iterTarget + next);
 /*
-			debugExtInfo debug(
-								m_params.DebugExtend, pExtDebugFile, result.readid, case_number,
-								source.seedEndPos - source.seedLen+1, source.seedEndPos,
-								(*iterTarget).seedStartPos,(*iterTarget).seedEndPos, true
-							);
-			isFMExtensionSuccess = correctByFMExtension(source, target, readSeq, mergedSeq, result, debug);
+			debugExtInfo debug( m_params.DebugExtend, pExtDebugFile, result.readid, case_number);
 /*/
 			debugExtInfo debug;
-			isFMExtensionSuccess = correctByFMExtension(source, target, readSeq, mergedSeq, result, debug);
 //*/
+
+			isFMExtensionSuccess = correctByFMExtension(source, target, readSeq, mergedSeq, result, debug);
 			firstFMExtensionType = (next == 0 ? isFMExtensionSuccess : firstFMExtensionType);
 			if(isFMExtensionSuccess > 0)
 			{
@@ -154,50 +150,66 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 int PacBioSelfCorrectionProcess::correctByFMExtension
 (const SeedFeature& source, const SeedFeature& target, const std::string& in, std::string& out, PacBioSelfCorrectionResult& result, debugExtInfo& debug)
 {
-	int interval = target.seedStartPos - source.seedEndPos - 1;
-	int extendKmerSize = std::min(source.endBestKmerSize, target.startBestKmerSize) - 2;
-	if(source.isRepeat || target.isRepeat)
-	{
-		extendKmerSize = std::min(source.seedLen, target.seedLen);
-		extendKmerSize = std::min(extendKmerSize, m_params.startKmerLen + 2);
-	}
-	std::string src, trg, path;
-	src = source.seedStr.substr(source.seedLen - extendKmerSize);
-		debug.sourceReduceSize(source.seedLen - extendKmerSize);
-	trg = target.seedStr;
-	path = in.substr(source.seedEndPos + 1, interval);
-	int min_SA_threshold = 3, isFMExtensionSuccess = 0;
-	min_SA_threshold = m_params.PBcoverage > 60 ? ((m_params.PBcoverage / 60) * 3) : min_SA_threshold;
 	bool isFromRtoU = source.isRepeat && !target.isRepeat;
-	if(isFromRtoU)
-	{
-		std::swap(src,trg);
-		src = reverseComplement(src);
-		trg = reverseComplement(trg);
-		path = reverseComplement(path);
-			debug.reverseStrand();
-	}
+	int isFMExtensionSuccess = 0;
 
-	Timer* FMTimer = new Timer("FM Time",true);
-	FMWalkResult2 fmwalkresult;
-	LongReadSelfCorrectByOverlap OverlapTree
-	(src, path, trg, interval, extendKmerSize, extendKmerSize + 2, m_params.FM_params, min_SA_threshold, debug);
-	isFMExtensionSuccess = OverlapTree.extendOverlap(fmwalkresult);
-	result.Timer_FM += FMTimer->getElapsedWallTime();
-	delete FMTimer;
+	// Set initial extend size
+		int initExtSize = std::min(source.endBestKmerSize, target.startBestKmerSize) - 2;
+			if(source.isRepeat || target.isRepeat)
+			{
+				initExtSize = std::min(source.seedLen, target.seedLen);
+				initExtSize = std::min(initExtSize, m_params.startKmerLen + 2);
+			}
 
-	if(isFMExtensionSuccess < 0) return isFMExtensionSuccess;
-	if(isFromRtoU)
-	{
-		fmwalkresult.mergedSeq = reverseComplement(fmwalkresult.mergedSeq);
-		fmwalkresult.mergedSeq += reverseComplement(src).substr(extendKmerSize);
-	}
-	out = fmwalkresult.mergedSeq;
-	out.erase(0,extendKmerSize);
-	result.correctedLen += out.length();
-	result.seedDis += interval;
-	result.FMNum++;
+	// Set seed Information
+		seedPair extSeeds(source, target);
+		extSeeds.reduceSourceBy(source.seedLen - initExtSize);
+
+	// Set the raw read path which shall be corrected.
+		int seedDistance     = target.seedStartPos - source.seedEndPos - 1;
+		std::string readPath = in.substr(source.seedEndPos + 1, seedDistance);
+
+		if(isFromRtoU)
+		{
+			extSeeds.reverseSeed();
+			readPath = reverseComplement(readPath);
+		}
+
+	// Set the normal threshold by extension
+		int min_SA_threshold;
+		if(m_params.PBcoverage > 60)
+			min_SA_threshold = (m_params.PBcoverage / 60) * 3;
+		else
+			min_SA_threshold = 3;
+
+	// FM extension
+		Timer* FMTimer = new Timer("FM Time",true);
+			FMWalkResult2 fmwalkresult;
+			LongReadSelfCorrectByOverlap OverlapTree
+				(extSeeds, readPath, seedDistance, initExtSize, initExtSize + 2, m_params.FM_params, min_SA_threshold, debug);
+			isFMExtensionSuccess = OverlapTree.extendOverlap(fmwalkresult);
+			result.Timer_FM += FMTimer->getElapsedWallTime();
+		delete FMTimer;
+
+	if(isFMExtensionSuccess < 0)
+		return isFMExtensionSuccess;
+
+	// Recover reverse Sequence
+		if(isFromRtoU)
+		{
+			fmwalkresult.mergedSeq  = reverseComplement(fmwalkresult.mergedSeq);
+			fmwalkresult.mergedSeq += reverseComplement(extSeeds.source.seq).substr(initExtSize);
+		}
+
+	// Set the output sequence
+		out = fmwalkresult.mergedSeq;
+		out.erase(0,initExtSize);
+		result.correctedLen += out.length();
+		result.seedDis      += seedDistance;
+		result.FMNum++;
+
 	return isFMExtensionSuccess;
+
 }
 
 bool PacBioSelfCorrectionProcess::correctByMSAlignment
