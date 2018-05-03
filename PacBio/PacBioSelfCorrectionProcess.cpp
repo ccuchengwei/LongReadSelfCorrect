@@ -66,10 +66,10 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 		pExtWriter    = createWriter(m_params.directory + "extend/" + result.readid + ".ext");
 		pDpWriter     = createWriter(m_params.directory + "extend/" + result.readid + ".dp");
 	}
-/*
+
 	if(m_params.DebugExtend)
 		pExtDebugFile = createWriter(m_params.directory + "extensionFile/" + result.readid + ".fa");
-//*/
+
 	int case_number = 1;
 	for(SeedFeature::SeedVector::const_iterator iterTarget = seedVec.begin() + 1; iterTarget != seedVec.end(); iterTarget++, case_number++)
 	{
@@ -80,13 +80,10 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 		for(int next = 0; next < m_params.numOfNextTarget && (iterTarget + next) != seedVec.end() ; next++)
 		{
 			const SeedFeature& target = *(iterTarget + next);
-/*
-			debugExtInfo debug( m_params.DebugExtend, pExtDebugFile, result.readid, case_number);
-/*/
-			debugExtInfo debug;
-//*/
 
+			debugExtInfo debug( m_params.DebugExtend, pExtDebugFile, result.readid, case_number);
 			isFMExtensionSuccess = correctByFMExtension(source, target, readSeq, mergedSeq, result, debug);
+
 			firstFMExtensionType = (next == 0 ? isFMExtensionSuccess : firstFMExtensionType);
 			if(isFMExtensionSuccess > 0)
 			{

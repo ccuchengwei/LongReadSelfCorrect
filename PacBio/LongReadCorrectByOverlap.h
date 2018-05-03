@@ -167,6 +167,11 @@ struct FMidx
 				return kmerFrequency;
 			}
 
+		char getLetter()
+			{
+				return SearchLetters[0];
+			}
+
 		const std::string SearchLetters;
 
 	private:
@@ -242,6 +247,46 @@ struct leafInfo
 
 };
 typedef std::list<leafInfo> leafList;
+
+struct dominantBase
+{
+	public:
+		dominantBase(const std::string& goalBase):
+			identicalBase(goalBase[0]) {};
+
+		int getMaxFreq()
+			{
+				return freqs[0];
+			}
+
+		void setFreq(FMidx currExt)
+			{
+				int  currFreq = currExt.getKmerFrequency();
+				char currBase = currExt.getLetter();
+
+				if( currFreq >  freqs[0] 
+				|| (currFreq == freqs[0] && currBase == identicalBase))
+				{
+					std::swap(freqs[0], currFreq);
+					std::swap(bases[0], currBase);
+				}
+				if( currFreq >  freqs[1] 
+				|| (currFreq == freqs[1] && currBase == identicalBase))
+				{
+					std::swap(freqs[1], currFreq);
+					std::swap(bases[1], currBase);
+				}
+			}
+
+		bool isDominant()
+			{
+				return (bases[0] == identicalBase || bases[1] == identicalBase);
+			}
+
+		int  freqs[2] = {0,0};
+		char bases[2] = {0,0};
+		char identicalBase = 0;
+};
 
 class LongReadSelfCorrectByOverlap
 {
