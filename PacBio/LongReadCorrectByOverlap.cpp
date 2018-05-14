@@ -436,6 +436,8 @@ void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves, const boo
 				*(m_Debug.debug_file)   << ">" << m_Debug.readID
 										<< "|" << m_extSeeds.source.start 
 										<< "|" << m_extSeeds.source.end
+										<< "|" << m_extSeeds.target.start
+										<< "|" << m_extSeeds.target.end
 										<< "|" << strand
 										<< "&" << m_Debug.caseNum     << "|" << m_step_number
 										<< "&" << m_leaves.size()
@@ -773,9 +775,9 @@ extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const leafInfo& curr
 		else if ( isHomopolymer )
 				kmerRatioCutoff = std::max(kmerRatioCutoff,0.6);
 /*
-			if (isDominant)
+			if (isDominant && (m_extSeeds.source.isRepeat || m_extSeeds.target.isRepeat))
 				kmerRatioCutoff = std::max(kmerRatioCutoff,0.4);
-*/
+//*/
 		if(m_Debug.isDebug && printDebugInfo)
 		{
 			*(m_Debug.debug_file) << kmerRatio;

@@ -53,9 +53,13 @@ PacBioSelfCorrectionResult PacBioSelfCorrectionProcess::process(const SequenceWo
 //Correct sequence by FMWalk & MSAlignment; it's a workflow control module. Noted by KuanWeiLee 18/3/12
 void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFeature::SeedVector& seedVec, SeedFeature::SeedVector& pieceVec, PacBioSelfCorrectionResult& result)
 {
-	std::ostream* pExtWriter = nullptr;
-	std::ostream* pDpWriter = nullptr;
+	std::ostream* pExtWriter    = nullptr;
+	std::ostream* pDpWriter     = nullptr;
 	std::ostream* pExtDebugFile = nullptr;
+	std::ostream* pExtDebugSeed = nullptr;
+
+	SeedFeature::SeedVector::const_iterator srcSeedIter = seedVec.begin();
+
 	if(m_params.OnlySeed || seedVec.size() < 2) return;
 
 	//push first seed into vector and reserve space for fast expansion
@@ -68,10 +72,25 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 	}
 
 	if(m_params.DebugExtend)
+	{
 		pExtDebugFile = createWriter(m_params.directory + "extensionFile/" + result.readid + ".fa");
+		pExtDebugSeed = createWriter(m_params.directory + "extensionFile/" + result.readid + ".txt");
+/*
+		(*pExtDebugSeed)    << "readName\tcaseNum\t"
+							<< "oriSrcStart\toriSrcEnd\toriSrcSeq\t"
+							<< "extSrcStart\textSrcEnd\textSrcSeq\t"
+							<< "oriTgtStart\toriTgtEnd\toriTgtSeq\t"
+							<< "extTgtStart\textTgtEnd\textTgtSeq\t"
+							<< "FMStatus\tisDPSuccess\t"
+							<< "isIdentSrc\tisIdentTgt"
+							<< std::endl;
+*/
+	}
 
 	int case_number = 1;
-	for(SeedFeature::SeedVector::const_iterator iterTarget = seedVec.begin() + 1; iterTarget != seedVec.end(); iterTarget++, case_number++)
+	for(SeedFeature::SeedVector::const_iterator iterTarget = seedVec.begin() + 1;
+		iterTarget != seedVec.end();
+		iterTarget++, case_number++, srcSeedIter++)
 	{
 		int isFMExtensionSuccess = 0, firstFMExtensionType = 0;
 		SeedFeature& source = pieceVec.back();
@@ -87,6 +106,47 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 			firstFMExtensionType = (next == 0 ? isFMExtensionSuccess : firstFMExtensionType);
 			if(isFMExtensionSuccess > 0)
 			{
+				if (m_params.DebugExtend)
+				{
+					const SeedFeature& oriSrcSeed = (*srcSeedIter)  ;
+					const SeedFeature& oriTgtSeed =   target        ;
+
+					const std::string& extSrcSeq =   source.seedStr;
+					const std::string& extTgtSeq =   mergedSeq     ;
+					
+					int srcOffset  = (int)extSrcSeq.length() - (int) oriSrcSeed.seedStr.length();
+					int tgtOffset  = (int)extTgtSeq.length() - (int) oriTgtSeed.seedStr.length();
+					
+					int relSrcStrt = std::max(srcOffset,0);
+					int reltgtStrt = std::max(tgtOffset,0);
+
+					int absSrcStrt = oriSrcSeed.seedStartPos + std::max(-srcOffset, 0);
+					int abstgtStrt = oriTgtSeed.seedStartPos + std::max(-tgtOffset, 0);
+
+					bool isIdentSrc = extSrcSeq.substr(relSrcStrt) == (*srcSeedIter).seedStr;
+					bool isIdentTgt = extTgtSeq.substr(reltgtStrt) ==   target      .seedStr;
+
+					(*pExtDebugSeed)    << result.readid << "\t" << case_number << "\t"
+
+										<< oriSrcSeed.seedStartPos       << "\t"
+										<< oriSrcSeed.seedEndPos         << "\t"
+										<< oriSrcSeed.seedStr            << "\t"
+
+										<< absSrcStrt                    << "\t"
+										<< oriSrcSeed.seedEndPos         << "\t"
+										<< extSrcSeq .substr(relSrcStrt) << "\t"
+
+										<< oriTgtSeed.seedStartPos       << "\t"
+										<< oriTgtSeed.seedEndPos         << "\t"
+										<< oriTgtSeed.seedStr            << "\t"
+
+										<< abstgtStrt                    << "\t"
+										<< oriTgtSeed.seedEndPos         << "\t"
+										<< extTgtSeq .substr(reltgtStrt) << "\t"
+
+										<< 0          << "\t" << "None"     << "\t"
+										<< isIdentSrc << "\t" << isIdentTgt << std::endl;
+				}
 				result.totalWalkNum++;
 				source.append(mergedSeq, target);
 				iterTarget += next;
@@ -120,6 +180,49 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 
 			result.totalWalkNum++;
 			bool isMSAlignmentSuccess = correctByMSAlignment(source, target, readSeq, mergedSeq, result);
+
+			if (m_params.DebugExtend)
+			{
+				const SeedFeature& oriSrcSeed = (*srcSeedIter)  ;
+				const SeedFeature& oriTgtSeed =   target        ;
+
+				const std::string& extSrcSeq =   source.seedStr;
+				const std::string& extTgtSeq =   mergedSeq     ;
+				
+				int srcOffset  = (int)extSrcSeq.length() - (int) oriSrcSeed.seedStr.length();
+				int tgtOffset  = (int)extTgtSeq.length() - (int) oriTgtSeed.seedStr.length();
+				
+				int relSrcStrt = std::max(srcOffset,0);
+				int reltgtStrt = std::max(tgtOffset,0);
+
+				int absSrcStrt = oriSrcSeed.seedStartPos + std::max(-srcOffset, 0);
+				int abstgtStrt = oriTgtSeed.seedStartPos + std::max(-tgtOffset, 0);
+
+				bool isIdentSrc = extSrcSeq.substr(relSrcStrt) == (*srcSeedIter).seedStr;
+				bool isIdentTgt = extTgtSeq.substr(reltgtStrt) ==   target      .seedStr;
+
+				(*pExtDebugSeed)    << result.readid << "\t" << case_number << "\t"
+
+									<< oriSrcSeed.seedStartPos       << "\t"
+									<< oriSrcSeed.seedEndPos         << "\t"
+									<< oriSrcSeed.seedStr            << "\t"
+
+									<< absSrcStrt                    << "\t"
+									<< oriSrcSeed.seedEndPos         << "\t"
+									<< extSrcSeq .substr(relSrcStrt) << "\t"
+
+									<< oriTgtSeed.seedStartPos       << "\t"
+									<< oriTgtSeed.seedEndPos         << "\t"
+									<< oriTgtSeed.seedStr            << "\t"
+
+									<< abstgtStrt                    << "\t"
+									<< oriTgtSeed.seedEndPos         << "\t"
+									<< extTgtSeq .substr(reltgtStrt) << "\t"
+
+									<< isFMExtensionSuccess << "\t" << isMSAlignmentSuccess << "\t"
+									<< isIdentSrc           << "\t" << isIdentTgt           << std::endl;
+			}
+
 			if(isMSAlignmentSuccess)
 				source.append(mergedSeq, target);
 			else
@@ -142,6 +245,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 	delete pExtWriter;
 	delete pDpWriter;
 	delete pExtDebugFile;
+	delete pExtDebugSeed;
 }
 
 int PacBioSelfCorrectionProcess::correctByFMExtension
