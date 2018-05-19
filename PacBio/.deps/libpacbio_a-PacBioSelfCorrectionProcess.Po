@@ -207,13 +207,13 @@ libpacbio_a-PacBioSelfCorrectionProcess.o: \
  ../Util/QualityCodec.h ../SuffixTools/SampledSuffixArray.h \
  ../SuffixTools/BWTAlgorithms.h ../SuffixTools/BWTIndexSet.h \
  ../Bigraph/GraphCommon.h ../Util/KmerDistribution.h \
- /usr/include/c++/6/cstddef /usr/include/c++/6/queue \
- /usr/include/c++/6/deque /usr/include/c++/6/bits/stl_deque.h \
- /usr/include/c++/6/bits/deque.tcc /usr/include/c++/6/bits/stl_queue.h \
- SeedFeature.h LongReadCorrectByOverlap.h ../SuffixTools/BWT.h \
- ../FMIndexWalk/SAINode.h IntervalTree.h HashtableSearch.h \
- LongReadProbe.h LongReadOverlap.h ../Thirdparty/multiple_alignment.h \
- ../Thirdparty/overlapper.h ../FMIndexWalk/FMIndexWalkProcess.h \
+ /usr/include/c++/6/queue /usr/include/c++/6/deque \
+ /usr/include/c++/6/bits/stl_deque.h /usr/include/c++/6/bits/deque.tcc \
+ /usr/include/c++/6/bits/stl_queue.h SeedFeature.h \
+ LongReadCorrectByOverlap.h ../SuffixTools/BWT.h ../FMIndexWalk/SAINode.h \
+ IntervalTree.h HashtableSearch.h LongReadProbe.h LongReadOverlap.h \
+ ../Thirdparty/multiple_alignment.h ../Thirdparty/overlapper.h \
+ ../FMIndexWalk/FMIndexWalkProcess.h \
  ../Concurrency/SequenceProcessFramework.h ../Concurrency/ThreadWorker.h \
  /usr/include/semaphore.h /usr/include/x86_64-linux-gnu/bits/semaphore.h \
  ../Util/Timer.h /usr/include/x86_64-linux-gnu/sys/time.h \
@@ -833,8 +833,6 @@ PacBioSelfCorrectionProcess.h:
 ../Bigraph/GraphCommon.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/6/cstddef:
 
 /usr/include/c++/6/queue:
 

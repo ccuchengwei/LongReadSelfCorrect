@@ -30,25 +30,17 @@ struct PacBioSelfCorrectionParameters
     double ErrorRate;
 
 	int startKmerLen;
-	int scanKmerLen = 19;
-	std::array<int, 3> kmerOffset{{0}};
-	int kmerLenUpBound = 50;
-	int radius = 100;
-	float hhRatio = 0.6;
 	
 	// tree search parameters
 //	int minOverlap;
 //	int maxOverlap;
-	int numOfNextTarget;
+	int nextTarget;
 	int maxLeaves;
     int idmerLen;
 	int minKmerLen;
-	std::array<int, 2> overlapKmerLen{{5, 9}};
 	
-	int mode;
-	std::set<int> kmerPool;
+	std::set<int> pool;
     
-	bool Manual;
 	bool Split;
     bool DebugExtend;
     bool DebugSeed;
@@ -81,7 +73,6 @@ struct PacBioSelfCorrectionResult
 		Timer_DP(0){ }
 
 	std::string readid;
-	
 	bool merge;
 	
 	// PacBio reads correction by Ya, v20151001.
@@ -123,16 +114,15 @@ class PacBioSelfCorrectionProcess
 class PacBioSelfCorrectionPostProcess
 {
 	public:
-		PacBioSelfCorrectionPostProcess(std::string correctFile, std::string discardFile, const PacBioSelfCorrectionParameters& params);
+		PacBioSelfCorrectionPostProcess(const PacBioSelfCorrectionParameters& params);
 		~PacBioSelfCorrectionPostProcess();
 		void process(const SequenceWorkItem& item, const PacBioSelfCorrectionResult& result);
 	
 	private:
 
+		PacBioSelfCorrectionParameters m_params;
 		std::ostream* m_pCorrectWriter;
 		std::ostream* m_pDiscardWriter;
-		std::ostream* m_pKdWriter;
-		PacBioSelfCorrectionParameters m_params;
 	
 		int64_t m_totalReadsLen;
 		int64_t m_correctedLen;

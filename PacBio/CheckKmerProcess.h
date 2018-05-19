@@ -1,12 +1,13 @@
 // CheckKmerProcess - Check kmer distribution and error condition
 //
 
-#ifndef KMERFREQPROCESS_H
-#define KMERFREQPROCESS_H
+#ifndef CHECKKMERPROCESS_H
+#define CHECKKMERPROCESS_H
 
 #include <iostream>
 #include <map>
 #include <utility>
+#include <cstdio>
 #include "BWTIndexSet.h"
 #include "SequenceWorkItem.h"
 #include "KmerDistribution.h"
@@ -44,13 +45,18 @@ struct CheckKmerParameters
 	BWTIndexSet indices;
 	std::string directory;
 	std::pair<int ,int> size;
-	const std::map<std::string, std::list<CodeBlock> >* pAlignRec;
+	std::map<std::string, std::list<CodeBlock> >* pAlignLog;
+	//mode(true/false) ? seq : seed
+	bool mode;
 };
 
 struct CheckKmerResult
 {
-	kdMap correctKdMap;
-	kdMap errorKdMap;
+	kdMap corKdMap;
+	kdMap errKdMap;
+	//0:none 1:true 2:false
+	std::string readid;
+	int status[3]{0, 0 ,0};
 };
 
 //
@@ -80,11 +86,12 @@ class CheckKmerPostProcess
 
 	private:
 		CheckKmerParameters m_params;
-		kdMap m_correctKdMap;
-		kdMap m_errorKdMap;
-		ostreamPtrMap m_pCorrectWriterMap;
-		ostreamPtrMap m_pErrorWriterMap;
-
+		kdMap m_corKdMap;
+		kdMap m_errKdMap;
+		ostreamPtrMap m_pCorWriterMap;
+		ostreamPtrMap m_pErrWriterMap;
+		int* m_status;
+		FILE *m_pStatusWriter;
 };
 
 #endif

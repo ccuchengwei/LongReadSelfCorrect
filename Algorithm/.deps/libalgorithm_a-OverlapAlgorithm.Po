@@ -206,9 +206,9 @@ libalgorithm_a-OverlapAlgorithm.o: OverlapAlgorithm.cpp \
  /usr/local/include/sparsehash/sparse_hash_set \
  /usr/local/include/google/dense_hash_set \
  /usr/local/include/sparsehash/dense_hash_set ../Util/QualityTable.h \
- ../Util/QualityCodec.h ../Util/KmerDistribution.h \
- /usr/include/c++/6/cstddef ../SQG/ASQG.h ../SQG/SQG.h \
- /usr/include/c++/6/tr1/unordered_set /usr/include/c++/6/tr1/type_traits \
+ ../Util/QualityCodec.h ../Util/KmerDistribution.h ../SQG/ASQG.h \
+ ../SQG/SQG.h /usr/include/c++/6/tr1/unordered_set \
+ /usr/include/c++/6/tr1/type_traits \
  /usr/include/c++/6/tr1/functional_hash.h \
  /usr/include/c++/6/tr1/hashtable.h \
  /usr/include/c++/6/tr1/hashtable_policy.h \
@@ -840,8 +840,6 @@ SearchSeed.h:
 ../Util/QualityCodec.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/6/cstddef:
 
 ../SQG/ASQG.h:
 

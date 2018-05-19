@@ -24,7 +24,7 @@ static const float formula[3][6] =
 	{0.01714285714,   -0.6193907563,   2.266956783,   17.28450630,   -100.6983493,  1103.571729} //repeat-update
 };// x*x              x*y              y*y            x              y              (constant)
 
-KmerThreshold::KmerThreshold():table{nullptr},pTableWriter(nullptr),set(false)
+KmerThreshold::KmerThreshold(): table{nullptr}, pTableWriter(nullptr), set(false)
 {
 }
 
@@ -40,15 +40,15 @@ KmerThreshold::~KmerThreshold()
 	delete pTableWriter;
 }
 
-void KmerThreshold::initialize(int _start, int _end, int _cov, const std::string& _dir)
+void KmerThreshold::initialize(int s, int e, int c, const std::string& d)
 {
 	if(set) return;
 	set = true;
-	start = std::max(_start, 15);
-	end  = _end;
-	cov  = _cov;
-	if(!_dir.empty())
-		pTableWriter = createWriter(_dir + "threshold-table");
+	start = std::max(s, 15);
+	end = e;
+	cov = c;
+	if(!d.empty()) pTableWriter = createWriter(d + "threshold-table");
+	
 	for(int mode = 0; mode <= 2; mode++)
 	{
 		table[mode] = new float[end + 2]{0};
@@ -62,18 +62,18 @@ void KmerThreshold::initialize(int _start, int _end, int _cov, const std::string
 	}
 }
 
-void KmerThreshold::write(std::ostream& outfile)
+void KmerThreshold::write(std::ostream& out)
 {
 	const float* lowcov = table[0] + start;
 	const float* unique = table[1] + start;
 	const float* repeat = table[2] + start;
 	for(int ksize = start; ksize <= end; ksize++, lowcov++, unique++, repeat++)
-		outfile << ksize << "\t" << *lowcov << "\t" << *unique << "\t" << *repeat << "\n";
+		out << ksize << "\t" << *lowcov << "\t" << *unique << "\t" << *repeat << "\n";
 }
 
-float KmerThreshold::calculate(int t, int x, int y)
+float KmerThreshold::calculate(int mode, int x, int y)
 {
-	const float* f = formula[t];
+	const float* f = formula[mode];
 	float v = f[0]*x*x + f[1]*x*y + f[2]*y*y + f[3]*x + f[4]*y + f[5];
 	return std::fmaxf(v, 2.0f);
 }

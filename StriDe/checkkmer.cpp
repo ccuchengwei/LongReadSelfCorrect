@@ -27,7 +27,7 @@ static const char *KMERFREQ_USAGE_MESSAGE =
 "  -p, --prefix=PREFIX       Use PREFIX for the names of the index files\n"
 "  -o, --directory=PATH      Put results in the directory\n"
 "  -t, --threads=NUM         Use NUM threads for the computation (default: 1)\n"
-"  -c, --barcode=FILE        Use the barcode to check kmer \n"
+"  -b, --barcode=FILE        Use the barcode to check kmer \n"
 "  -v, --verbose             Display verbose output\n"
 "      --help                Display this help and exit\n"
 "      --version             Display version\n";
@@ -39,7 +39,7 @@ namespace opt
     static unsigned int verbose;
     static std::string prefix;
 	static std::string directory;
-	static int numThreads = 1;
+	static int thread = 1;
 	static std::string barcode;
 	static int sizeLb = 15;
 	static int sizeUb = 15;	
@@ -47,7 +47,7 @@ namespace opt
     static int sampleRate = BWT::DEFAULT_SAMPLE_RATE_SMALL;
 }
 
-static const char* shortopts = "p:o:t:c:v";
+static const char* shortopts = "p:o:t:b:v";
 
 enum { OPT_ALIGN, OPT_HELP = 1, OPT_VERSION };
 
@@ -55,7 +55,7 @@ static const struct option longopts[] = {
 	{ "prefix",      required_argument, nullptr, 'p' },
 	{ "directory",   required_argument, nullptr, 'o' },
 	{ "threads",     required_argument, nullptr, 't' },
-	{ "barcode",     required_argument, nullptr, 'c' },
+	{ "barcode",     required_argument, nullptr, 'b' },
     { "verbose",     no_argument,       nullptr, 'v' },
     { "help",        no_argument,       nullptr, OPT_HELP },
     { "version",     no_argument,       nullptr, OPT_VERSION },
@@ -67,7 +67,6 @@ int checkkmerMain(int argc, char** argv)
 	parseCHECKKMEROptions(argc, argv);
 	
 	std::unique_ptr<BWT> pBWT, pRBWT;
-	std::unique_ptr<std::map<std::string, std::list<CodeBlock> > > pAlignRec(new std::map<std::string, std::list<CodeBlock> >);
 	// Load indices
 	#pragma omp parallel
 	{
@@ -81,73 +80,47 @@ int checkkmerMain(int argc, char** argv)
 			std::cerr << "Loading RBWT: " << opt::prefix + RBWT_EXT << "\n";
 			pRBWT = std::unique_ptr<BWT>(new BWT(opt::prefix + RBWT_EXT, opt::sampleRate));
 		}
-		#pragma omp single nowait
-		{
-			std::cerr << "Loading BARCODE: " << opt::barcode << '\n';
-			std::istream* pCodeReader = createReader(opt::barcode);
-			while(true)
-			{
-				if(pCodeReader->eof()) break;
-				std::string qname, tname, code, rvc, sup;
-				int qstart, qend, tstart, tend;
-				*pCodeReader
-				>> qname >> qstart >> qend
-				>> tname >> tstart >> tend
-				>> code  >> rvc    >> sup;
-				(*pAlignRec)[qname].push_back(CodeBlock(qstart, qend, code, (rvc == "True" ? true : false)));
-			}
-			delete pCodeReader;
-		}
 	}
+	
+	std::unique_ptr<std::map<std::string, std::list<CodeBlock> > > pAlignLog(new std::map<std::string, std::list<CodeBlock> >);
+	std::cerr << "Loading BARCODE: " << opt::barcode << '\n';
+	std::istream* pCodeReader = createReader(opt::barcode);
+	while(true)
+	{
+		if(pCodeReader->eof()) break;
+		std::string qname, tname, code, rvc, sup;
+		int qstart, qend, tstart, tend;
+		*pCodeReader
+		>> qname >> qstart >> qend
+		>> tname >> tstart >> tend
+		>> code  >> rvc    >> sup;
+		(*pAlignLog)[qname].push_back(CodeBlock(qstart, qend, code, (rvc == "True" ? true : false)));
+	}
+	delete pCodeReader;
+	
 	BWTIndexSet indexSet;
 	indexSet.pBWT  = pBWT.get();
 	indexSet.pRBWT = pRBWT.get();
 	
 	
-	CheckKmerParameters kcParams;
-	kcParams.indices     = indexSet;
-	kcParams.directory   = opt::directory;
-	kcParams.size.first  = opt::sizeLb;
-	kcParams.size.second = opt::sizeUb;
-	kcParams.pAlignRec   = pAlignRec.get();
+	CheckKmerParameters ckParams;
+	ckParams.indices     = indexSet;
+	ckParams.directory   = opt::directory;
+	ckParams.size.first  = opt::sizeLb;
+	ckParams.size.second = opt::sizeUb;
+	ckParams.pAlignLog   = pAlignLog.get();
+	ckParams.mode        = true;
 	
-	std::cerr << "Using kmer size : " << kcParams.size.first << " - " << kcParams.size.second << "\n";
+	std::cerr << "Using kmer size : " << ckParams.size.first << " - " << ckParams.size.second << "\n";
 	
 	Timer* pTimer = new Timer(PROGRAM_IDENT);
 	
-	CheckKmerPostProcess* pPostProcessor = new CheckKmerPostProcess(kcParams);
+	SequenceProcessFramework::processSequences<SequenceWorkItem,
+	CheckKmerResult,
+	CheckKmerProcess,
+	CheckKmerPostProcess,
+	CheckKmerParameters>(opt::thread, opt::readsFile, ckParams);
 	
-	if(opt::numThreads <= 1)
-	{
-		// Serial mode
-		
-		CheckKmerProcess* pProcessor = new CheckKmerProcess(kcParams);
-
-		SequenceProcessFramework::processSequencesSerial<SequenceWorkItem,
-		CheckKmerResult,
-		CheckKmerProcess,
-		CheckKmerPostProcess>(opt::readsFile, pProcessor, pPostProcessor);
-		delete pProcessor;
-		
-	}
-	else
-	{
-		// Parallel mode
-		
-		std::vector<CheckKmerProcess*> pProcessorVec;
-		for(int i = 0; i < opt::numThreads; ++i)
-			pProcessorVec.push_back(new CheckKmerProcess(kcParams));
-
-		SequenceProcessFramework::processSequencesParallel<SequenceWorkItem,
-		CheckKmerResult,
-		CheckKmerProcess,
-		CheckKmerPostProcess>(opt::readsFile, pProcessorVec, pPostProcessor);
-		
-		for(auto& iter : pProcessorVec)
-			delete iter;
-		
-	}
-	delete pPostProcessor;
 	delete pTimer;
     return 0;
 }
@@ -167,8 +140,8 @@ void parseCHECKKMEROptions(int argc, char** argv)
         {
 			case 'p': arg >> opt::prefix; break;
 			case 'o': arg >> opt::directory; break;
-			case 't': arg >> opt::numThreads; break;
-			case 'c': arg >> opt::barcode; break;
+			case 't': arg >> opt::thread; break;
+			case 'b': arg >> opt::barcode; break;
 			case 'v': opt::verbose++; break;
 			case '?': die = true; break;
             case OPT_HELP:
@@ -205,16 +178,16 @@ void parseCHECKKMEROptions(int argc, char** argv)
 	else
 	{		
 		opt::directory += "/";
-		if( system(("mkdir -p " + opt::directory + "split/").c_str()) != 0)
+		if(system(("mkdir -p " + opt::directory + "split/").c_str()) != 0)
 		{
 			std::cerr << SUBPROGRAM << ": something wrong in directory: " << opt::directory << "\n";
 			die = true;
 		}
 	}
 	
-	if(opt::numThreads <= 0)
+	if(opt::thread <= 0)
 	{
-		std::cerr << SUBPROGRAM ": invalid number of threads: " << opt::numThreads << "\n";
+		std::cerr << SUBPROGRAM ": invalid number of threads: " << opt::thread << "\n";
 		die = true;
 	}
 	

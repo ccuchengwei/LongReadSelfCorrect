@@ -121,8 +121,7 @@ am_libpacbio_a_OBJECTS = libpacbio_a-SAIPBSelfCTree.$(OBJEXT) \
 	libpacbio_a-IntervalTree.$(OBJEXT) \
 	libpacbio_a-IntervalTreeInstantiation.$(OBJEXT) \
 	libpacbio_a-KmerThreshold.$(OBJEXT) \
-	libpacbio_a-SeedFeature.$(OBJEXT) \
-	libpacbio_a-KmerFeature.$(OBJEXT)
+	libpacbio_a-SeedFeature.$(OBJEXT)
 libpacbio_a_OBJECTS = $(am_libpacbio_a_OBJECTS)
 AM_V_P = $(am__v_P_$(V))
 am__v_P_ = $(am__v_P_$(AM_DEFAULT_VERBOSITY))
@@ -317,9 +316,9 @@ libpacbio_a_SOURCES = \
 	LongReadCorrectByOverlap.h LongReadCorrectByOverlap.cpp \
 	CheckKmerProcess.h CheckKmerProcess.cpp \
 	IntervalTree.h IntervalTree.cpp IntervalTreeInstantiation.cpp \
-	KmerThreshold.h KmerThreshold.cpp \
+	KmerThreshold.h KmerThreshold.cpp\
 	SeedFeature.h SeedFeature.cpp \
-	KmerFeature.h KmerFeature.cpp
+	KmerFeature.h 
 
 all: all-am
 
@@ -373,7 +372,6 @@ include ./$(DEPDIR)/libpacbio_a-CheckKmerProcess.Po
 include ./$(DEPDIR)/libpacbio_a-HashtableSearch.Po
 include ./$(DEPDIR)/libpacbio_a-IntervalTree.Po
 include ./$(DEPDIR)/libpacbio_a-IntervalTreeInstantiation.Po
-include ./$(DEPDIR)/libpacbio_a-KmerFeature.Po
 include ./$(DEPDIR)/libpacbio_a-KmerThreshold.Po
 include ./$(DEPDIR)/libpacbio_a-LongReadCorrectByOverlap.Po
 include ./$(DEPDIR)/libpacbio_a-LongReadExtend.Po
@@ -624,20 +622,6 @@ libpacbio_a-SeedFeature.obj: SeedFeature.cpp
 #	$(AM_V_CXX)source='SeedFeature.cpp' object='libpacbio_a-SeedFeature.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-SeedFeature.obj `if test -f 'SeedFeature.cpp'; then $(CYGPATH_W) 'SeedFeature.cpp'; else $(CYGPATH_W) '$(srcdir)/SeedFeature.cpp'; fi`
-
-libpacbio_a-KmerFeature.o: KmerFeature.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-KmerFeature.o -MD -MP -MF $(DEPDIR)/libpacbio_a-KmerFeature.Tpo -c -o libpacbio_a-KmerFeature.o `test -f 'KmerFeature.cpp' || echo '$(srcdir)/'`KmerFeature.cpp
-	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-KmerFeature.Tpo $(DEPDIR)/libpacbio_a-KmerFeature.Po
-#	$(AM_V_CXX)source='KmerFeature.cpp' object='libpacbio_a-KmerFeature.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-KmerFeature.o `test -f 'KmerFeature.cpp' || echo '$(srcdir)/'`KmerFeature.cpp
-
-libpacbio_a-KmerFeature.obj: KmerFeature.cpp
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpacbio_a-KmerFeature.obj -MD -MP -MF $(DEPDIR)/libpacbio_a-KmerFeature.Tpo -c -o libpacbio_a-KmerFeature.obj `if test -f 'KmerFeature.cpp'; then $(CYGPATH_W) 'KmerFeature.cpp'; else $(CYGPATH_W) '$(srcdir)/KmerFeature.cpp'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/libpacbio_a-KmerFeature.Tpo $(DEPDIR)/libpacbio_a-KmerFeature.Po
-#	$(AM_V_CXX)source='KmerFeature.cpp' object='libpacbio_a-KmerFeature.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpacbio_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpacbio_a-KmerFeature.obj `if test -f 'KmerFeature.cpp'; then $(CYGPATH_W) 'KmerFeature.cpp'; else $(CYGPATH_W) '$(srcdir)/KmerFeature.cpp'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique

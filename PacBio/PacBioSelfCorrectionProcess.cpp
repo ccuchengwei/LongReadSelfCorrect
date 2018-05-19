@@ -26,9 +26,9 @@ PacBioSelfCorrectionResult PacBioSelfCorrectionProcess::process(const SequenceWo
 	const size_t readSeqLen = readSeq.length();
 	SeedFeature::SeedVector seedVec, pieceVec;
 	
-	//allocate space for kmers on each position
-	for(auto& iter : m_params.kmerPool)
-		KmerFeature::kmerRec[iter] = std::unique_ptr<KmerFeature[]>(new KmerFeature[readSeqLen]);
+	//allocate space for kmers on the sequence
+	for(auto& iter : m_params.pool)
+		KmerFeature::Log()[iter] = std::unique_ptr<KmerFeature[]>(new KmerFeature[readSeqLen]);
 	
 	//Part 1: start searching seeds
     Timer* seedTimer = new Timer("Seed Time", true);
@@ -41,8 +41,8 @@ PacBioSelfCorrectionResult PacBioSelfCorrectionProcess::process(const SequenceWo
 	//Part 2:start correcting sequence
     initCorrect(readSeq, seedVec, pieceVec, result);
 	
-	//free space for kmers on each position
-	KmerFeature::kmerRec.clear();
+	//free space for kmers on the sequence
+	KmerFeature::Log().clear();
 	
 	result.merge = !pieceVec.empty();
 	result.totalReadsLen = readSeq.length();
@@ -53,10 +53,15 @@ PacBioSelfCorrectionResult PacBioSelfCorrectionProcess::process(const SequenceWo
 //Correct sequence by FMWalk & MSAlignment; it's a workflow control module. Noted by KuanWeiLee 18/3/12
 void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFeature::SeedVector& seedVec, SeedFeature::SeedVector& pieceVec, PacBioSelfCorrectionResult& result)
 {
+	if(m_params.OnlySeed)
+	{
+		SeedFeature::Log()[result.readid] = seedVec;
+		return;
+	}
+	if(seedVec.size() < 2) return;
 	std::ostream* pExtWriter = nullptr;
-	std::ostream* pDpWriter = nullptr;
+	std::ostream* pDpWriter  = nullptr;
 	std::ostream* pExtDebugFile = nullptr;
-	if(m_params.OnlySeed || seedVec.size() < 2) return;
 	
 	//push first seed into vector and reserve space for fast expansion
 	pieceVec.push_back(seedVec[0]);
@@ -75,7 +80,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 		SeedFeature& source = pieceVec.back();
 		std::string mergedSeq;
 
-		for(int next = 0; next < m_params.numOfNextTarget && (iterTarget + next) != seedVec.end() ; next++)
+		for(int next = 0; next < m_params.nextTarget && (iterTarget + next) != seedVec.end() ; next++)
 		{
 			const SeedFeature& target = *(iterTarget + next);
 /*
@@ -240,11 +245,10 @@ bool PacBioSelfCorrectionProcess::correctByMSAlignment
 //
 //
 //
-PacBioSelfCorrectionPostProcess::PacBioSelfCorrectionPostProcess(
-		std::string correctFile,
-		std::string discardFile,
-		const PacBioSelfCorrectionParameters& params)
+PacBioSelfCorrectionPostProcess::PacBioSelfCorrectionPostProcess(const PacBioSelfCorrectionParameters& params)
 :	m_params(params),
+	m_pCorrectWriter(createWriter(m_params.directory + "correct.fa")),
+	m_pDiscardWriter(createWriter(m_params.directory + "discard.fa")),
 	m_totalReadsLen(0),
 	m_correctedLen(0),
 	m_totalSeedNum(0),
@@ -258,17 +262,13 @@ PacBioSelfCorrectionPostProcess::PacBioSelfCorrectionPostProcess(
 	m_seedDis(0),
 	m_Timer_Seed(0),
 	m_Timer_FM(0),
-	m_Timer_DP(0)
-{
-	m_pCorrectWriter = createWriter(correctFile);
-	m_pDiscardWriter = createWriter(discardFile);
-}
+	m_Timer_DP(0){ }
 
 //
 PacBioSelfCorrectionPostProcess::~PacBioSelfCorrectionPostProcess()
 {
 	m_OutcastNum = m_totalWalkNum - m_FMNum - m_DPNum;
-	if(m_totalWalkNum>0 && m_totalReadsLen>0)
+	if(m_totalWalkNum > 0 && m_totalReadsLen > 0)
 	{
 		std::cout << "\n"
 		<< "TotalReadsLen: " << m_totalReadsLen << "\n"
@@ -283,8 +283,8 @@ PacBioSelfCorrectionPostProcess::~PacBioSelfCorrectionPostProcess()
 		<< "ExceedLeaveNum: "  << m_exceedLeaveNum << ", ratio: " << (float)(m_exceedLeaveNum * 100)/(m_DPNum + m_OutcastNum) << "%\n"
 		<< "DisBetweenSeeds: " << m_seedDis/m_totalWalkNum << "\n"
         << "Time of searching Seeds: " << m_Timer_Seed  << "\n"
-        << "Time of searching FM: "    << m_Timer_FM  << "\n"
-        << "Time of searching DP: "    << m_Timer_DP  << "\n";
+        << "Time of searching FM: "    << m_Timer_FM    << "\n"
+        << "Time of searching DP: "    << m_Timer_DP    << "\n";
 	}
 	delete m_pCorrectWriter;
 	delete m_pDiscardWriter;

@@ -1,12 +1,12 @@
 #ifndef Kmer_H
 #define Kmer_H
 
-#include "BWTIndexSet.h"
-#include "BWTAlgorithms.h"
-#include "Alphabet.h"
 #include <algorithm>
 #include <map>
 #include <memory>
+#include "BWTIndexSet.h"
+#include "BWTAlgorithms.h"
+#include "Alphabet.h"
 
 /*
 Implemntaiont of kmer object on each position of some sequence;
@@ -21,117 +21,121 @@ ex: On position 14, 4-mer is established first, and 6-mer is established on 4-me
 class KmerFeature
 {
 	public:
-
-		static thread_local std::map<int, std::unique_ptr<KmerFeature[]> > kmerRec;
+		inline static std::map<int ,std::unique_ptr<KmerFeature[]> >& Log()
+		{
+			static thread_local std::map<int, std::unique_ptr<KmerFeature[]> > log;
+			return log;
+		}
 	
 		KmerFeature(void) = default;
 		~KmerFeature(void) = default;
 		
 		//Copy kmer
-		KmerFeature(const KmerFeature& base)
-		:	count(base.getCount()),
-			indices(base.getIndex()),
-			word(base.getWord()),
-			size(base.getSize()),
-			biInterval(base.getInterval()),
-			isFake(base.getPseudo()),
-			frequency(base.getFreq()){ }
+		KmerFeature(const KmerFeature& base){ *this = base; }
 		
 		//Base(or not) kmer
 		KmerFeature(
-				const BWTIndexSet _indices,
-				const std::string & seq,
+				const BWTIndexSet& indices,
+				const std::string& seq,
 				size_t pos,
 				int len,
 				const KmerFeature* base = nullptr)
-		:	count(
-				base != nullptr ?
-				base->getCount() :
-				std::unique_ptr<int[]>(new int[DNA_ALPHABET::size]{0})),
-			indices(
-				base != nullptr ?
-				base->getIndex() :
-				_indices),
-			word(
-				base != nullptr ?
-				base->getWord() :
-				seq.substr(pos, len)),
-			size(
-				base != nullptr ?
-				base->getSize() :
-				word.length()),
-			biInterval(
-				base != nullptr ?
-				base->getInterval() :
-				BWTAlgorithms::findBiInterval(indices, word, count.get()))
 		{
-			size_t seqlen = seq.length();
-			for(size_t i = (pos + size); (i < seqlen) && (size < len); i++)
+			if(base == nullptr)
 			{
-				char b = seq[i];
-				expand(b);
+				this->count      = std::unique_ptr<int[]>(new int[DNA_ALPHABET::size]{0});
+				this->indices    = indices;
+				this->word       = seq.substr(pos, len);
+				this->size       = word.length();
+				this->biInterval = BWTAlgorithms::findBiInterval(this->indices, this->word, this->count.get());
+				
+				this->residue   = std::make_pair(0, 0);
+				this->isBlotted = monitor(this->word, this->residue);
 			}
-			isFake = (len != size);
-			frequency = biInterval.getFreq();
+			else
+			{
+				*this = *base;
+				assert(this->size < len);
+				size_t seqlen = seq.length();
+				std::string remainder;
+				for(size_t i = (pos + this->size); (i < seqlen) && (this->size < len); i++)
+				{
+					char b = seq[i];
+					expand(b);
+					remainder += b;
+				}
+				this->isBlotted |= monitor(remainder, this->residue);
+			}
+			this->isFake = (len != this->size);
+			this->frequency = this->biInterval.getFreq();
 		}
 	
 		inline KmerFeature& operator=(const KmerFeature& other)
 		{
 			if(&other == this) return *this;
-			count      = other.getCount();
-			indices    = other.getIndex();
-			word       = other.getWord();
-			size       = other.getSize();
-			biInterval = other.getInterval();
-			isFake     = other.getPseudo();
-			frequency  = other.getFreq();
+			this->count      = other.getCount();
+			this->indices    = other.getIndex();
+			this->word       = other.getWord();
+			this->size       = other.getSize();
+			this->biInterval = other.getInterval();
+			this->isFake     = other.getPseudo();
+			this->frequency  = other.getFreq();
+			
+			this->residue   = other.getResidue();
+			this->isBlotted = other.getProperty();
 			return *this;
 		}
 	
 		inline std::unique_ptr<int[]> getCount() const
 		{
-			const int* oldOne = count.get();
-			std::unique_ptr<int[]> newOne(new int[DNA_ALPHABET::size]);
-			std::copy(oldOne, (oldOne + 4), newOne.get());
-			return newOne;
+			const int* orig = this->count.get();
+			std::unique_ptr<int[]> copy(new int[DNA_ALPHABET::size]);
+			std::copy(orig, (orig + 4), copy.get());
+			return copy;
 		}
-		inline BWTIndexSet   getIndex()    const { return indices; }
-		inline std::string   getWord()     const { return word; }
-		inline int           getSize()     const { return size; }
-		inline BiBWTInterval getInterval() const { return biInterval; }
-		inline bool          getPseudo()   const { return isFake; }
-		inline int           getFreq()     const { return isFake ? -1 : frequency; }
+		
+		inline BWTIndexSet   getIndex()    const { return this->indices; }
+		inline std::string   getWord()     const { return this->word; }
+		inline int           getSize()     const { return this->size; }
+		inline BiBWTInterval getInterval() const { return this->biInterval; }
+		inline bool          getPseudo()   const { return this->isFake; }
+		inline int           getFreq()     const { return this->isFake ? -1 : this->frequency; }
+		
+		inline std::pair<char,int> getResidue()  const { return this->residue; }
+		inline bool                getProperty() const { return this->isBlotted; }
 	
-		inline bool isValid() const { return biInterval.isValid(); }
+		inline bool isValid() const { return this->biInterval.isValid(); }
+		
 		inline void expand(char b)
 		{
 			if(b == 0) return;
-			size++;
-			word += b;
-			BWTAlgorithms::updateBiInterval(biInterval, b, indices, count.get());
-			frequency = biInterval.getFreq();
+			this->size++;
+			this->word += b;
+			BWTAlgorithms::updateBiInterval(this->biInterval, b, this->indices, this->count.get());
+			this->frequency = this->biInterval.getFreq();
 		}
+		
 		inline void shrink(int len, bool update = false)
 		{
-			assert(len < size);
-			size -= len;
-			for(std::string::iterator iter = (word.begin() + size); iter != word.end(); iter++)
-				count[DNA_ALPHABET::getIdx(*iter)]--;
-			word.erase(size, len);
+			assert(len < this->size);
+			this->size -= len;
+			for(std::string::iterator iter = (this->word.begin() + this->size); iter != this->word.end(); iter++)
+				this->count[DNA_ALPHABET::getIdx(*iter)]--;
+			this->word.erase(this->size, len);
 			if(!update) return;
-			biInterval = BWTAlgorithms::findBiInterval(indices, word);
-			frequency = biInterval.getFreq();
+			this->biInterval = BWTAlgorithms::findBiInterval(this->indices, this->word);
+			this->frequency = this->biInterval.getFreq();
 		}
-		inline bool isLowComplexity(float t = 0.7) const
+		
+		inline bool isLowComplexity(float m = 0.7, float d = 0.9) const
 		{
-			bool isMonmer = false, isDimer = false;
-			int num = 0;
-			for(int i = 0; i < DNA_ALPHABET::size; i++)
-			{
-				isMonmer = isMonmer || ((float)count[i]/size >= t);
-				num += (count[i] == 0 ? 1 : 0);
-			}
-			isDimer = (num == 2);
+			const int* orig = this->count.get();
+			int* copy = new int[4];
+			std::copy(orig, (orig + 4), copy);
+			std::sort(copy, (copy + 4));
+			bool isMonmer = (float)copy[3]/this->size >= m;
+			bool isDimer  = (float)(copy[2] + copy[3])/this->size >= d;
+			delete[] copy;
 			return isMonmer || isDimer;
 		}
 
@@ -143,7 +147,25 @@ class KmerFeature
 		BiBWTInterval biInterval;
 		bool isFake; //'isFake' is set only when initialized.
 		int frequency;
-	
+		
+		std::pair<char,int> residue;
+		bool isBlotted;
+		
+		bool monitor(const std::string& seq, std::pair<char,int>& p)
+		{
+			bool s = false;
+			for(char c : seq)
+			{
+				if(c == p.first)
+					p.second++;
+				else
+				{
+					s |= (p.second > 3);
+					p = std::make_pair(c, 1);
+				}
+			}
+			return s || (p.second > 3);
+		}
 };
 
 #endif

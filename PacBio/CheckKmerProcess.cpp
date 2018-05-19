@@ -1,22 +1,24 @@
 // CheckKmerProcess.cpp - Check kmer correctness & distribution condition
 //
+#include <algorithm>
+#include <numeric>
 #include "CheckKmerProcess.h"
 #include "BWTAlgorithms.h"
 #include "KmerFeature.h"
-#include <algorithm>
+#include "SeedFeature.h"
 #define hex_num(o) (((o & 1) >> 0) + ((o & 2) >> 1) + ((o & 4) >> 2) + ((o & 8) >> 3))
 
-const static std::map<char, int> base_hex = 
+static const std::map<char, int> base_hex = 
 {
 	{'a', 1}, {'t', 2}, {'c', 4}, {'g', 8},
 	{'A', 1}, {'T', 2}, {'C', 4}, {'G', 8}
 };
 
-const static std::map<char, int> char_int =
+static const std::map<char, int> char_int =
 {
-	{'0', 0},  {'1', 1},  {'2', 2},  {'3', 3},
-	{'4', 4},  {'5', 5},  {'6', 6},  {'7', 7},
-	{'8', 8},  {'9', 9},  {'a', 10}, {'b', 11},
+	{'0',  0}, {'1',  1}, {'2',  2}, {'3',  3},
+	{'4',  4}, {'5',  5}, {'6',  6}, {'7',  7},
+	{'8',  8}, {'9',  9}, {'a', 10}, {'b', 11},
 	{'c', 12}, {'d', 13}, {'e', 14}, {'f', 15}
 };
  
@@ -24,13 +26,29 @@ const static std::map<char, int> char_int =
 CheckKmerResult CheckKmerProcess::process(const SequenceWorkItem& workItem)
 {
 	CheckKmerResult result;
-	std::string id    = workItem.read.id;
+	std::string id  = workItem.read.id;
 	std::string seq = workItem.read.seq.toString();
+	result.readid = id;
 //	std::cout << id << '\n';
-	const std::list<CodeBlock>& alignList = (*m_params.pAlignRec)[id];
-	for(auto& iter : alignList)
-		for(int k = m_params.size.first; k <= m_params.size.second; k++)
-			scan(k, iter, seq, result);
+	const std::list<CodeBlock>& alignList = (*m_params.pAlignLog)[id];
+	if(m_params.mode)
+		for(auto& iter : alignList)
+			for(int k = m_params.size.first; k <= m_params.size.second; k++)
+				scan(k, iter, seq, result);
+	else
+		for(auto& e : SeedFeature::Log()[id])
+		{
+			int status = 2;
+			for(auto& i : alignList)
+			{
+				if(e.seedStartPos >= i.getStart() && e.seedEndPos <= i.getEnd())
+				{
+					status = validate(e.seedStartPos, e.seedLen, i, seq) ? 0 : 1;
+					break;
+				}
+			}
+			result.status[status]++;
+		}
 	return result;
 }
 
@@ -44,9 +62,9 @@ void CheckKmerProcess::scan(int ksize, const CodeBlock& block, const std::string
 		if(curr.getFreq() == 1) continue;
 		bool find = validate(pos, ksize, block, seq);
 		if(find)
-			result.correctKdMap[ksize].add(curr.getFreq());
+			result.corKdMap[ksize].add(curr.getFreq());
 		else
-			result.errorKdMap[ksize].add(curr.getFreq());
+			result.errKdMap[ksize].add(curr.getFreq());
 //		std::cout << pos << '\t' << curr.getWord() << '\t' << (find ? "True\n" : "False\n");
 	}
 }
@@ -55,7 +73,7 @@ std::string CheckKmerProcess::fetch(const std::string& in, int pos, int step)
 {
 	pos = getPys(pos, in.size());
 	std::string out;
-	for(int i = pos; (i >= 0 && i < in.size()); i += step)
+	for(int i = pos; (i >= 0 && i < (int)in.size()); i += step)
 		out += in[i];
 	return out;
 }
@@ -65,7 +83,8 @@ int CheckKmerProcess::sum(const std::string& in)
 	int out = 0;
 	for(char c : in)
 	{
-		int v = char_int[c];
+	//	int v = char_int[c];
+		int v = char_int.at(c);
 		out += v;
 	}
 	return out;
@@ -102,7 +121,8 @@ bool CheckKmerProcess::validate(int pos, int ksize, const CodeBlock& block, cons
 		int n     = 0;
 		for(char c : fetch(info, -bit, -sign*2))
 		{
-			int v = char_int[c];
+		//	int v = char_int[c];
+			int v = char_int.at(c);
 			if( ! ( (igap == 0 && (v == 0 || v == 1)) || (igap > 0 && v == 1) ) ) break;
 			n += 1;
 			igap += v;
@@ -113,7 +133,8 @@ bool CheckKmerProcess::validate(int pos, int ksize, const CodeBlock& block, cons
 			int ioffset = 0;
 			for(char c : fetch(fetch(code, 0, 2), (pole - base + bit - 1), sign))
 			{
-				int v = char_int[c];
+			//	int v = char_int[c];
+				int v = char_int.at(c);
 				if(v != 1) break;
 				ioffset += 1;
 			}
@@ -136,9 +157,11 @@ bool CheckKmerProcess::validate(int pos, int ksize, const CodeBlock& block, cons
 		int hex   = 0;
 		for(char c : fetch(info, -sign*(1 + bit), -sign*2))
 		{
-			int v = char_int[c];
+		//	int v = char_int[c];
+			int v = char_int.at(c);
 			if(dgap != 0) break;
-			hex = hex | base_hex[kmer[getPys(-sign*(bit + m), ksize)]];
+		//	hex = hex | base_hex[kmer[getPys(-sign*(bit + m), ksize)]];
+			hex = hex | base_hex.at(kmer[getPys(-sign*(bit + m), ksize)]);
 			m += 1;
 			dgap += v;
 		}
@@ -153,29 +176,65 @@ bool CheckKmerProcess::validate(int pos, int ksize, const CodeBlock& block, cons
 //postprocess
 CheckKmerPostProcess::CheckKmerPostProcess(CheckKmerParameters params):m_params(params)
 {
-	for(int k = m_params.size.first; k <= m_params.size.second; k++)
+	if(m_params.mode)
+		for(int k = m_params.size.first; k <= m_params.size.second; k++)
+		{
+			m_pCorWriterMap[k] = createWriter(m_params.directory + std::to_string(k) + ".cor.kf");
+			m_pErrWriterMap[k] = createWriter(m_params.directory + std::to_string(k) + ".err.kf");
+		}
+	else
 	{
-		m_pCorrectWriterMap[k] = createWriter(m_params.directory + std::to_string(k) + ".correct.kf");
-		m_pErrorWriterMap[k]   = createWriter(m_params.directory + std::to_string(k) + ".error.kf");
+		m_status = new int[3]{0};
+		m_pStatusWriter = fopen((m_params.directory + "total.stat").c_str(), "w");
 	}
 }
 CheckKmerPostProcess::~CheckKmerPostProcess()
 {
-	for(int k = m_params.size.first; k <= m_params.size.second; k++)
+	if(m_params.mode)
 	{
-		m_correctKdMap[k].write(*(m_pCorrectWriterMap[k]));
-		m_errorKdMap[k]  .write(*(m_pErrorWriterMap[k]));
+		for(int k = m_params.size.first; k <= m_params.size.second; k++)
+		{
+			m_corKdMap[k].write(*(m_pCorWriterMap[k]));
+			m_errKdMap[k].write(*(m_pErrWriterMap[k]));
+		}
+		for(const auto& iter : m_pCorWriterMap)
+			delete iter.second;
+		for(const auto& iter : m_pErrWriterMap)
+			delete iter.second;
 	}
-	for(const auto& iter : m_pCorrectWriterMap)
-		delete iter.second;
-	for(const auto& iter : m_pErrorWriterMap)
-		delete iter.second;
+	else
+	{
+		int sum = std::accumulate(m_status, (m_status + 3), 0);
+		float cor = (float)(100*m_status[0])/sum;
+		float err = (float)(100*m_status[1])/sum;
+		float non = (float)(100*m_status[2])/sum;
+		printf("TOTAL(%d) %.2f%% %.2f%% %.2f%%\n", sum, cor, err, non);
+		delete m_status;
+		fclose(m_pStatusWriter);
+	}
 }
 void CheckKmerPostProcess::process(const SequenceWorkItem& workItem, const CheckKmerResult& result)
 {
-	for(int k = m_params.size.first; k <= m_params.size.second; k++)
+	if(m_params.mode)
+		for(int k = m_params.size.first; k <= m_params.size.second; k++)
+		{
+			kdMap::const_iterator cor = result.corKdMap.find(k);
+			kdMap::const_iterator err = result.errKdMap.find(k);
+			if(cor != result.corKdMap.end()) m_corKdMap[k] += cor->second;
+			if(err != result.errKdMap.end()) m_errKdMap[k] += err->second;
+		//	m_corKdMap[k] += result.corKdMap[k];
+		//	m_errKdMap[k] += result.errKdMap[k];
+		}
+	else
 	{
-		m_correctKdMap[k] += result.correctKdMap[k];
-		m_errorKdMap[k]   += result.errorKdMap[k];
+		int sum = std::accumulate(result.status, (result.status + 3), 0);
+		float cor = (float)(100*result.status[0])/sum;
+		float err = (float)(100*result.status[1])/sum;
+		float non = (float)(100*result.status[2])/sum;
+		if(result.status[1] > 0)
+			fprintf(m_pStatusWriter, "%s %.2f%% %.2f%% %.2f%%\n", result.readid.c_str(), cor, err, non);
+	//	for(int i = 0; i < 3; i++)
+	//		m_status[i] += result.status[i];
+		std::transform(m_status, (m_status + 3), result.status, m_status, std::plus<int>());
 	}
 }

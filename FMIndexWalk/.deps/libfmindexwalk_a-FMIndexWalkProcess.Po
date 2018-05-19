@@ -212,10 +212,10 @@ libfmindexwalk_a-FMIndexWalkProcess.o: FMIndexWalkProcess.cpp \
  ../Util/QualityCodec.h ../SuffixTools/SampledSuffixArray.h \
  ../SuffixTools/BWTAlgorithms.h ../SuffixTools/BWTIndexSet.h \
  ../Bigraph/GraphCommon.h ../Util/KmerDistribution.h \
- /usr/include/c++/6/cstddef /usr/include/c++/6/queue \
- /usr/include/c++/6/deque /usr/include/c++/6/bits/stl_deque.h \
- /usr/include/c++/6/bits/deque.tcc /usr/include/c++/6/bits/stl_queue.h \
- ../Util/BitVector.h ../Util/BitChar.h ../Util/CorrectionThresholds.h \
+ /usr/include/c++/6/queue /usr/include/c++/6/deque \
+ /usr/include/c++/6/bits/stl_deque.h /usr/include/c++/6/bits/deque.tcc \
+ /usr/include/c++/6/bits/stl_queue.h ../Util/BitVector.h \
+ ../Util/BitChar.h ../Util/CorrectionThresholds.h \
  /usr/include/c++/6/iomanip /usr/include/c++/6/locale \
  /usr/include/c++/6/bits/locale_facets_nonio.h /usr/include/c++/6/ctime \
  /usr/include/x86_64-linux-gnu/c++/6/bits/time_members.h \
@@ -855,8 +855,6 @@ FMIndexWalkProcess.h:
 ../Bigraph/GraphCommon.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/6/cstddef:
 
 /usr/include/c++/6/queue:
 

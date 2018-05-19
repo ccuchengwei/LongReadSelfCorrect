@@ -203,11 +203,11 @@ stride-PacBioSelfCorrection.o: PacBioSelfCorrection.cpp \
  /usr/local/include/google/dense_hash_set \
  /usr/local/include/sparsehash/dense_hash_set ../Util/QualityTable.h \
  ../Util/QualityCodec.h ../Bigraph/GraphCommon.h \
- ../Util/KmerDistribution.h /usr/include/c++/6/cstddef \
- /usr/include/c++/6/queue /usr/include/c++/6/deque \
- /usr/include/c++/6/bits/stl_deque.h /usr/include/c++/6/bits/deque.tcc \
- /usr/include/c++/6/bits/stl_queue.h ../SuffixTools/SuffixArray.h \
- SGACommon.h ../Util/Timer.h /usr/include/x86_64-linux-gnu/sys/time.h \
+ ../Util/KmerDistribution.h /usr/include/c++/6/queue \
+ /usr/include/c++/6/deque /usr/include/c++/6/bits/stl_deque.h \
+ /usr/include/c++/6/bits/deque.tcc /usr/include/c++/6/bits/stl_queue.h \
+ ../SuffixTools/SuffixArray.h SGACommon.h ../Util/Timer.h \
+ /usr/include/x86_64-linux-gnu/sys/time.h \
  ../Concurrency/SequenceProcessFramework.h ../Concurrency/ThreadWorker.h \
  /usr/include/semaphore.h /usr/include/x86_64-linux-gnu/bits/semaphore.h \
  ../Concurrency/SequenceWorkItem.h ../Util/SeqReader.h \
@@ -217,7 +217,8 @@ stride-PacBioSelfCorrection.o: PacBioSelfCorrection.cpp \
  ../PacBio/LongReadCorrectByOverlap.h ../FMIndexWalk/SAINode.h \
  ../PacBio/IntervalTree.h ../PacBio/HashtableSearch.h \
  ../SuffixTools/BWTIntervalCache.h ../PacBio/KmerThreshold.h \
- ../PacBio/LongReadProbe.h
+ ../PacBio/LongReadProbe.h ../PacBio/CheckKmerProcess.h \
+ ../PacBio/KmerFeature.h
 
 /usr/include/stdc-predef.h:
 
@@ -827,8 +828,6 @@ PacBioSelfCorrection.h:
 
 ../Util/KmerDistribution.h:
 
-/usr/include/c++/6/cstddef:
-
 /usr/include/c++/6/queue:
 
 /usr/include/c++/6/deque:
@@ -882,3 +881,7 @@ SGACommon.h:
 ../PacBio/KmerThreshold.h:
 
 ../PacBio/LongReadProbe.h:
+
+../PacBio/CheckKmerProcess.h:
+
+../PacBio/KmerFeature.h:

@@ -211,10 +211,10 @@ libconcurrency_a-OverlapProcess.o: OverlapProcess.cpp \
  /usr/local/include/google/dense_hash_set \
  /usr/local/include/sparsehash/dense_hash_set ../Util/QualityTable.h \
  ../Util/QualityCodec.h ../Util/KmerDistribution.h \
- /usr/include/c++/6/cstddef SequenceProcessFramework.h ThreadWorker.h \
- /usr/include/semaphore.h /usr/include/x86_64-linux-gnu/bits/semaphore.h \
- ../Util/Timer.h /usr/include/x86_64-linux-gnu/sys/time.h \
- SequenceWorkItem.h ../Util/SeqReader.h ../SQG/ASQG.h ../SQG/SQG.h
+ SequenceProcessFramework.h ThreadWorker.h /usr/include/semaphore.h \
+ /usr/include/x86_64-linux-gnu/bits/semaphore.h ../Util/Timer.h \
+ /usr/include/x86_64-linux-gnu/sys/time.h SequenceWorkItem.h \
+ ../Util/SeqReader.h ../SQG/ASQG.h ../SQG/SQG.h
 
 /usr/include/stdc-predef.h:
 
@@ -843,8 +843,6 @@ OverlapProcess.h:
 ../Util/QualityCodec.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/6/cstddef:
 
 SequenceProcessFramework.h:
 

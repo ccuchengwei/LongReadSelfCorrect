@@ -332,4 +332,38 @@ inline bool is_empty(std::istream* pFile)
 {
     return pFile->peek() == std::istream::traits_type::eof();
 }
+//Implementation of downcast helper in range-based for loop
+/*ex:
+	struct B { };
+	struct D : public B
+	{
+		D():a(0){ }
+		int a;
+	};
+	std::vector<B*> box;
+	box.push_back(new D());
+	box.push_back(new D());
+	for(Helper<B,D> iter : box)
+		printf("%d\n", iter->a);
+*/
+template <class B, class D>
+struct Helper
+{
+	Helper(B* _b): b(_b){ }
+	~Helper(void) = default;
+	operator D* ()
+	{
+		if(D* d = dynamic_cast<B*>(b)) return d;
+		std::cerr << "Bad Cast\n";
+		exit(EXIT_FAILURE);
+	}
+	D* operator->()
+	{
+		if(D* d = dynamic_cast<B*>(b)) return d;
+		std::cerr << "Bad Cast\n";
+		exit(EXIT_FAILURE);
+	}
+	B* const b;
+};
+
 #endif

@@ -44,14 +44,14 @@ size_t processWorkSerial(Generator& generator, Processor* pProcessor, PostProces
 
         pPostProcessor->process(workItem, output);
         if(generator.getNumConsumed() % 50000 == 0)
-            printf("Processed %zu sequences (%lfs elapsed)\n", generator.getNumConsumed(), timer.getElapsedWallTime());
+            fprintf(stderr, "Processed %zu sequences (%lfs elapsed)\n", generator.getNumConsumed(), timer.getElapsedWallTime());
     }
 
     assert(n == (size_t)-1 || generator.getNumConsumed() == n);
 
     //
     double proc_time_secs = timer.getElapsedWallTime();
-    printf("Processed %zu sequences in %lfs (%lf sequences/s)\n",
+    fprintf(stderr, "Processed %zu sequences in %lfs (%lf sequences/s)\n",
             generator.getNumConsumed(), proc_time_secs, (double)generator.getNumConsumed() / proc_time_secs);
 
     return generator.getNumConsumed();
@@ -196,7 +196,7 @@ size_t processWorkParallelPthread(Generator& generator,
 
                 double proc_time_secs = timer.getElapsedWallTime();
                 if(generator.getNumConsumed() % (10 * BUFFER_SIZE * numThreads) == 0)
-                    printf("Processed %zu sequences in %lfs (%lf sequences/s)\n", generator.getNumConsumed(), proc_time_secs, (double)generator.getNumConsumed() / proc_time_secs);
+                    fprintf(stderr, "Processed %zu sequences in %lfs (%lf sequences/s)\n", generator.getNumConsumed(), proc_time_secs, (double)generator.getNumConsumed() / proc_time_secs);
 
                 // This should never loop more than twice
                 assert(numLoops < 2);
@@ -224,7 +224,7 @@ size_t processWorkParallelPthread(Generator& generator,
     assert(numWorkItemsRead == numWorkItemsWrote);
 
     double proc_time_secs = timer.getElapsedWallTime();
-    printf("Processed %zu sequences in %lfs (%lf sequences/s)\n",
+    fprintf(stderr, "Processed %zu sequences in %lfs (%lf sequences/s)\n",
             generator.getNumConsumed(), proc_time_secs, (double)generator.getNumConsumed() / proc_time_secs);
     return generator.getNumConsumed();
 }
@@ -305,7 +305,7 @@ size_t processWorkParallelOpenMP(Generator& generator,
 
             double proc_time_secs = timer.getElapsedWallTime();
             if(generator.getNumConsumed() % (numThreads * 64) == 0)
-                printf("Processed %zu sequences in %lfs (%lf sequences/s)\n", generator.getNumConsumed(), proc_time_secs, (double)generator.getNumConsumed() / proc_time_secs);
+                fprintf(stderr, "Processed %zu sequences in %lfs (%lf sequences/s)\n", generator.getNumConsumed(), proc_time_secs, (double)generator.getNumConsumed() / proc_time_secs);
         }
     }
 
@@ -313,7 +313,7 @@ size_t processWorkParallelOpenMP(Generator& generator,
     assert(numWorkItemsRead == numWorkItemsWrote);
 
     double proc_time_secs = timer.getElapsedWallTime();
-    printf("Processed %zu sequences in %lfs (%lf sequences/s)\n",
+    fprintf(stderr, "Processed %zu sequences in %lfs (%lf sequences/s)\n",
             generator.getNumConsumed(), proc_time_secs, (double)generator.getNumConsumed() / proc_time_secs);
     
 	#pragma omp barrier
@@ -356,6 +356,34 @@ size_t processSequencesParallelOpenMP(const std::string& readsFile, std::vector<
                                       PostProcessor>(generator, pProcessorVec, pPostProcessor);
 }
 
+//Wrapper function to operate on single/multi threads.
+//Processor & PostProcessor should only accept Parameter as single argument
+//Noted by KuanWeiLee. 2018/4/30
+template<class Input, class Output, class Processor, class PostProcessor, class Parameter>
+void processSequences(int thread, const std::string& readsFile, const Parameter& params, bool pthread = true)
+{
+	assert(thread > 0);
+	PostProcessor* pPostProcessor = new PostProcessor(params);
+	if(thread == 1)
+	{
+		Processor* pProcessor = new Processor(params);
+		processSequencesSerial<Input, Output, Processor, PostProcessor>(readsFile, pProcessor, pPostProcessor);
+		delete pProcessor;
+	}
+	else
+	{
+		std::vector<Processor*> pProcessorVec;
+		for(int i = 0; i < thread; i++)
+			pProcessorVec.push_back(new Processor(params));
+		if(pthread)
+			processSequencesParallel<Input, Output, Processor, PostProcessor>(readsFile, pProcessorVec, pPostProcessor);
+		else
+			processSequencesParallelOpenMP<Input, Output, Processor, PostProcessor>(readsFile, pProcessorVec, pPostProcessor);
+		for(auto& iter : pProcessorVec)
+			delete iter;
+	}
+	delete pPostProcessor;
+}
 
 };
 

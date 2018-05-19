@@ -6,8 +6,8 @@
 //
 // bwt2fa - Transform a bwt back into a set of sequences
 //
-#ifndef KMERCHECK_H
-#define KMERCHECK_H
+#ifndef CHECKKMER_H
+#define CHECKKMER_H
 #include <getopt.h>
 #include "config.h"
 

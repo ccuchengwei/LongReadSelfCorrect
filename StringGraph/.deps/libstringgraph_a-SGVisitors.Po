@@ -210,9 +210,8 @@ libstringgraph_a-SGVisitors.o: SGVisitors.cpp /usr/include/stdc-predef.h \
  ../SuffixTools/BWTInterval.h ../SuffixTools/SampledSuffixArray.h \
  ../Util/ReadInfoTable.h ../Util/QualityTable.h ../Util/QualityCodec.h \
  ../SuffixTools/BWTAlgorithms.h ../SuffixTools/BWTIndexSet.h \
- ../Bigraph/GraphCommon.h ../Util/KmerDistribution.h \
- /usr/include/c++/6/cstddef SGSearch.h SGWalk.h GraphSearchTree.h \
- ../Thirdparty/stdaln.h /usr/include/c++/6/iomanip \
+ ../Bigraph/GraphCommon.h ../Util/KmerDistribution.h SGSearch.h SGWalk.h \
+ GraphSearchTree.h ../Thirdparty/stdaln.h /usr/include/c++/6/iomanip \
  /usr/include/c++/6/locale /usr/include/c++/6/bits/locale_facets_nonio.h \
  /usr/include/c++/6/ctime \
  /usr/include/x86_64-linux-gnu/c++/6/bits/time_members.h \
@@ -849,8 +848,6 @@ SGUtil.h:
 ../Bigraph/GraphCommon.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/6/cstddef:
 
 SGSearch.h:
 

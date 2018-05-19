@@ -150,7 +150,7 @@ void LongReadExtend::extendLeaves()
 // Extend each leaf node
 void LongReadExtend::attempToExtend(SAINodePtrList &newLeaves)
 {
-	for(SAINode::Caster<SAIPBNode> iter : leaves)
+	for(Helper<SAINode, SAIPBNode> iter : leaves)
 	{
 		std::vector<std::pair<std::string, BiBWTInterval> > extensions;
 		extensions = getFMIndexExtensions(iter);
@@ -203,7 +203,7 @@ void LongReadExtend::refineSAInterval(int newKmerSize)
 {
 	assert(currentLength >= newKmerSize);
 
-	for(SAINode::Caster<SAIPBNode> iter : leaves)
+	for(Helper<SAINode, SAIPBNode> iter : leaves)
 	{
 		// reset the SA intervals using original minOverlap
 		std::string newKmer = iter->getSuffix(newKmerSize);
@@ -219,7 +219,7 @@ bool LongReadExtend::isTerminated(std::vector<std::string>& results)
 {
 	bool found = false;
 
-	for(SAINode::Caster<SAIPBNode> iter : leaves)
+	for(Helper<SAINode, SAIPBNode> iter : leaves)
 	{
 		if(iter->biInterval.isOverlapping(destInterval))
 		{

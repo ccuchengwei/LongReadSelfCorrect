@@ -211,7 +211,7 @@ libstringgraph_a-SGUtil.o: SGUtil.cpp /usr/include/stdc-predef.h SGUtil.h \
  ../Util/ReadInfoTable.h ../Util/QualityTable.h ../Util/QualityCodec.h \
  ../SuffixTools/BWTAlgorithms.h ../SuffixTools/BWTIndexSet.h \
  ../Bigraph/GraphCommon.h ../Util/KmerDistribution.h \
- /usr/include/c++/6/cstddef ../StriDe/SGACommon.h
+ ../StriDe/SGACommon.h
 
 /usr/include/stdc-predef.h:
 
@@ -840,7 +840,5 @@ SGVisitors.h:
 ../Bigraph/GraphCommon.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/6/cstddef:
 
 ../StriDe/SGACommon.h:

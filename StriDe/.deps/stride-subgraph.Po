@@ -209,8 +209,7 @@ stride-subgraph.o: subgraph.cpp /usr/include/stdc-predef.h \
  ../SuffixTools/BWTInterval.h ../SuffixTools/SampledSuffixArray.h \
  ../Util/ReadInfoTable.h ../Util/QualityTable.h ../Util/QualityCodec.h \
  ../SuffixTools/BWTAlgorithms.h ../SuffixTools/BWTIndexSet.h \
- ../Bigraph/GraphCommon.h ../Util/KmerDistribution.h \
- /usr/include/c++/6/cstddef ../Util/Timer.h \
+ ../Bigraph/GraphCommon.h ../Util/KmerDistribution.h ../Util/Timer.h \
  /usr/include/x86_64-linux-gnu/sys/time.h
 
 /usr/include/stdc-predef.h:
@@ -844,8 +843,6 @@ subgraph.h:
 ../Bigraph/GraphCommon.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/6/cstddef:
 
 ../Util/Timer.h:
 

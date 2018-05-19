@@ -25,25 +25,25 @@ void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedF
 	for(size_t initPos = 0; initPos < readSeqLen; initPos++)
 	{
 		int dynamicMode = attribute[initPos];
-		staticSize += m_params.kmerOffset[dynamicMode];
+		staticSize += m_params.offset[dynamicMode];
 		bool isSeed = false, isRepeat = false;
-		KmerFeature dynamicKmer = KmerFeature::kmerRec[staticSize][initPos];
+		KmerFeature dynamicKmer = KmerFeature::Log()[staticSize][initPos];
 		int maxFixedMerFreq = dynamicKmer.getFreq();
-		size_t seedStartPos = initPos;
+		size_t seedPos = initPos;
 		for(size_t currPos = initPos; currPos < readSeqLen; currPos++)
 		{
 			int staticMode = attribute[currPos];
-			const KmerFeature& staticKmer = KmerFeature::kmerRec[staticSize][currPos];
+			const KmerFeature& staticKmer = KmerFeature::Log()[staticSize][currPos];
+			if(staticKmer.getPseudo()) break;
 			if(isSeed)
 			{
 				char b = readSeq[(currPos + staticSize - 1)];
 				dynamicKmer.expand(b);
 			}
 			float dynamicThreshold = KmerThreshold::Instance().get(dynamicMode, dynamicKmer.getSize());
-			float staticThreshold  = KmerThreshold::Instance().get(staticMode,  staticKmer.getSize());
-			float repeatThreshold  = staticThreshold * (5 - ((staticMode >> 1) << 2));
-			bool isOnRepeat = (staticKmer.getFreq() >= repeatThreshold);
-			float freqDiff = (float)staticKmer.getFreq()/maxFixedMerFreq;
+			float staticThreshold  = KmerThreshold::Instance().get(staticMode, staticKmer.getSize());
+			float repeatThreshold  = (5 - ((staticMode >> 1) << 2))*staticThreshold;
+			staticThreshold *= staticKmer.getProperty() ? 1.5 : 1;
 			//Gerneral seed extension strategy.
 			if	(
 				   staticKmer.getFreq() < staticThreshold						//1.static frequency
@@ -52,10 +52,12 @@ void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedF
 				|| dynamicKmer.getSize() > m_params.kmerLenUpBound				//3.over length
 				)
 			{
-				if(isSeed && !staticKmer.getPseudo()) dynamicKmer.shrink(1);
+				if(isSeed) dynamicKmer.shrink(1);
 				break;
 			}
 			//Kmer Hitchhike strategy.
+			float freqDiff = (float)staticKmer.getFreq()/maxFixedMerFreq;
+			bool isOnRepeat = (staticKmer.getFreq() >= repeatThreshold);
 			int isGiantRepeat = ((dynamicMode >> 1) & (staticMode >> 1)) + 1;
 			if(isRepeat && freqDiff < (m_params.hhRatio/isGiantRepeat))			//4.hitchhiking kmer(1) (HIGH-->LOW)
 			{
@@ -70,26 +72,26 @@ void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedF
 				break;
 			}
 			isSeed = true;
-			initPos = seedStartPos + dynamicKmer.getSize() - 1;
-			isRepeat = isRepeat || isOnRepeat;
+			initPos = seedPos + dynamicKmer.getSize() - 1;
+			isRepeat |= isOnRepeat;
 			maxFixedMerFreq = std::max(maxFixedMerFreq, staticKmer.getFreq());
 		}
 		//Low Complexity strategy.
 		if(isSeed && !dynamicKmer.isLowComplexity())
 		{
-			SeedFeature newSeed(dynamicKmer.getWord(), seedStartPos, maxFixedMerFreq, isRepeat, staticSize, m_params.PBcoverage);
-			newSeed.estimateBestKmerSize(m_params.indices);
-			seedVec.push_back(newSeed);
+			seedVec.push_back(SeedFeature(dynamicKmer.getWord(), seedPos, maxFixedMerFreq, isRepeat, staticSize, m_params.PBcoverage));
+			seedVec.back().estimateBestKmerSize(m_params.indices);
 		}
-		staticSize -= m_params.kmerOffset[dynamicMode];
+		staticSize -= m_params.offset[dynamicMode];
 	}
 
 	//Seed Hitchhike strategy.
 	seedVec = removeHitchhikingSeeds(seedVec, attribute);
+	
 	if(m_params.DebugSeed)
 	{
 		std::ostream* pSeedWriter = createWriter(m_params.directory + "seed/" + readid + ".seed");
-		write(*pSeedWriter, seedVec);
+		SeedFeature::write(*pSeedWriter, seedVec);
 		delete pSeedWriter;
 	}
 	
@@ -99,6 +101,9 @@ void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedF
 //Noted by KuanWeiLee 20180118
 void LongReadProbe::getSeqAttribute(const std::string& seq, int* const attribute)
 {
+	std::ostream* pAutoWriter = nullptr;
+	if(m_params.DebugSeed)
+		pAutoWriter = createWriter(m_params.directory + "extend/" + readid + ".log");
 	const size_t seqLen = seq.length();
 	std::fill_n(attribute, seqLen, 1);
 	
@@ -107,8 +112,8 @@ void LongReadProbe::getSeqAttribute(const std::string& seq, int* const attribute
 	float repeatValue = KmerThreshold::Instance().get(2, ksize);
 	
 	int front = 0, fear = -1;
-	int leftmost = (seqLen - 1), rightmost = 0, repeatcount = 0;
-	std::map<int, int> set;
+	int leftmost = (seqLen - 1), rightmost = 0;
+	std::map<int, int> box; //-1 -> garbage; 0 -> lowcov(disable); 1 -> unique; 2 -> repeat
 	
 	for(size_t pos = 0; pos < seqLen; pos++)
 	{
@@ -120,41 +125,42 @@ void LongReadProbe::getSeqAttribute(const std::string& seq, int* const attribute
 		{
 			fear++;
 			KmerFeature* prev = nullptr;
-			for(auto& iter : m_params.kmerPool)
+			for(auto& iter : m_params.pool)
 			{
-				KmerFeature::kmerRec[iter][fear] = KmerFeature(m_params.indices, seq, fear, iter, prev);
-				prev = KmerFeature::kmerRec[iter].get() + fear;
+				KmerFeature::Log()[iter][fear] = KmerFeature(m_params.indices, seq, fear, iter, prev);
+				prev = KmerFeature::Log()[iter].get() + fear;
 			}
-			const KmerFeature& inKmer = KmerFeature::kmerRec[ksize][fear];
-			int freq = inKmer.isLowComplexity() ? 0 : inKmer.getFreq();
+			const KmerFeature& inKmer = KmerFeature::Log()[ksize][fear];
+			int freq = inKmer.isLowComplexity() ? -1 : inKmer.getFreq();
 			int mode;
-			if(freq == 0) mode = -1;
+			if(freq < 0) mode = -1;
 			else if(freq >= repeatValue) mode = 2;
 			else mode = 1;
-			set[mode]++;
+			box[mode]++;
 		}
 		while(front < left)
 		{
-			const KmerFeature& outKmer = KmerFeature::kmerRec[ksize][front];
+			const KmerFeature& outKmer = KmerFeature::Log()[ksize][front];
 			front++;
-			int freq = outKmer.isLowComplexity() ? 0 : outKmer.getFreq();
+			int freq = outKmer.isLowComplexity() ? -1 : outKmer.getFreq();
 			int mode;
-			if(freq == 0) mode = -1;
+			if(freq <= 0) mode = -1;
 			else if(freq >= repeatValue) mode = 2;
 			else mode = 1;
-			set[mode]--;
+			box[mode]--;
 		}
-		int size = (right - left + 1) - set[-1];
-		float ratio = (float)set[2]/size + 0.0005;
+		int size = (right - left + 1) - box[-1];
+		float ratio = (float)box[2]/size + 0.0005;
+		if(m_params.DebugSeed)
+			*pAutoWriter << pos << '\t' << ratio << '\n';
 		if(ratio >= 0.02)
 		{
 			attribute[pos] = 2;
-			repeatcount++;
 			leftmost = std::min(leftmost, (int)pos);
 			rightmost = std::max(rightmost, (int)pos);
 		}
 	}
-	
+	delete pAutoWriter;
 }
 
 //Kmer & Seed Hitchhike strategy would maitain seed-correctness, 
@@ -164,7 +170,7 @@ SeedFeature::SeedVector LongReadProbe::removeHitchhikingSeeds(SeedFeature::SeedV
 {
 	if(initSeedVec.size() < 2) return initSeedVec;
 	
-	int ksize = m_params.startKmerLen + m_params.kmerOffset[2];
+	int ksize = m_params.startKmerLen + m_params.offset[2];
 	float overValue = KmerThreshold::Instance().get(2, ksize)*5;
 	
 	for(SeedFeature::SeedVector::iterator iterQuery = initSeedVec.begin(); (iterQuery + 1) != initSeedVec.end(); iterQuery++)
@@ -186,8 +192,8 @@ SeedFeature::SeedVector LongReadProbe::removeHitchhikingSeeds(SeedFeature::SeedV
 			float freqDiff = (float)subject.maxFixedMerFreq/query.maxFixedMerFreq;
 			int isGiantRepeat = ((queryMode >> 1) & (subjectMode >> 1)) + 1;
 			
-			subject.isHitchhiked = subject.isHitchhiked || (query.isRepeat && freqDiff < (m_params.hhRatio/isGiantRepeat));	//HIGH --> LOW
-			query.isHitchhiked = query.isHitchhiked || (subject.isRepeat && freqDiff > (isGiantRepeat/m_params.hhRatio));	//LOW  --> HIGH
+			subject.isHitchhiked |= (query.isRepeat && freqDiff < (m_params.hhRatio/isGiantRepeat));	//HIGH --> LOW
+			query.isHitchhiked |= (subject.isRepeat && freqDiff > (isGiantRepeat/m_params.hhRatio));	//LOW  --> HIGH
 		}
 	}
 	
@@ -206,18 +212,8 @@ SeedFeature::SeedVector LongReadProbe::removeHitchhikingSeeds(SeedFeature::SeedV
 	if(m_params.DebugSeed)
 	{
 		std::ostream* pOutcastSeedWriter = createWriter(m_params.directory + "seed/error/" + readid + ".seed");
-		write(*pOutcastSeedWriter, outcastSeedVec);
+		SeedFeature::write(*pOutcastSeedWriter, outcastSeedVec);
 		delete pOutcastSeedWriter;
 	}
 	return finalSeedVec;
-}
-
-void LongReadProbe::write(std::ostream& outfile, const SeedFeature::SeedVector& seedVec)
-{	
-	for(const auto& iter : seedVec)
-		outfile
-		<< iter.seedStr << "\t"
-		<< iter.maxFixedMerFreq << "\t" 
-		<< iter.seedStartPos << "\t"
-		<< (iter.isRepeat ? "Yes" : "No") << "\n";
 }

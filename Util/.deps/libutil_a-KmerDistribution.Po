@@ -99,9 +99,9 @@ libutil_a-KmerDistribution.o: KmerDistribution.cpp \
  /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
  /usr/include/c++/6/bits/basic_string.tcc \
  /usr/include/c++/6/bits/uses_allocator.h \
- /usr/include/c++/6/bits/stl_multimap.h /usr/include/c++/6/cstddef \
- /usr/include/c++/6/iostream /usr/include/c++/6/ostream \
- /usr/include/c++/6/ios /usr/include/c++/6/bits/ios_base.h \
+ /usr/include/c++/6/bits/stl_multimap.h /usr/include/c++/6/iostream \
+ /usr/include/c++/6/ostream /usr/include/c++/6/ios \
+ /usr/include/c++/6/bits/ios_base.h \
  /usr/include/c++/6/bits/locale_classes.h \
  /usr/include/c++/6/bits/locale_classes.tcc \
  /usr/include/c++/6/system_error \
@@ -402,8 +402,6 @@ KmerDistribution.h:
 /usr/include/c++/6/bits/uses_allocator.h:
 
 /usr/include/c++/6/bits/stl_multimap.h:
-
-/usr/include/c++/6/cstddef:
 
 /usr/include/c++/6/iostream:
 
