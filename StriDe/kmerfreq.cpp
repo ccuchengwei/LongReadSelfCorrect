@@ -56,14 +56,14 @@ int kmerfreqMain(int argc, char** argv)
 	
 	std::unique_ptr<BWT> pBWT, pRBWT;
 	// Load indices
-	#pragma omp parallel
+	#pragma omp parallel sections
 	{
-		#pragma omp single nowait
+		#pragma omp section
 		{	//Initialization of large BWT takes some time, pass the disk to next job
 			std::cerr << "Loading BWT: " << opt::prefix + BWT_EXT << "\n";
 			pBWT = std::unique_ptr<BWT>(new BWT(opt::prefix + BWT_EXT, opt::sampleRate));
 		}
-		#pragma omp single nowait
+		#pragma omp section
 		{
 			std::cerr << "Loading RBWT: " << opt::prefix + RBWT_EXT << "\n";
 			pRBWT = std::unique_ptr<BWT>(new BWT(opt::prefix + RBWT_EXT, opt::sampleRate));

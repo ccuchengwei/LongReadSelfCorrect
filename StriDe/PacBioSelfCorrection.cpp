@@ -8,9 +8,8 @@
 //
 
 #include <iostream>
-#include <fstream>
-#include <sstream>
-#include <iterator>
+#include <array>
+#include <set>
 #include "Util.h"
 #include "PacBioSelfCorrection.h"
 #include "SuffixArray.h"
@@ -23,8 +22,9 @@
 #include "BWTIntervalCache.h"
 #include "KmerThreshold.h"
 #include "LongReadProbe.h"
-#include "CheckKmerProcess.h"
+#include "KmerCheckProcess.h"
 #include "KmerFeature.h"
+#include "BCode.h"
 
 //
 // Getopt
@@ -152,19 +152,19 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	// Load indices
 	std::unique_ptr<BWT> pBWT, pRBWT;
 	std::unique_ptr<SampledSuffixArray> pSSA;
-	#pragma omp parallel
+	#pragma omp parallel sections
 	{
-		#pragma omp single nowait
+		#pragma omp section
 		{	//Initialization of large BWT takes some time, pass the disk to next job
 			std::cerr << "Loading BWT: " << opt::prefix + BWT_EXT << "\n";
 			pBWT = std::unique_ptr<BWT>(new BWT(opt::prefix + BWT_EXT, opt::sampleRate));
 		}
-		#pragma omp single nowait
+		#pragma omp section
 		{
 			std::cerr << "Loading RBWT: " << opt::prefix + RBWT_EXT << "\n";
 			pRBWT = std::unique_ptr<BWT>(new BWT(opt::prefix + RBWT_EXT, opt::sampleRate));
 		}
-		#pragma omp single nowait
+		#pragma omp section
 		{
 			std::cerr << "Loading Sampled Suffix Array: " << opt::prefix + SAI_EXT << "\n";
 			pSSA = std::unique_ptr<SampledSuffixArray>(new SampledSuffixArray(opt::prefix + SAI_EXT, SSA_FT_SAI));
@@ -187,6 +187,8 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	ecParams.Split       = opt::Split;
     ecParams.DebugExtend = opt::DebugExtend;
     ecParams.DebugSeed   = opt::DebugSeed;
+	
+	if(opt::OnlySeed) BCode::load(opt::barcode);
 	ecParams.OnlySeed    = opt::OnlySeed;
 	ecParams.NoDp        = opt::NoDp;
 	
@@ -198,9 +200,9 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	}
 	ecParams.startKmerLen = opt::startKmerLen;
 	
-	//Insert kmer sizes in pool for further use. Noted by KuanWeiLee 18/3/12
+	//Insert kmer sizes in pool for future usage. Noted by KuanWeiLee 18/3/12
 	for(auto& o : opt::offset)
-		opt::pool.insert(ecParams.startKmerLen + o);
+		opt::pool.insert(opt::startKmerLen + o);
 	ecParams.pool = opt::pool;
 	
 	FMextendParameters FM_params(
@@ -250,36 +252,6 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	PacBioSelfCorrectionParameters>(opt::thread, opt::readsFile, ecParams);
 	
 	delete pTimer;
-	if(!opt::OnlySeed) return 0;
-
-	std::unique_ptr<std::map<std::string, std::list<CodeBlock> > > pAlignLog(new std::map<std::string, std::list<CodeBlock> >);
-	std::cerr << "Loading BARCODE: " << opt::barcode << '\n';
-	std::istream* pCodeReader = createReader(opt::barcode);
-	while(true)
-	{
-		if(pCodeReader->eof()) break;
-		std::string qname, tname, code, rvc, sup;
-		int qstart, qend, tstart, tend;
-		*pCodeReader
-		>> qname >> qstart >> qend
-		>> tname >> tstart >> tend
-		>> code  >> rvc    >> sup;
-		(*pAlignLog)[qname].push_back(CodeBlock(qstart, qend, code, (rvc == "True" ? true : false)));
-	}
-	delete pCodeReader;
-	
-	CheckKmerParameters ckParams;
-	ckParams.indices   = opt::indices;
-	ckParams.directory = opt::directory;
-	ckParams.pAlignLog = pAlignLog.get();
-	ckParams.mode      = false;
-	
-	SequenceProcessFramework::processSequences<SequenceWorkItem,
-	CheckKmerResult,
-	CheckKmerProcess,
-	CheckKmerPostProcess,
-	CheckKmerParameters>(opt::thread, opt::readsFile, ckParams);
-	
 	return 0;
 }
 

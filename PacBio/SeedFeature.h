@@ -7,6 +7,31 @@
 class SeedFeature
 {
 	public:
+		
+		typedef std::vector<SeedFeature> SeedVector;
+		static std::map<std::string, SeedVector>& Log();
+		static void write(std::ostream& out, const SeedVector& vec);
+		
+		SeedFeature(std::string str, int startPos, int frequency, bool repeat, int kmerSize, int PBcoverage);
+		~SeedFeature(void) = default;
+		
+		// append current seed string with extendedStr
+		void append(std::string extendedStr, const SeedFeature& target);
+		// adjust start/end kmer for future FMWalk
+		void estimateBestKmerSize(const BWTIndexSet& indices);
+		
+		std::string seedStr;
+		int seedLen;
+		int seedStartPos;
+		int seedEndPos;
+        int maxFixedMerFreq;
+		bool isRepeat;
+		bool isHitchhiked;
+		int startBestKmerSize;
+		int endBestKmerSize;
+		int startKmerFreq;
+		int endKmerFreq;
+		
 		//Legacy part
 		/***********/
 		SeedFeature(size_t startPos, std::string str, bool repeat, size_t kmerSize, size_t repeatCutoff, size_t maxFixedMerFreq=0);
@@ -22,39 +47,12 @@ class SeedFeature
 		{
 			startBestKmerSize = endBestKmerSize = staticKmerSize;;
 		}
-		/**********/
 		
-		typedef std::vector<SeedFeature> SeedVector;
-		static std::map<std::string, SeedVector>& Log();
-		static void write(std::ostream& out, const SeedVector& vec);
-		
-		SeedFeature(std::string str, int startPos, int frequency, bool repeat, int kmerSize, int PBcoverage);
-		~SeedFeature(void) = default;
-		
-		// append current seed string with extendedStr
-		void append(std::string extendedStr, const SeedFeature& target);
-		// adjust start/end kmer for future FMWalk
-		void estimateBestKmerSize(const BWTIndexSet& indices);
-		
-		//Legacy part
-		/***********/
 		bool isPBSeed;
 		bool isNextRepeat = false;
         bool isLargeVar = false;
 		int minKmerSize;
 		/***********/
-		std::string seedStr;
-		int seedLen;
-		int seedStartPos;
-		int seedEndPos;
-        int maxFixedMerFreq;
-		bool isRepeat;
-		bool isHitchhiked;
-		int startBestKmerSize;
-		int endBestKmerSize;
-		int startKmerFreq;
-		int endKmerFreq;
-		
 	private:
 		int sizeUpperBound;
 		int sizeLowerBound;

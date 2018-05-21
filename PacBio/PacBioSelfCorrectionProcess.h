@@ -11,6 +11,7 @@
 #define PACBIOSELFCORRECTIONPROCESS_H
 
 #include <set>
+#include <cstdio>
 #include "Util.h"
 #include "SequenceWorkItem.h"
 #include "BWTIndexSet.h"
@@ -119,8 +120,8 @@ class PacBioSelfCorrectionPostProcess
 		void process(const SequenceWorkItem& item, const PacBioSelfCorrectionResult& result);
 	
 	private:
-
 		PacBioSelfCorrectionParameters m_params;
+		
 		std::ostream* m_pCorrectWriter;
 		std::ostream* m_pDiscardWriter;
 	
@@ -138,7 +139,11 @@ class PacBioSelfCorrectionPostProcess
 		double m_Timer_Seed;
 		double m_Timer_FM;
 	    double m_Timer_DP;
-
+		
+		FILE* m_pStatusWriter;
+		int m_status[3];
+		
+		void summarize(FILE* out, const int* status, std::string subject);
 };
 
 

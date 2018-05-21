@@ -54,6 +54,7 @@ libpacbio_a-PacBioSelfCorrectionProcess.o: \
  /usr/include/c++/6/bits/alloc_traits.h \
  /usr/include/c++/6/bits/memoryfwd.h \
  /usr/include/c++/6/bits/uniform_int_dist.h /usr/include/c++/6/limits \
+ /usr/include/c++/6/numeric /usr/include/c++/6/bits/stl_numeric.h \
  /usr/include/c++/6/memory /usr/include/c++/6/bits/allocator.h \
  /usr/include/x86_64-linux-gnu/c++/6/bits/c++allocator.h \
  /usr/include/c++/6/ext/new_allocator.h \
@@ -218,7 +219,7 @@ libpacbio_a-PacBioSelfCorrectionProcess.o: \
  /usr/include/semaphore.h /usr/include/x86_64-linux-gnu/bits/semaphore.h \
  ../Util/Timer.h /usr/include/x86_64-linux-gnu/sys/time.h \
  ../Concurrency/SequenceWorkItem.h ../Util/Metrics.h ../Util/BitVector.h \
- ../Util/BitChar.h ../Algorithm/KmerOverlaps.h KmerFeature.h
+ ../Util/BitChar.h ../Algorithm/KmerOverlaps.h KmerFeature.h BCode.h
 
 /usr/include/stdc-predef.h:
 
@@ -359,6 +360,10 @@ libpacbio_a-PacBioSelfCorrectionProcess.o: \
 /usr/include/c++/6/bits/uniform_int_dist.h:
 
 /usr/include/c++/6/limits:
+
+/usr/include/c++/6/numeric:
+
+/usr/include/c++/6/bits/stl_numeric.h:
 
 /usr/include/c++/6/memory:
 
@@ -889,3 +894,5 @@ LongReadOverlap.h:
 ../Algorithm/KmerOverlaps.h:
 
 KmerFeature.h:
+
+BCode.h:

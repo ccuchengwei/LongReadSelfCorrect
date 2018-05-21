@@ -2,30 +2,6 @@
 #include "BWTAlgorithms.h"
 #include "Util.h"
 
-//Legacy part
-/***********/
-SeedFeature::SeedFeature(
-		size_t startPos,
-		std::string str,
-		bool repeat,
-		size_t staticKmerSize,
-		size_t repeatCutoff,
-		size_t maxFixedMerFreq)
-:	seedStr(str),
-	seedStartPos(startPos),
-	maxFixedMerFreq(maxFixedMerFreq),
-	isRepeat(repeat),
-	isHitchhiked(false),
-	minKmerSize(staticKmerSize),
-	freqUpperBound(repeatCutoff),
-	freqLowerBound(repeatCutoff>>1)
-{
-	seedLen = seedStr.length();
-	seedEndPos = seedStartPos + seedLen -1;
-	startBestKmerSize = endBestKmerSize = staticKmerSize;
-}
-/***********/
-
 std::map<std::string, SeedFeature::SeedVector>& SeedFeature::Log()
 {
 	static std::map<std::string, SeedVector> log;
@@ -112,4 +88,28 @@ void SeedFeature::modifyKmerSize(const BWTIndexSet& indices, bool pole)
 		kmerFreq = BWTAlgorithms::countSequenceOccurrences(seed.substr(seedLen - kmerSize), pSelBWT);
 	}
 }
+
+//Legacy part
+/***********/
+SeedFeature::SeedFeature(
+		size_t startPos,
+		std::string str,
+		bool repeat,
+		size_t staticKmerSize,
+		size_t repeatCutoff,
+		size_t maxFixedMerFreq)
+:	seedStr(str),
+	seedStartPos(startPos),
+	maxFixedMerFreq(maxFixedMerFreq),
+	isRepeat(repeat),
+	isHitchhiked(false),
+	minKmerSize(staticKmerSize),
+	freqUpperBound(repeatCutoff),
+	freqLowerBound(repeatCutoff>>1)
+{
+	seedLen = seedStr.length();
+	seedEndPos = seedStartPos + seedLen -1;
+	startBestKmerSize = endBestKmerSize = staticKmerSize;
+}
+/***********/
 
