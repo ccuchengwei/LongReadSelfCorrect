@@ -25,10 +25,14 @@ SUBPROGRAM " Version " PACKAGE_VERSION "\n"
 static const char *KMERFREQ_USAGE_MESSAGE =
 "Usage: " PACKAGE_NAME " " SUBPROGRAM " [OPTION] ... READSFILE\n"
 "Get sequences kmer frequency\n"
+"  -t, --threads=NUM         Use NUM threads for the computation (default: 1)\n"
+"  -c, --coverage=NUM        Coverage of PacBio reads (default: 90)\n"
 "  -p, --prefix=PREFIX       Use PREFIX for the names of the index files\n"
 "  -o, --directory=PATH      Put results in the directory\n"
-"  -t, --threads=NUM         Use NUM threads for the computation (default: 1)\n"
 "  -b, --barcode=FILE        Use the barcode to check kmer \n"
+"  -l, --lower=NUM           Kmer size lower bound (default: 15)\n"
+"  -u, --upper=NUM           Kmer size upper bound (default: 35)\n"
+"  -s, --step=NUM            Kmer size step (default: 1)\n"
 "  -v, --verbose             Display verbose output\n"
 "      --help                Display this help and exit\n"
 "      --version             Display version\n";
@@ -38,25 +42,31 @@ PACKAGE_NAME "::" SUBPROGRAM;
 namespace opt
 {
     static unsigned int verbose;
+	static int thread = 1;
+	static int coverage = 90;
     static std::string prefix;
 	static std::string directory;
-	static int thread = 1;
 	static std::string barcode;
-	static int sizeLb = 15;
-	static int sizeUb = 15;	
+	static int lower = 15;
+	static int upper = 35;
+	static int step = 1;
 	static std::string readsFile;
     static int sampleRate = BWT::DEFAULT_SAMPLE_RATE_SMALL;
 }
 
-static const char* shortopts = "p:o:t:b:v";
+static const char* shortopts = "t:c:p:o:b:l:u:s:v";
 
 enum { OPT_ALIGN, OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "threads",     required_argument, nullptr, 't' },
+	{ "coverage",    required_argument, nullptr, 'c' },
 	{ "prefix",      required_argument, nullptr, 'p' },
 	{ "directory",   required_argument, nullptr, 'o' },
-	{ "threads",     required_argument, nullptr, 't' },
 	{ "barcode",     required_argument, nullptr, 'b' },
+	{ "lower",       required_argument, nullptr, 'l' },
+	{ "upper",       required_argument, nullptr, 'u' },
+	{ "step",        required_argument, nullptr, 's' },
     { "verbose",     no_argument,       nullptr, 'v' },
     { "help",        no_argument,       nullptr, OPT_HELP },
     { "version",     no_argument,       nullptr, OPT_VERSION },
@@ -85,18 +95,20 @@ int kmercheckMain(int argc, char** argv)
 	
 	BCode::load(opt::barcode);
 	
-	BWTIndexSet indexSet;
-	indexSet.pBWT  = pBWT.get();
-	indexSet.pRBWT = pRBWT.get();
+	BWTIndexSet indices;
+	indices.pBWT  = pBWT.get();
+	indices.pRBWT = pRBWT.get();
 	
 	
 	KmerCheckParameters kcParams;
-	kcParams.indices     = indexSet;
-	kcParams.directory   = opt::directory;
-	kcParams.size.first  = opt::sizeLb;
-	kcParams.size.second = opt::sizeUb;
+	kcParams.indices   = indices;
+	kcParams.directory = opt::directory;
+	kcParams.coverage  = opt::coverage;
+	kcParams.lower     = opt::lower;
+	kcParams.upper     = opt::upper;
+	kcParams.step      = opt::step; 
 	
-	std::cerr << "Using kmer size : " << kcParams.size.first << " - " << kcParams.size.second << "\n";
+	std::cerr << "Using kmer size : " << opt::lower << " - " << opt::upper << " ("  << opt::step << ")\n";
 	
 	Timer* pTimer = new Timer(PROGRAM_IDENT);
 	
@@ -123,10 +135,14 @@ void parseKMERCHECKOptions(int argc, char** argv)
         std::istringstream arg(optarg != nullptr ? optarg : "");
         switch (c) 
         {
+			case 't': arg >> opt::thread; break;
+			case 'c': arg >> opt::coverage; break;
 			case 'p': arg >> opt::prefix; break;
 			case 'o': arg >> opt::directory; break;
-			case 't': arg >> opt::thread; break;
 			case 'b': arg >> opt::barcode; break;
+			case 'l': arg >> opt::lower; break;
+			case 'u': arg >> opt::upper; break;
+			case 's': arg >> opt::step; break;
 			case 'v': opt::verbose++; break;
 			case '?': die = true; break;
             case OPT_HELP:
@@ -138,7 +154,7 @@ void parseKMERCHECKOptions(int argc, char** argv)
         }
     }
 
-    if (argc - optind < 1) 
+    if(argc - optind < 1) 
     {
         std::cerr << SUBPROGRAM ": missing arguments\n";
         die = true;
@@ -148,7 +164,19 @@ void parseKMERCHECKOptions(int argc, char** argv)
         std::cerr << SUBPROGRAM ": too many arguments\n";
         die = true;
     }
-
+	
+	if(opt::thread <= 0)
+	{
+		std::cerr << SUBPROGRAM ": invalid number of threads: " << opt::thread << "\n";
+		die = true;
+	}
+	
+	if(opt::coverage <= 0)
+	{
+		std::cerr << SUBPROGRAM ": invalid coverage: " << opt::coverage << "\n";
+		die = true;
+	}
+	
 	if(opt::prefix.empty())
 	{
 		std::cerr << SUBPROGRAM << ": no prefix\n";
@@ -163,17 +191,11 @@ void parseKMERCHECKOptions(int argc, char** argv)
 	else
 	{		
 		opt::directory += "/";
-		if(system(("mkdir -p " + opt::directory + "split/").c_str()) != 0)
+		if(system(("mkdir -p " + opt::directory).c_str()) != 0)
 		{
 			std::cerr << SUBPROGRAM << ": something wrong in directory: " << opt::directory << "\n";
 			die = true;
 		}
-	}
-	
-	if(opt::thread <= 0)
-	{
-		std::cerr << SUBPROGRAM ": invalid number of threads: " << opt::thread << "\n";
-		die = true;
 	}
 	
 	if(opt::barcode.empty())
@@ -182,19 +204,23 @@ void parseKMERCHECKOptions(int argc, char** argv)
 		die = true;
 	}
 	
+	if(!(opt::lower >= 9 && opt::upper >= opt::lower))
+	{
+		std::cerr << SUBPROGRAM << "invalid range of kmer size:" << opt::lower << " - " << opt::upper << '\n';
+		die = true;
+	}
+	
+	if(opt::step <= 0)
+	{
+		std::cerr << SUBPROGRAM << "invalid step size: " << opt::step << '\n';
+		die = true;
+	}
+	
     if (die) 
     {
         std::cerr << "\n" << KMERFREQ_USAGE_MESSAGE;
         exit(EXIT_FAILURE);
     }
-	
-	while(true)
-	{
-		std::cerr << "Please enter start & end kmer size\n";
-		std::cin >> opt::sizeLb >> opt::sizeUb;
-		if(opt::sizeLb >= 7 && opt::sizeUb >= opt::sizeLb) break;
-		std::cerr << "Illegal values\n";
-	}
 	
 	opt::readsFile = argv[optind++];
 }

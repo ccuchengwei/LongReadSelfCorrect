@@ -8,14 +8,15 @@ std::map<std::string, SeedFeature::SeedVector>& SeedFeature::Log()
 	return log;
 }
 
-void SeedFeature::write(std::ostream& out, const SeedVector& vec)
+std::ostream& operator<<(std::ostream& out, const SeedFeature::SeedVector& vec)
 {
-	for(auto& iter : vec)
+	for(const auto& iter : vec)
 		out
 		<< iter.seedStr << '\t'
 		<< iter.maxFixedMerFreq << '\t' 
 		<< iter.seedStartPos << '\t'
 		<< (iter.isRepeat ? "Yes" : "No") << '\n';
+	return out;
 }
 
 SeedFeature::SeedFeature(

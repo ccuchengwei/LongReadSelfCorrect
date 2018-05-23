@@ -6,9 +6,6 @@
 
 struct ProbeParameters
 {
-	ProbeParameters(void) = default;
-	~ProbeParameters(void) = default;
-	
 	ProbeParameters(
 			BWTIndexSet _indices,
 			std::string _directory,
@@ -18,16 +15,10 @@ struct ProbeParameters
 			std::array<int, 3> _offset,
 			std::set<int> _pool,
 			bool _DebugSeed,
-			bool _Manual)
-	:	indices(_indices),
-		directory(_directory),
-		startKmerLen(_startKmerLen),
-		PBcoverage(_PBcoverage),
-		mode(_mode),
-		offset(_offset),
-		pool(_pool),
-		DebugSeed(_DebugSeed),
-		Manual(_Manual){ }
+			bool _Manual);
+	
+	ProbeParameters(void) = default;
+	~ProbeParameters(void) = default;
 		
 	BWTIndexSet indices;
 	std::string directory;

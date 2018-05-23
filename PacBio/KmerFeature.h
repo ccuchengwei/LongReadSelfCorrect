@@ -49,8 +49,9 @@ class KmerFeature
 				this->size       = word.length();
 				this->biInterval = BWTAlgorithms::findBiInterval(this->indices, this->word, this->count.get());
 				
+				this->stain     = 0;
 				this->residue   = std::make_pair(0, 0);
-				this->isBlotted = monitor(this->word, this->residue);
+				this->isBlotted = monitor(this->word, this->stain, this->residue);
 			}
 			else
 			{
@@ -64,7 +65,7 @@ class KmerFeature
 					expand(b);
 					remainder += b;
 				}
-				this->isBlotted |= monitor(remainder, this->residue);
+				this->isBlotted |= monitor(remainder, this->stain, this->residue);
 			}
 			this->isFake = (len != this->size);
 			this->frequency = this->biInterval.getFreq();
@@ -73,16 +74,19 @@ class KmerFeature
 		inline KmerFeature& operator=(const KmerFeature& other)
 		{
 			if(&other == this) return *this;
-			this->count      = other.getCount();
-			this->indices    = other.getIndex();
-			this->word       = other.getWord();
-			this->size       = other.getSize();
-			this->biInterval = other.getInterval();
-			this->isFake     = other.getPseudo();
-			this->frequency  = other.getFreq();
 			
-			this->residue   = other.getResidue();
-			this->isBlotted = other.getProperty();
+			this->count      = other.getCount();
+			this->indices    = other.indices;
+			this->word       = other.word;
+			this->size       = other.size;
+			this->biInterval = other.biInterval;
+			this->isFake     = other.isFake;
+			this->frequency  = other.frequency;
+			
+			this->stain     = other.stain;
+			this->residue   = other.residue;
+			this->isBlotted = other.isBlotted;
+			
 			return *this;
 		}
 	
@@ -94,15 +98,11 @@ class KmerFeature
 			return copy;
 		}
 		
-		inline BWTIndexSet   getIndex()    const { return this->indices; }
-		inline std::string   getWord()     const { return this->word; }
-		inline int           getSize()     const { return this->size; }
-		inline BiBWTInterval getInterval() const { return this->biInterval; }
-		inline bool          getPseudo()   const { return this->isFake; }
-		inline int           getFreq()     const { return this->isFake ? -1 : this->frequency; }
-		
-		inline std::pair<char,int> getResidue()  const { return this->residue; }
-		inline bool                getProperty() const { return this->isBlotted; }
+		inline std::string getWord() const { return this->word; }
+		inline int getSize() const { return this->size; }
+		inline bool getPseudo() const { return this->isFake; }
+		inline int getFreq() const { return this->isFake ? -1 : this->frequency; }
+		inline bool getProperty() const { return this->isBlotted; }
 	
 		inline bool isValid() const { return this->biInterval.isValid(); }
 		
@@ -148,23 +148,26 @@ class KmerFeature
 		bool isFake; //'isFake' is set only when initialized.
 		int frequency;
 		
+		int stain;
 		std::pair<char,int> residue;
 		bool isBlotted;
 		
-		bool monitor(const std::string& seq, std::pair<char,int>& p)
+		bool monitor(const std::string& seq, int& s, std::pair<char,int>& r)
 		{
-			bool s = false;
+			bool a = false;
 			for(char c : seq)
 			{
-				if(c == p.first)
-					p.second++;
+				if(c == r.first)
+					r.second++;
 				else
 				{
-					s |= (p.second > 3);
-					p = std::make_pair(c, 1);
+					s = std::max(s, r.second);
+					a |= (r.second > 3);
+					r = std::make_pair(c, 1);
 				}
 			}
-			return s || (p.second > 3);
+			s= std::max(s, r.second);
+			return a || (r.second > 3);
 		}
 };
 

@@ -10,7 +10,7 @@ class SeedFeature
 		
 		typedef std::vector<SeedFeature> SeedVector;
 		static std::map<std::string, SeedVector>& Log();
-		static void write(std::ostream& out, const SeedVector& vec);
+		friend std::ostream& operator<<(std::ostream& out, const SeedVector& vec);
 		
 		SeedFeature(std::string str, int startPos, int frequency, bool repeat, int kmerSize, int PBcoverage);
 		~SeedFeature(void) = default;

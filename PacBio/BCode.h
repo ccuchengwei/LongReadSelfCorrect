@@ -19,7 +19,7 @@ class BCode
 			end  (e),
 			code (c),
 			rvc  (r) { }
-		~BCode() = default;
+		~BCode(void) = default;
 		
 		typedef std::vector<BCode> BCodeVector;
 		static std::map<std::string, BCodeVector>& Log();

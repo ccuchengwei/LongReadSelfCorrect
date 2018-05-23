@@ -69,7 +69,7 @@ int BCode::sum(const std::string& in)
 	return out;
 }
 
-//'pysition'
+//get 'py'thonic po'sition'
 int BCode::getPys(int pos, int len)
 {
 	if(pos < 0) pos += len;

@@ -11,22 +11,22 @@
 
 #include <vector>
 #include <map>
+#include <cstdio>
 #include <iostream>
 
 class KmerDistribution
 {
 	public:
 		
-		KmerDistribution(void) = default;
+		KmerDistribution();
 		~KmerDistribution(void) = default;
-		void operator+=(const KmerDistribution& temp);
+		void operator+=(const KmerDistribution& other);
 		
 		inline void add(int kmerFreqs){ data[kmerFreqs]++; total++; }
 		inline double getSdv() const{ return sdv; }
 		inline int getTotalKmers() const{ return total; }
 		inline int getMode() const{ return mode; }
 		inline int getRepeatKmerCutoff() const{ return repeatKmerCutoff; }
-		
 		
 		int getNumberWithCount (int n) const;
 		int getQuartile(int n) const;
@@ -39,11 +39,12 @@ class KmerDistribution
 		int getCutoffForProportion(double p) const;
 		
 		//compute quartiles ,mode and sdv
-		void computeKDAttributes(float censor = 0.0f);
+		void computeKDAttributes();
 		
 		//Write data to file
-		void write(std::ostream& out, int mode = 0) const;
+		friend std::ostream& operator<<(std::ostream& out, const KmerDistribution& o);
 		
+		friend void compare(std::ostream& t, std::ostream& v, int cov, int ksize, KmerDistribution& c, KmerDistribution& e);
 		
 		//Legacy Part
 		/***********/
@@ -61,14 +62,15 @@ class KmerDistribution
 		
 	private:
 		std::map<int, int> data;
-		std::string readid = "";
-		int total = 0;
-		int median = 0;
-		int first_quartile = 0;
-		int third_quartile = 0;
-		int mode = 0;
-		double sdv = 0;
-		int repeatKmerCutoff = 0;
+		int total;
+		int q1;
+		int q2;
+		int q3;
+		int min;
+		int max;
+		int mode;
+		double sdv;
+		int repeatKmerCutoff;
 };
 
 #endif

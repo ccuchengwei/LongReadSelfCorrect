@@ -353,13 +353,13 @@ struct Helper
 	~Helper(void) = default;
 	operator D* ()
 	{
-		if(D* d = dynamic_cast<B*>(b)) return d;
+		if(D* d = dynamic_cast<D*>(b)) return d;
 		std::cerr << "Bad Cast\n";
 		exit(EXIT_FAILURE);
 	}
 	D* operator->()
 	{
-		if(D* d = dynamic_cast<B*>(b)) return d;
+		if(D* d = dynamic_cast<D*>(b)) return d;
 		std::cerr << "Bad Cast\n";
 		exit(EXIT_FAILURE);
 	}

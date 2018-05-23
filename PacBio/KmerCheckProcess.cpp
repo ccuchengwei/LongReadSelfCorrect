@@ -17,7 +17,7 @@ KmerCheckResult KmerCheckProcess::process(const SequenceWorkItem& workItem)
 	result.readid = id;
 	
 	for(auto& iter : BCode::Log()[id])
-		for(int k = m_params.size.first; k <= m_params.size.second; k++)
+		for(int k = m_params.lower; k <= m_params.upper; k += m_params.step)
 			scan(k, iter, seq, result);
 	return result;
 }
@@ -41,27 +41,19 @@ void KmerCheckProcess::scan(int ksize, const BCode& block, const std::string& se
 //postprocess
 KmerCheckPostProcess::KmerCheckPostProcess(KmerCheckParameters params):m_params(params)
 {
-	for(int k = m_params.size.first; k <= m_params.size.second; k++)
-	{
-		m_pCrtWriterMap[k] = createWriter(m_params.directory + std::to_string(k) + ".crt.kf");
-		m_pErrWriterMap[k] = createWriter(m_params.directory + std::to_string(k) + ".err.kf");
-	}
+	m_pTotalWriter = createWriter(m_params.directory + "total.box", std::ios_base::app);
+	m_pValueWriter = createWriter(m_params.directory + "value.box", std::ios_base::app);
 }
 KmerCheckPostProcess::~KmerCheckPostProcess()
 {
-	for(int k = m_params.size.first; k <= m_params.size.second; k++)
-	{
-		m_crtKdMap[k].write(*(m_pCrtWriterMap[k]));
-		m_errKdMap[k].write(*(m_pErrWriterMap[k]));
-	}
-	for(const auto& iter : m_pCrtWriterMap)
-		delete iter.second;
-	for(const auto& iter : m_pErrWriterMap)
-		delete iter.second;
+	for(int k = m_params.lower; k <= m_params.upper; k += m_params.step)
+		compare(*m_pTotalWriter, *m_pValueWriter, m_params.coverage, k, m_crtKdMap[k], m_errKdMap[k]);
+	delete m_pTotalWriter;
+	delete m_pValueWriter;
 }
 void KmerCheckPostProcess::process(const SequenceWorkItem& workItem, const KmerCheckResult& result)
 {
-	for(int k = m_params.size.first; k <= m_params.size.second; k++)
+	for(int k = m_params.lower; k <= m_params.upper; k += m_params.step)
 	{
 		kdMap::const_iterator crt = result.crtKdMap.find(k);
 		kdMap::const_iterator err = result.errKdMap.find(k);

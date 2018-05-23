@@ -6,18 +6,30 @@
 //
 // KmerDistribution - Histogram of kmer frequencies
 //
-#include "KmerDistribution.h"
-#include <limits>
+#include <algorithm>
 #include <cmath>
-#include <fstream>
+#include <iostream>
+#include "KmerDistribution.h"
+
+KmerDistribution::KmerDistribution()
+:	total(0),
+	q1(0),
+	q2(0),
+	q3(0),
+	min(0),
+	max(0),
+	mode(0),
+	sdv(0),
+	repeatKmerCutoff(0){ }
 
 void KmerDistribution::operator+=(const KmerDistribution& other)
 {
 	for(const auto& iter : other.data)
-		this->data[iter.first] += iter.second;
+		data[iter.first] += iter.second;
+	total += other.total;
 }
 
-int KmerDistribution::getNumberWithCount (int n) const
+int KmerDistribution::getNumberWithCount(int n) const
 {
 	std::map<int, int>::const_iterator iter = data.find(n);
 	return iter != data.end() ? iter->second : 0;
@@ -27,15 +39,15 @@ int KmerDistribution::getQuartile(int n) const
 {
 	switch(n)
 	{
-		case 1: return first_quartile;
-		case 2: return median;
-		case 3: return third_quartile;
-		default: 
-			std::cout << "Quartile options : 1 , 2 ,3\n";
+		case 1: return q1;
+		case 2: return q2;
+		case 3: return q3;
+		default:
+			std::cerr << "Quartile option: 1,2,3\n";
 			exit(EXIT_FAILURE);
 	}
 }
-		
+
 double KmerDistribution::getCumulativeProportionLEQ(int n) const
 {    
 	int cumulativeSum = 0;
@@ -69,61 +81,74 @@ int KmerDistribution::getCutoffForProportion(double p) const
 	return kmerFreq;
 }
 
-//compute median and sdv
-void KmerDistribution::computeKDAttributes(float censor)
+void KmerDistribution::computeKDAttributes()
 {
-	std::vector<int>rawdata;
-	std::map<int, int>::const_iterator iter = data.begin();
-	
-	for(; iter != data.end() && iter->first <= censor; iter++);
-	
-	for(int most = 0; iter !=  data.end(); iter++)
+	int low = total*1/4;
+	int mid = total*2/4;
+	int upp = total*3/4;
+	int prev = 0;
+	int curr = 0;
+	int most = 0;
+	for(const auto& iter : data)
 	{
-		rawdata.resize((rawdata.size() + iter->second), iter->first);
-		if(iter->second > most)
+		if(iter.second > most)
 		{
-			mode = iter->first;
-			most = iter->second;
+			most = iter.second;
+			mode = iter.first;
 		}
+		
+		prev = curr;
+		curr += iter.second;
+		if(low >= prev && low <= curr) q1 = iter.first;
+		if(mid >= prev && mid <= curr) q2 = iter.first;
+		if(upp >= prev && upp <= curr) q3 = iter.first;
+	//	if(q3 > 0) break;
 	}
 	
-	//compute quartiles
-	if(rawdata.empty()) return;
-	median = rawdata[rawdata.size()/2];
-	first_quartile = rawdata[rawdata.size()/4];
-	third_quartile = rawdata[rawdata.size()*3/4];
+	int iqr = q3 - q1;
+	int small = q1 - (int)(iqr*1.5);
+	int large = q3 + (int)(iqr*1.5);
+	prev = curr = 0;
+	for(const auto& iter :data)
+	{
+		prev = curr;
+		curr = iter.first;
+		if(min == 0 && curr >= small) min = curr;
+		if(prev <= large && curr > large) max = prev;
+	//	if(max > 0) break;
+	}
+	if(max == 0) max = curr;
 	
-	//compute standard deviation
-	if(rawdata.size() <= 1) return;
-	double difference_square = 0;
-	for(const auto& iter : rawdata)
-		difference_square += pow((iter - median), 2);
-	double variance = difference_square/(rawdata.size() - 1);
+	int sqsum = 0;
+	std::for_each(data.begin(), data.end(), [&](std::pair<int,int> x)mutable{sqsum += x.second*pow((x.first - q2), 2);});
+	double variance = (double)sqsum/(total - 1);
 	sdv = sqrt(variance);
 	
 	// double freq95 = getCutoffForProportion(0.95);
-	// repeatKmerCutoff = sdv > median*2? median*1.5: median*1.3;
-	repeatKmerCutoff = median*1.3;
+	// repeatKmerCutoff = sdv > q2*2? q2*1.5: q2*1.3;
+	repeatKmerCutoff = q2*1.3;
 	// repeatKmerCutoff = getCutoffForProportion(0.8);
-	// repeatKmerCutoff = (double) median*(0.39+0.53* (freq95/(double)median));
-	
+	// repeatKmerCutoff = (double) q2*(0.39+0.53* (freq95/(double)q2));
 }
 
-void KmerDistribution::write(std::ostream& out, int mode) const
+std::ostream& operator<<(std::ostream& out, const KmerDistribution& o)
 {
-	switch(mode)
-	{
-		case 0:
-			for(const auto& iter : data)
-				out << iter.first <<'\t' << iter.second << '\n';
-			break;
-		case 1:
-			out << readid << '\t' << first_quartile << '\t' << median << '\t' << third_quartile << '\t' << mode << '\t' << sdv << '\n';
-			break;
-		default:
-			std::cerr << "Mode should be 0/1.\n";
-			exit(EXIT_FAILURE);
-	}
+	out << o.min << ' ' << o.q1 << ' ' << o.q2 << ' ' << o.q3 << ' ' << o.max;
+	return out;
+}
+
+void compare(std::ostream& t, std::ostream& v, int cov, int ksize, KmerDistribution& c, KmerDistribution& e)
+{
+	c.computeKDAttributes();
+	e.computeKDAttributes();
+	
+	t << cov << ' ' << ksize << " | " << e << " | " << c << '\n';
+	
+	int value = 0;
+	if(c.min >= e.max) value = c.min;
+	else if(c.q1 >= e.q3) value = c.q1;
+	else value = c.q1;
+	v << cov << ' ' << ksize << ' ' << value << '\n';
 }
 
 //Legacy Part
@@ -251,4 +276,4 @@ void KmerDistribution::print(FILE *fp, int max) const
 	fprintf(fp, ">%d\t%d\n", max, maxCount);
 
 }
-
+/***********/

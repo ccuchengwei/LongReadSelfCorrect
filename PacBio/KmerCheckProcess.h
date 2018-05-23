@@ -6,15 +6,12 @@
 
 #include <iostream>
 #include <map>
-#include <utility>
-#include <cstdio>
 #include "BWTIndexSet.h"
 #include "SequenceWorkItem.h"
 #include "KmerDistribution.h"
 #include "BCode.h"
 
 //Helpful typedef
-typedef std::map<int, std::ostream*> ostreamPtrMap;
 typedef std::map<int, KmerDistribution> kdMap;
 
 //Parameter
@@ -22,7 +19,10 @@ struct KmerCheckParameters
 {
 	BWTIndexSet indices;
 	std::string directory;
-	std::pair<int ,int> size;
+	int coverage;
+	int lower;
+	int upper;
+	int step;
 };
 
 //Result
@@ -38,7 +38,7 @@ class KmerCheckProcess
 {
 	public:
 		KmerCheckProcess(KmerCheckParameters params):m_params(params){ }
-		~KmerCheckProcess(){ }
+		~KmerCheckProcess(void) = default;
 		KmerCheckResult process(const SequenceWorkItem& workItem);
 	
 	private:
@@ -59,8 +59,8 @@ class KmerCheckPostProcess
 		KmerCheckParameters m_params;
 		kdMap m_crtKdMap;
 		kdMap m_errKdMap;
-		ostreamPtrMap m_pCrtWriterMap;
-		ostreamPtrMap m_pErrWriterMap;
+		std::ostream* m_pTotalWriter;
+		std::ostream* m_pValueWriter;
 };
 
 #endif

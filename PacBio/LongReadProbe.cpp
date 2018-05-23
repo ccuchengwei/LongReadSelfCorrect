@@ -5,6 +5,27 @@
 #include "KmerFeature.h"
 #include "KmerThreshold.h"
 
+
+ProbeParameters::ProbeParameters(
+		BWTIndexSet _indices,
+		std::string _directory,
+		int _startKmerLen,
+		int _PBcoverage,
+		int _mode,
+		std::array<int, 3> _offset,
+		std::set<int> _pool,
+		bool _DebugSeed,
+		bool _Manual)
+:	indices(_indices),
+	directory(_directory),
+	startKmerLen(_startKmerLen),
+	PBcoverage(_PBcoverage),
+	mode(_mode),
+	offset(_offset),
+	pool(_pool),
+	DebugSeed(_DebugSeed),
+	Manual(_Manual){ }
+
 ProbeParameters LongReadProbe::m_params;
 
 thread_local std::string LongReadProbe::readid;
@@ -91,7 +112,7 @@ void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedF
 	if(m_params.DebugSeed)
 	{
 		std::ostream* pSeedWriter = createWriter(m_params.directory + "seed/" + readid + ".seed");
-		SeedFeature::write(*pSeedWriter, seedVec);
+		*pSeedWriter << seedVec;
 		delete pSeedWriter;
 	}
 	
@@ -212,7 +233,7 @@ SeedFeature::SeedVector LongReadProbe::removeHitchhikingSeeds(SeedFeature::SeedV
 	if(m_params.DebugSeed)
 	{
 		std::ostream* pOutcastSeedWriter = createWriter(m_params.directory + "seed/error/" + readid + ".seed");
-		SeedFeature::write(*pOutcastSeedWriter, outcastSeedVec);
+		*pOutcastSeedWriter << outcastSeedVec;
 		delete pOutcastSeedWriter;
 	}
 	return finalSeedVec;
