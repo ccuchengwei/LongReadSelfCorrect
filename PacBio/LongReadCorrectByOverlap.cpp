@@ -68,7 +68,7 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap
 		freqsOfKmerSize = new double[100 + 1]{0};
 		for(int i = m_minOverlap ; i <= 100 ; i++)
 			freqsOfKmerSize[i] = pow(1 - m_PacBioErrorRate, i) * m_PBcoverage;
-/*
+//*
 	if(m_Debug.isDebug)
 	{
 		std::cout   << m_Debug.caseNum << "\tBE: " 
@@ -77,7 +77,7 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap
 					<< m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size() << "|" 
 					<< disBetweenSrcTarget <<"\n";
 	}
-*/
+//*/
 	// PacBio reads are longer than real length due to insertions
 		m_maxLength =          (1.2*(m_disBetweenSrcTarget+10))+2*m_initkmersize     ;
 		m_minLength = std::max((0.8*(m_disBetweenSrcTarget-20))+2*m_initkmersize,0.0);
@@ -165,32 +165,46 @@ int LongReadSelfCorrectByOverlap::extendOverlap(FMWalkResult2& FMWResult)
 	//Overlap extension via FM-index walk
 	while(!m_leaves.empty() && m_leaves.size() <= m_maxLeaves && m_currentLength <= m_maxLength)
 	{
-/*		if(m_Debug.isDebug)
-			std::cout << "    " << m_step_number << " Leaves number for extension:" << m_leaves.size() << std::endl;
-*/
+/*
+		if(m_Debug.isDebug)
+		{
+			std::cout   << m_Debug.caseNum << "\t" << m_step_number 
+						<< " Leaves number for extension:" << m_leaves.size() << std::endl;
+			std::cout << "\t(Rel) Leaves number to trim branch:" << m_leaves.size() << std::endl;
+			std::cout << "\t";
+			printErrorRate(m_leaves);
+		}
+/*/
 		// ACGT-extend the leaf nodes via updating existing SA interval
 			leafList newLeaves;
 			extendLeaves(newLeaves);
 /*
+
 		if(m_Debug.isDebug)
-			std::cout << "Leaves number to trim branch:" << newLeaves.size() << std::endl;
-*/
+		{
+			std::cout << "\t(Rel) Leaves number after trimming branch: " << m_leaves.size() << std::endl;
+			std::cout << "\t(Abs) Leaves number to trim branch:" << newLeaves.size() << std::endl;
+			std::cout << "\t";
+			printErrorRate(newLeaves);
+		}
+//*/
 		//use overlap tree to trim branch
 			PrunedBySeedSupport(newLeaves);
 /*
+
 		if(m_Debug.isDebug)
 		{
-			std::cout << "Leaves number after trimming branch: " << newLeaves.size() << std::endl;
-			std::cout << "Current Length:" << m_currentLength << " (" << m_minLength << "," << m_maxLength << ")" << std::endl;
+			std::cout << "\t(Abs) Leaves number after trimming branch: " << newLeaves.size() << std::endl;
+			std::cout << "\tCurrent Length:" << m_currentLength << " (" << m_minLength << "," << m_maxLength << ")" << std::endl;
 		}
-*/
+//*/
 		//update leaves
 			m_leaves.clear();
 			m_leaves = newLeaves;
 /*
 		if(m_Debug.isDebug)
 			std::cout << "----" << std::endl;
-*/
+//*/
 		if(m_currentLength >= m_minLength)
 			isTerminated(results);
 
@@ -203,7 +217,8 @@ int LongReadSelfCorrectByOverlap::extendOverlap(FMWalkResult2& FMWResult)
 /*
 	if(m_Debug.isDebug)
 			std::cout << "\tERROR\t" << std::endl;
-*/
+//*/
+
 	// Did not reach the terminal kmer
 	if(m_leaves.empty())	//high error
 		return -1;
@@ -223,12 +238,12 @@ int LongReadSelfCorrectByOverlap::findTheBestPath(const SAIntervalNodeResultVect
 	for (size_t i = 0 ; i < results.size() ;i++)
 	{
 		const std::string& candidateSeq = results[i].thread;
-/*
+//*
 		if(m_Debug.isDebug)
 			{
 				std::cout << "Final Seqs:" << results[i].thread << "\tError Rate:" << results[i].errorRate << std::endl;
 			}
-*/
+//*/
 		if(results[i].errorRate < minErrorRate )
 		{
 			minErrorRate = results[i].errorRate;
@@ -494,6 +509,11 @@ void LongReadSelfCorrectByOverlap::updateLeaves(leafList& newLeaves,extArray& ex
 			SAIOverlapNode3* pChildNode = pNode->createChild(extensions[i].SearchLetters);
 			//inherit accumulated kmerCount from parent
 				pChildNode->addKmerCount( pNode->getKmerCount() );
+/*
+			// Remove the bug while changing the seed by FM-Extend 
+				if (i != 0)
+					(pChildNode -> resultindex).first = -1;
+//*/
 			newLeaves.emplace_back(pChildNode, leaf, extensions[i], currLeavesNum);
 		}
 	}
@@ -775,7 +795,7 @@ extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const leafInfo& curr
 		else if ( isHomopolymer )
 				kmerRatioCutoff = std::max(kmerRatioCutoff,0.6);
 /*
-			if (isDominant && (m_extSeeds.source.isRepeat || m_extSeeds.target.isRepeat))
+			if (isDominant)
 				kmerRatioCutoff = std::max(kmerRatioCutoff,0.4);
 //*/
 		if(m_Debug.isDebug && printDebugInfo)
@@ -863,6 +883,7 @@ bool LongReadSelfCorrectByOverlap::isTerminated(SAIntervalNodeResultVector& resu
 		bool isRvcTerminated = false;
 		for(size_t i = std::max(leaf -> resultindex.second,0);i < m_fwdTerminatedInterval.size(); i++)
 		{
+
 			isFwdTerminated=currfwd.isValid() && currfwd.lower >= m_fwdTerminatedInterval.at(i).lower
 							&& currfwd.upper <= m_fwdTerminatedInterval.at(i).upper;
 			isRvcTerminated=currrvc.isValid() && currrvc.lower >= m_rvcTerminatedInterval.at(i).lower
@@ -898,4 +919,17 @@ bool LongReadSelfCorrectByOverlap::isTerminated(SAIntervalNodeResultVector& resu
 	}
 
 	return found;
+}
+
+void LongReadSelfCorrectByOverlap::printErrorRate(leafList& currLeaves)
+{
+	std::cout << std::fixed << std::setprecision(5);
+
+	for(auto& iter : currLeaves)
+	{
+		SAIOverlapNode3* leaf = iter.leafNodePtr;
+		std::cout << 100*(leaf->LocalErrorRateRecord.back()) << "\t";
+	}
+
+	std::cout << std::endl;
 }

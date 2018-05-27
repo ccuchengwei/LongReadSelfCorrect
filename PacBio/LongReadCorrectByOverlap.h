@@ -360,6 +360,7 @@ class LongReadSelfCorrectByOverlap
 			bool ismatchedbykmer(BWTInterval currFwdInterval,BWTInterval currRvcInterval);
 			double computeErrorRate(SAIOverlapNode3* currNode);
 
+			void printErrorRate(leafList& currLeaves);
 		//
 		// Data
 		//

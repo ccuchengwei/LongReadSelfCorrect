@@ -123,8 +123,8 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 					int absSrcStrt = oriSrcSeed.seedStartPos + std::max(-srcOffset, 0);
 					int abstgtStrt = oriTgtSeed.seedStartPos + std::max(-tgtOffset, 0);
 
-					bool isIdentSrc = extSrcSeq.substr(relSrcStrt) == (*srcSeedIter).seedStr;
-					bool isIdentTgt = extTgtSeq.substr(reltgtStrt) ==   target      .seedStr;
+					bool isIdentSrc = extSrcSeq.substr(relSrcStrt) == oriSrcSeed.seedStr;
+					bool isIdentTgt = extTgtSeq.substr(reltgtStrt) == oriTgtSeed.seedStr;
 
 					(*pExtDebugSeed)    << result.readid << "\t" << case_number << "\t"
 
@@ -145,7 +145,8 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 										<< extTgtSeq .substr(reltgtStrt) << "\t"
 
 										<< 0          << "\t" << "None"     << "\t"
-										<< isIdentSrc << "\t" << isIdentTgt << std::endl;
+										<< isIdentSrc << "\t" << isIdentTgt << "\t"
+										<< mergedSeq  << std::endl;
 				}
 				result.totalWalkNum++;
 				source.append(mergedSeq, target);
@@ -198,8 +199,8 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 				int absSrcStrt = oriSrcSeed.seedStartPos + std::max(-srcOffset, 0);
 				int abstgtStrt = oriTgtSeed.seedStartPos + std::max(-tgtOffset, 0);
 
-				bool isIdentSrc = extSrcSeq.substr(relSrcStrt) == (*srcSeedIter).seedStr;
-				bool isIdentTgt = extTgtSeq.substr(reltgtStrt) ==   target      .seedStr;
+				bool isIdentSrc = extSrcSeq.substr(relSrcStrt) == oriSrcSeed.seedStr;
+				bool isIdentTgt = extTgtSeq.substr(reltgtStrt) == oriTgtSeed.seedStr;
 
 				(*pExtDebugSeed)    << result.readid << "\t" << case_number << "\t"
 
@@ -220,7 +221,8 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 									<< extTgtSeq .substr(reltgtStrt) << "\t"
 
 									<< isFMExtensionSuccess << "\t" << isMSAlignmentSuccess << "\t"
-									<< isIdentSrc           << "\t" << isIdentTgt           << std::endl;
+									<< isIdentSrc           << "\t" << isIdentTgt           << "\t"
+									<< mergedSeq            << std::endl;
 			}
 
 			if(isMSAlignmentSuccess)
