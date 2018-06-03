@@ -46,6 +46,6 @@ namespace LongReadProbe
 	
 	void searchSeedsWithHybridKmers(const std::string& readSeq, SeedFeature::SeedVector& seedVec);
 	void getSeqAttribute(const std::string& seq, int* const type);
-	SeedFeature::SeedVector removeHitchhikingSeeds(SeedFeature::SeedVector initSeedVec, int const *type);
+	SeedFeature::SeedVector removeHitchhikingSeeds(SeedFeature::SeedVector initSeedVec);
 };
 #endif

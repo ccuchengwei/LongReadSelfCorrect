@@ -40,19 +40,6 @@ SeedFeature::SeedFeature(
 	freqUpperBound(PBcoverage >> 1),
 	freqLowerBound(PBcoverage >> 2){ }
 
-void SeedFeature::append(std::string extendedStr, const SeedFeature& target)
-{
-	seedStr += extendedStr;
-	seedLen += extendedStr.length();
-	//Upadate seed features of source into target
-	startBestKmerSize = target.startBestKmerSize;
-	endBestKmerSize = target.endBestKmerSize;
-	isRepeat = target.isRepeat;
-	maxFixedMerFreq = target.maxFixedMerFreq;
-	seedStartPos = target.seedStartPos;
-	seedEndPos = target.seedEndPos;
-}
-		
 void SeedFeature::estimateBestKmerSize(const BWTIndexSet& indices)
 {
 	modifyKmerSize(indices, true);

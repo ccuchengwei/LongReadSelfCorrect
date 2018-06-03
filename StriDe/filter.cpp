@@ -192,7 +192,7 @@ int filterMain(int argc, char** argv)
         delete pSharedBV;
 
     std::cout << "RE-building index for " << opt::outFile << " in memory using ropebwt2\n";
-    std::string prefix=stripFilename(opt::outFile);
+    std::string prefix=getFilename(opt::outFile);
         //BWT *pBWT, *pRBWT;
 		#pragma omp parallel
 		{
@@ -304,7 +304,7 @@ void parseFilterOptions(int argc, char** argv)
 
     if(opt::prefix.empty())
     {
-        opt::prefix = stripFilename(opt::readsFile);
+        opt::prefix = getFilename(opt::readsFile);
     }
 
     if(opt::outFile.empty())
@@ -314,6 +314,6 @@ void parseFilterOptions(int argc, char** argv)
     }
     else
     {
-        opt::discardFile = stripFilename(opt::outFile) + ".discard.fa";
+        opt::discardFile = getFilename(opt::outFile) + ".discard.fa";
     }
 }

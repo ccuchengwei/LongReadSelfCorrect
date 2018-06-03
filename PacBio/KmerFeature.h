@@ -48,26 +48,18 @@ class KmerFeature
 				this->word       = seq.substr(pos, len);
 				this->size       = word.length();
 				this->biInterval = BWTAlgorithms::findBiInterval(this->indices, this->word, this->count.get());
-				
-				this->stain     = 0;
-				this->residue   = std::make_pair(0, 0);
-				this->isBlotted = monitor(this->word, this->stain, this->residue);
 			}
 			else
 			{
 				*this = *base;
 				assert(this->size < len);
-				size_t seqlen = seq.length();
-				std::string remainder;
-				for(size_t i = (pos + this->size); (i < seqlen) && (this->size < len); i++)
+				for(size_t i = (pos + this->size); (i < seq.length()) && (this->size < len); i++)
 				{
 					char b = seq[i];
 					expand(b);
-					remainder += b;
 				}
-				this->isBlotted |= monitor(remainder, this->stain, this->residue);
 			}
-			this->isFake = (len != this->size);
+			this->fake = (len != this->size);
 			this->frequency = this->biInterval.getFreq();
 		}
 	
@@ -80,13 +72,8 @@ class KmerFeature
 			this->word       = other.word;
 			this->size       = other.size;
 			this->biInterval = other.biInterval;
-			this->isFake     = other.isFake;
+			this->fake       = other.fake;
 			this->frequency  = other.frequency;
-			
-			this->stain     = other.stain;
-			this->residue   = other.residue;
-			this->isBlotted = other.isBlotted;
-			
 			return *this;
 		}
 	
@@ -100,12 +87,8 @@ class KmerFeature
 		
 		inline std::string getWord() const { return this->word; }
 		inline int getSize() const { return this->size; }
-		inline bool getPseudo() const { return this->isFake; }
-		inline int getFreq() const { return this->isFake ? -1 : this->frequency; }
-		inline bool getProperty() const { return this->isBlotted; }
+		inline int getFreq() const { return this->fake ? -1 : this->frequency; }
 	
-		inline bool isValid() const { return this->biInterval.isValid(); }
-		
 		inline void expand(char b)
 		{
 			if(b == 0) return;
@@ -127,6 +110,9 @@ class KmerFeature
 			this->frequency = this->biInterval.getFreq();
 		}
 		
+		inline bool isFake() const { return this->fake; };
+		inline bool isValid() const { return this->biInterval.isValid(); }
+		
 		inline bool isLowComplexity(float m = 0.7, float d = 0.9) const
 		{
 			const int* orig = this->count.get();
@@ -145,30 +131,8 @@ class KmerFeature
 		std::string word;
 		int size;
 		BiBWTInterval biInterval;
-		bool isFake; //'isFake' is set only when initialized.
+		bool fake; //'fake' is set only when initialized.
 		int frequency;
-		
-		int stain;
-		std::pair<char,int> residue;
-		bool isBlotted;
-		
-		bool monitor(const std::string& seq, int& s, std::pair<char,int>& r)
-		{
-			bool a = false;
-			for(char c : seq)
-			{
-				if(c == r.first)
-					r.second++;
-				else
-				{
-					s = std::max(s, r.second);
-					a |= (r.second > 3);
-					r = std::make_pair(c, 1);
-				}
-			}
-			s= std::max(s, r.second);
-			return a || (r.second > 3);
-		}
 };
 
 #endif

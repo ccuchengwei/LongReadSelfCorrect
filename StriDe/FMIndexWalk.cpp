@@ -332,7 +332,7 @@ void parseFMWalkOptions(int argc, char** argv)
 
 	if(opt::prefix.empty())
 	{
-		opt::prefix = stripFilename(opt::readsFile);
+		opt::prefix = getFilename(opt::readsFile);
 	}
 
 	// Set the correction threshold
@@ -343,7 +343,7 @@ void parseFMWalkOptions(int argc, char** argv)
 	}
 	CorrectionThresholds::Instance().setBaseMinSupport(opt::kmerThreshold);
 
-	std::string out_prefix = stripFilename(opt::readsFile);
+	std::string out_prefix = getFilename(opt::readsFile);
 	if(opt::outFile.empty())
 	{
 		if (opt::algorithm == FMW_HYBRID || opt::algorithm ==  FMW_MERGE )

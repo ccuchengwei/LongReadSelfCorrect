@@ -15,10 +15,22 @@ class SeedFeature
 		SeedFeature(std::string str, int startPos, int frequency, bool repeat, int kmerSize, int PBcoverage);
 		~SeedFeature(void) = default;
 		
-		// append current seed string with extendedStr
-		void append(std::string extendedStr, const SeedFeature& target);
 		// adjust start/end kmer for future FMWalk
 		void estimateBestKmerSize(const BWTIndexSet& indices);
+		
+		// append current seed string with extendedStr
+		inline void append(std::string extendedStr, const SeedFeature& target)
+		{
+			seedStr += extendedStr;
+			seedLen += extendedStr.length();
+			//Upadate seed features of source into target
+			startBestKmerSize = target.startBestKmerSize;
+			endBestKmerSize = target.endBestKmerSize;
+			isRepeat = target.isRepeat;
+			maxFixedMerFreq = target.maxFixedMerFreq;
+			seedStartPos = target.seedStartPos;
+			seedEndPos = target.seedEndPos;
+		}
 		
 		std::string seedStr;
 		int seedLen;

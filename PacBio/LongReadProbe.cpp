@@ -41,21 +41,21 @@ void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedF
 	getSeqAttribute(readSeq, attribute);
 	if(m_params.Manual) std::fill_n(attribute, readSeqLen, m_params.mode);
 	
-	//Search seeds; slide through the read sequence with hybrid-kmers. Noted by KuanWeiLee
+	//Search seeds; slide through the sequence with hybrid-kmers. Noted by KuanWeiLee
 	//[init/curr]Pos indicate the initial/current position of the static-kmer.
 	for(size_t initPos = 0; initPos < readSeqLen; initPos++)
 	{
 		int dynamicMode = attribute[initPos];
 		staticSize += m_params.offset[dynamicMode];
-		bool isSeed = false, isRepeat = false;
 		KmerFeature dynamicKmer = KmerFeature::Log()[staticSize][initPos];
+		bool isSeed = false, isRepeat = false;
 		int maxFixedMerFreq = dynamicKmer.getFreq();
 		size_t seedPos = initPos;
 		for(size_t currPos = initPos; currPos < readSeqLen; currPos++)
 		{
 			int staticMode = attribute[currPos];
 			const KmerFeature& staticKmer = KmerFeature::Log()[staticSize][currPos];
-			if(staticKmer.getPseudo()) break;
+			if(staticKmer.isFake()) break;
 			if(isSeed)
 			{
 				char b = readSeq[(currPos + staticSize - 1)];
@@ -64,7 +64,6 @@ void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedF
 			float dynamicThreshold = KmerThreshold::Instance().get(dynamicMode, dynamicKmer.getSize());
 			float staticThreshold  = KmerThreshold::Instance().get(staticMode, staticKmer.getSize());
 			float repeatThreshold  = (5 - ((staticMode >> 1) << 2))*staticThreshold;
-			staticThreshold *= staticKmer.getProperty() ? 1.5 : 1;
 			//Gerneral seed extension strategy.
 			if	(
 				   staticKmer.getFreq() < staticThreshold						//1.static frequency
@@ -78,23 +77,21 @@ void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedF
 			}
 			//Kmer Hitchhike strategy.
 			float freqDiff = (float)staticKmer.getFreq()/maxFixedMerFreq;
-			bool isOnRepeat = (staticKmer.getFreq() >= repeatThreshold);
-			int isGiantRepeat = ((dynamicMode >> 1) & (staticMode >> 1)) + 1;
-			if(isRepeat && freqDiff < (m_params.hhRatio/isGiantRepeat))			//4.hitchhiking kmer(1) (HIGH-->LOW)
+			if(freqDiff < m_params.hhRatio)						//4.hitchhiking kmer(1) (HIGH-->LOW)
 			{
-				dynamicKmer.shrink(1);
 				initPos++;
+				dynamicKmer.shrink(1);
 				break;
 			}
-			else if(isOnRepeat && freqDiff > (isGiantRepeat/m_params.hhRatio))	//4.hitchhiking kmer(2) (LOW-->HIGH)
+			else if(freqDiff > 1/m_params.hhRatio)				//4.hitchhiking kmer(2) (LOW-->HIGH)
 			{
-				isSeed = false;
 				initPos = currPos - 1;
+				isSeed = false;
 				break;
 			}
-			isSeed = true;
 			initPos = seedPos + dynamicKmer.getSize() - 1;
-			isRepeat |= isOnRepeat;
+			isSeed = true;
+			isRepeat |= (staticKmer.getFreq() >= repeatThreshold);
 			maxFixedMerFreq = std::max(maxFixedMerFreq, staticKmer.getFreq());
 		}
 		//Low Complexity strategy.
@@ -107,7 +104,7 @@ void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedF
 	}
 
 	//Seed Hitchhike strategy.
-	seedVec = removeHitchhikingSeeds(seedVec, attribute);
+	seedVec = removeHitchhikingSeeds(seedVec);
 	
 	if(m_params.DebugSeed)
 	{
@@ -187,34 +184,24 @@ void LongReadProbe::getSeqAttribute(const std::string& seq, int* const attribute
 //Kmer & Seed Hitchhike strategy would maitain seed-correctness, 
 //once the sequence is stuck between the ambiguity from uniqu to repeatThreshold mode.
 //Noted by KuanWeiLee 20180106
-SeedFeature::SeedVector LongReadProbe::removeHitchhikingSeeds(SeedFeature::SeedVector initSeedVec, int const *attribute)
+SeedFeature::SeedVector LongReadProbe::removeHitchhikingSeeds(SeedFeature::SeedVector initSeedVec)
 {
 	if(initSeedVec.size() < 2) return initSeedVec;
-	
-	int ksize = m_params.startKmerLen + m_params.offset[2];
-	float overValue = KmerThreshold::Instance().get(2, ksize)*5;
 	
 	for(SeedFeature::SeedVector::iterator iterQuery = initSeedVec.begin(); (iterQuery + 1) != initSeedVec.end(); iterQuery++)
 	{
 		SeedFeature& query = *iterQuery;
 		SeedFeature::SeedVector::iterator iterSubject = iterQuery + 1;
-		//if(query.isHitchhiked) continue;
-		int queryMode = attribute[query.seedStartPos];
-		if(queryMode == 2 && query.maxFixedMerFreq >= overValue) continue;
 		
 		for(; iterSubject != initSeedVec.end(); iterSubject++)
 		{
 			SeedFeature& subject = *iterSubject;
-			//if(subject.isHitchhiked) continue;
-			int	subjectMode = attribute[subject.seedStartPos];
 			if((int)(subject.seedStartPos - query.seedEndPos) > m_params.radius) break;
-			if(subjectMode == 2 && subject.maxFixedMerFreq >= overValue) continue;
 			
 			float freqDiff = (float)subject.maxFixedMerFreq/query.maxFixedMerFreq;
-			int isGiantRepeat = ((queryMode >> 1) & (subjectMode >> 1)) + 1;
 			
-			subject.isHitchhiked |= (query.isRepeat && freqDiff < (m_params.hhRatio/isGiantRepeat));	//HIGH --> LOW
-			query.isHitchhiked |= (subject.isRepeat && freqDiff > (isGiantRepeat/m_params.hhRatio));	//LOW  --> HIGH
+			subject.isHitchhiked |= (query.isRepeat && freqDiff < m_params.hhRatio);	//HIGH --> LOW
+			query.isHitchhiked |= (subject.isRepeat && freqDiff > 1/m_params.hhRatio);	//LOW  --> HIGH
 		}
 	}
 	

@@ -151,9 +151,9 @@ int overlapMain(int argc, char** argv)
 	// use the index of the target reads
 	std::string indexPrefix;
 	if(!opt::targetFile.empty())
-		indexPrefix = stripFilename(opt::targetFile);
+		indexPrefix = getFilename(opt::targetFile);
 	else
-		indexPrefix = stripFilename(opt::readsFile);
+		indexPrefix = getFilename(opt::readsFile);
 
 	BWT *pBWT, *pRBWT;
 	SuffixArray *pFwdSAI, *pRevSAI;
@@ -198,11 +198,11 @@ int overlapMain(int argc, char** argv)
 
 	// Make a prefix for the hit edges files
 	std::string outPrefix;
-	outPrefix = stripFilename(opt::readsFile);
+	outPrefix = getFilename(opt::readsFile);
 	if(!opt::targetFile.empty())
 	{
 		outPrefix.append(1, '.');
-		outPrefix.append(stripFilename(opt::targetFile));
+		outPrefix.append(getFilename(opt::targetFile));
 	}
 	
 	time_t now = time(NULL);
@@ -402,11 +402,11 @@ void parseOverlapOptions(int argc, char** argv)
 
 	if(opt::outFile.empty())
 	{
-		std::string prefix = stripFilename(opt::readsFile);
+		std::string prefix = getFilename(opt::readsFile);
 		if(!opt::targetFile.empty())
 		{
 			prefix.append(1,'.');
-			prefix.append(stripFilename(opt::targetFile));
+			prefix.append(getFilename(opt::targetFile));
 		}
 		opt::outFile = prefix + ASQG_EXT + GZIP_EXT;
 	}

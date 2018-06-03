@@ -27,7 +27,7 @@ void KmerCheckProcess::scan(int ksize, const BCode& block, const std::string& se
 	for(int pos = block.getStart(); pos <= (block.getEnd() - ksize); pos++)
 	{
 		KmerFeature curr(m_params.indices, seq, pos, ksize);
-		assert(!curr.getPseudo());
+		assert(!curr.isFake());
 		assert(curr.getFreq() != 0);
 		if(curr.getFreq() == 1) continue;
 		bool find = BCode::validate(pos, ksize, block, seq);

@@ -141,9 +141,9 @@ class PacBioSelfCorrectionPostProcess
 	    double m_Timer_DP;
 		
 		FILE* m_pStatusWriter;
-		int m_status[3];
+		size_t m_status[3];
 		
-		void summarize(FILE* out, const int* status, std::string subject);
+		void summarize(FILE* out, const size_t* status, std::string subject);
 };
 
 

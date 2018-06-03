@@ -269,7 +269,7 @@ PacBioSelfCorrectionPostProcess::PacBioSelfCorrectionPostProcess(const PacBioSel
 	m_status{0, 0, 0}
 {
 	if(m_params.OnlySeed)
-		m_pStatusWriter = fopen((m_params.directory + "total.stat").c_str(), "w");
+		m_pStatusWriter = fopen((m_params.directory + "total.seed").c_str(), "w");
 	else
 	{
 		m_pCorrectWriter = createWriter(m_params.directory + "correct.fa");
@@ -314,7 +314,7 @@ void PacBioSelfCorrectionPostProcess::process(const SequenceWorkItem& workItem, 
 {
 	if(m_params.OnlySeed)
 	{
-		int status[3]{0, 0, 0};
+		size_t status[3]{0, 0, 0};
 		std::string id = workItem.read.id;
 		std::string seq = workItem.read.seq.toString();
 		for(const auto& s : SeedFeature::Log()[id])
@@ -331,7 +331,7 @@ void PacBioSelfCorrectionPostProcess::process(const SequenceWorkItem& workItem, 
 			status[m]++;
 		}
 		summarize(m_pStatusWriter, status, result.readid);
-		std::transform(m_status, (m_status + 3), status, m_status, [=](int x, int y)->int{return x + y;});
+		std::transform(m_status, (m_status + 3), status, m_status, [=](size_t x, size_t y)->size_t{return x + y;});
 	}
 	else if(result.merge)
 	{
@@ -369,12 +369,12 @@ void PacBioSelfCorrectionPostProcess::process(const SequenceWorkItem& workItem, 
 	}
 }
 
-void PacBioSelfCorrectionPostProcess::summarize(FILE* out, const int* status, std::string subject)
+void PacBioSelfCorrectionPostProcess::summarize(FILE* out, const size_t* status, std::string subject)
 {
-	int sum = std::accumulate(status, (status + 3), 0);
-	float crt = (float)(100*status[0])/sum;
-	float err = (float)(100*status[1])/sum;
-	float non = (float)(100*status[2])/sum;
+	size_t sum = std::accumulate(status, (status + 3), 0);
+	double crt = (double)(100*status[0])/sum;
+	double err = (double)(100*status[1])/sum;
+	double non = (double)(100*status[2])/sum;
 	if(status[1] > 0)
-		fprintf(out, "%s(%d) %.2f%% %.2f%% %.2f%%\n", subject.c_str(), sum, crt, err, non);
+		fprintf(out, "%s [%ld] %.2lf%% %.2lf%% %.2lf%%\n", subject.c_str(), sum, crt, err, non);
 }

@@ -102,10 +102,10 @@ namespace opt
 	
 	//variables for auto set
 	static bool Adjust = false;
-	static std::map<int, int> order = { {5, 0}, {10, 1}, {100, 2} };
-	static int size[3] = { 17, 19, 21 };
-	static std::array<int, 3> offset = { 0, 0, 0 };
-	static std::set<int> pool = { 5, 9, 19 }; // (5 & 9) -> fragment; 19 -> scan-window
+	static std::map<int, int> order = {{5, 0}, {10, 1}, {100, 2}};
+	static int size[3] = {17, 19, 21};
+	static std::array<int, 3> offset = {0, 0, 0};
+	static std::set<int> pool = {5, 9, 19}; // (5 & 9) -> fragment; 19 -> scan-window
 }
 
 static const char* shortopts = "t:p:o:b:c:e:k:u:r:n:l:i:s:g:m:v";
@@ -429,7 +429,7 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 	}
 	
 	opt::readsFile = argv[optind++];
-//	std::string out_prefix = stripFilename(opt::readsFile);
+//	std::string out_prefix = getFilename(opt::readsFile);
 	
 }
 

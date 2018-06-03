@@ -53,6 +53,7 @@ namespace opt
     static unsigned int verbose;
     static std::string readsFile;
     static std::string prefix;
+	static std::string directory;
     static std::string algorithm = "ropebwt2";
     static int numReadsPerBatch = 2000000;
     static int numThreads = 8;
@@ -97,7 +98,7 @@ int indexMain(int argc, char** argv)
             indexInMemoryRopebwt2();
 	}
     else
-	std::cout << "Unknown BWT algorithm!\n";
+		std::cout << "Unknown BWT algorithm!\n";
  
 	
 	delete pTimer;
@@ -336,7 +337,12 @@ void parseIndexOptions(int argc, char** argv)
     // Parse the input filenames
     opt::readsFile = argv[optind++];
     if(opt::prefix.empty())
-        opt::prefix = stripFilename(opt::readsFile);
+        opt::prefix = getFilename(opt::readsFile);
+	else
+	{
+		opt::directory = getDirectory(opt::prefix);
+		assert(system(("mkdir -p " + opt::directory).c_str()) == 0);
+	}
 
     // Check if input file is empty
     size_t filesize = getFilesize(opt::readsFile);
