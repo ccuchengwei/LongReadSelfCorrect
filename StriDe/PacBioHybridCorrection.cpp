@@ -383,7 +383,7 @@ void parsePacBioHybridCorrectionOptions(int argc, char** argv)
 
 	if(opt::PBprefix.empty())
 	{
-		opt::PBprefix = stripFilename(opt::readsFile);
+		opt::PBprefix = getFilename(opt::readsFile);
 		std::cout << "Warning: FM-index of long reads is not provided. Search for index " << opt::PBprefix << ".bwt/sai/rbwt/rsai\n";
 	}
 	// Set the correction threshold
@@ -394,7 +394,7 @@ void parsePacBioHybridCorrectionOptions(int argc, char** argv)
 	}
 	CorrectionThresholds::Instance().setBaseMinSupport(opt::kmerThreshold);
 
-	std::string out_prefix = stripFilename(opt::readsFile);
+	std::string out_prefix = getFilename(opt::readsFile);
 	if(opt::outFile.empty())
 		opt::outFile = out_prefix + ".PBHybridCor.fa";
 	opt::discardFile = out_prefix + ".discard.fa";

@@ -166,11 +166,12 @@ enum ReadOnContig
 //
 // Functions
 //
-std::string stripFilename(const std::string& filename);
 std::string stripExtension(const std::string& filename);
 std::string stripGzippedExtension(const std::string& filename);
-std::string stripDirectories(const std::string& filename);
+std::string stripDirectory(const std::string& filename);
 std::string getFileExtension(const std::string& filename);
+std::string getFilename(const std::string& filename);
+std::string getDirectory(const std::string& filename);
 bool isGzip(const std::string& filename);
 bool isFastq(const std::string& filename);
 std::ifstream::pos_type getFilesize(const std::string& filename);

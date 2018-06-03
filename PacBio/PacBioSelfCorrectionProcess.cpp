@@ -269,7 +269,7 @@ PacBioSelfCorrectionPostProcess::PacBioSelfCorrectionPostProcess(const PacBioSel
 	m_status{0, 0, 0}
 {
 	if(m_params.OnlySeed)
-		m_pStatusWriter = fopen((m_params.directory + "total.stat").c_str(), "w");
+		m_pStatusWriter = fopen((m_params.directory + "total.seed").c_str(), "w");
 	else
 	{
 		m_pCorrectWriter = createWriter(m_params.directory + "correct.fa");
@@ -376,5 +376,5 @@ void PacBioSelfCorrectionPostProcess::summarize(FILE* out, const int* status, st
 	float err = (float)(100*status[1])/sum;
 	float non = (float)(100*status[2])/sum;
 	if(status[1] > 0)
-		fprintf(out, "%s(%d) %.2f%% %.2f%% %.2f%%\n", subject.c_str(), sum, crt, err, non);
+		fprintf(out, "%s [%d] %.2f%% %.2f%% %.2f%%\n", subject.c_str(), sum, crt, err, non);
 }

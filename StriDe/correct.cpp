@@ -435,7 +435,7 @@ void parseCorrectOptions(int argc, char** argv)
 
     if(opt::prefix.empty())
     {
-        opt::prefix = stripFilename(opt::readsFile);
+        opt::prefix = getFilename(opt::readsFile);
     }
 
     // Set the correction threshold
@@ -446,7 +446,7 @@ void parseCorrectOptions(int argc, char** argv)
     }
     CorrectionThresholds::Instance().setBaseMinSupport(opt::kmerThreshold);
 
-    std::string out_prefix = stripFilename(opt::readsFile);
+    std::string out_prefix = getFilename(opt::readsFile);
     if(opt::outFile.empty())
     {
         opt::outFile = out_prefix + ".ec.fa";

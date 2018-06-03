@@ -58,7 +58,7 @@ int grepMain(int argc, char** argv)
     Timer t("sga grep");
 	parseGREPOptions(argc, argv);
 	
-	std::string  prefix = stripFilename(opt::readsFile);
+	std::string  prefix = getFilename(opt::readsFile);
 	Timer* pLTimer = new Timer("Load Time");
 	BWT* pBWT = new BWT(prefix + BWT_EXT, BWT::DEFAULT_SAMPLE_RATE_SMALL);
 	SampledSuffixArray* pSSA = new SampledSuffixArray(prefix + SAI_EXT, SSA_FT_SAI);

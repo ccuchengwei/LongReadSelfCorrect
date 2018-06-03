@@ -41,21 +41,21 @@ void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedF
 	getSeqAttribute(readSeq, attribute);
 	if(m_params.Manual) std::fill_n(attribute, readSeqLen, m_params.mode);
 	
-	//Search seeds; slide through the read sequence with hybrid-kmers. Noted by KuanWeiLee
+	//Search seeds; slide through the sequence with hybrid-kmers. Noted by KuanWeiLee
 	//[init/curr]Pos indicate the initial/current position of the static-kmer.
 	for(size_t initPos = 0; initPos < readSeqLen; initPos++)
 	{
 		int dynamicMode = attribute[initPos];
 		staticSize += m_params.offset[dynamicMode];
-		bool isSeed = false, isRepeat = false;
 		KmerFeature dynamicKmer = KmerFeature::Log()[staticSize][initPos];
+		bool isSeed = false, isRepeat = false;
 		int maxFixedMerFreq = dynamicKmer.getFreq();
 		size_t seedPos = initPos;
 		for(size_t currPos = initPos; currPos < readSeqLen; currPos++)
 		{
 			int staticMode = attribute[currPos];
 			const KmerFeature& staticKmer = KmerFeature::Log()[staticSize][currPos];
-			if(staticKmer.getPseudo()) break;
+			if(staticKmer.isFake()) break;
 			if(isSeed)
 			{
 				char b = readSeq[(currPos + staticSize - 1)];
@@ -64,7 +64,6 @@ void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedF
 			float dynamicThreshold = KmerThreshold::Instance().get(dynamicMode, dynamicKmer.getSize());
 			float staticThreshold  = KmerThreshold::Instance().get(staticMode, staticKmer.getSize());
 			float repeatThreshold  = (5 - ((staticMode >> 1) << 2))*staticThreshold;
-			staticThreshold *= staticKmer.getProperty() ? 1.5 : 1;
 			//Gerneral seed extension strategy.
 			if	(
 				   staticKmer.getFreq() < staticThreshold						//1.static frequency
@@ -78,23 +77,22 @@ void LongReadProbe::searchSeedsWithHybridKmers(const std::string& readSeq, SeedF
 			}
 			//Kmer Hitchhike strategy.
 			float freqDiff = (float)staticKmer.getFreq()/maxFixedMerFreq;
-			bool isOnRepeat = (staticKmer.getFreq() >= repeatThreshold);
 			int isGiantRepeat = ((dynamicMode >> 1) & (staticMode >> 1)) + 1;
-			if(isRepeat && freqDiff < (m_params.hhRatio/isGiantRepeat))			//4.hitchhiking kmer(1) (HIGH-->LOW)
+			if(freqDiff < (m_params.hhRatio/isGiantRepeat))						//4.hitchhiking kmer(1) (HIGH-->LOW)
 			{
-				dynamicKmer.shrink(1);
 				initPos++;
+				dynamicKmer.shrink(1);
 				break;
 			}
-			else if(isOnRepeat && freqDiff > (isGiantRepeat/m_params.hhRatio))	//4.hitchhiking kmer(2) (LOW-->HIGH)
+			else if(freqDiff > (isGiantRepeat/m_params.hhRatio))				//4.hitchhiking kmer(2) (LOW-->HIGH)
 			{
-				isSeed = false;
 				initPos = currPos - 1;
+				isSeed = false;
 				break;
 			}
-			isSeed = true;
 			initPos = seedPos + dynamicKmer.getSize() - 1;
-			isRepeat |= isOnRepeat;
+			isSeed = true;
+			isRepeat |= (staticKmer.getFreq() >= repeatThreshold);
 			maxFixedMerFreq = std::max(maxFixedMerFreq, staticKmer.getFreq());
 		}
 		//Low Complexity strategy.

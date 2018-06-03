@@ -170,17 +170,6 @@ char randomBase()
     return 'A';        
 }
 
-// Strip the leading directories and
-// the last trailling suffix from a filename
-std::string stripFilename(const std::string& filename)
-{
-    std::string out = stripDirectories(filename);
-    // Remove the gzip extension if necessary
-    if(isGzip(out))
-        out = stripExtension(out);
-    return stripExtension(out);
-}
-
 // Remove a single file extension from the filename
 std::string stripExtension(const std::string& filename)
 {
@@ -202,14 +191,13 @@ std::string stripGzippedExtension(const std::string& filename)
         return stripExtension(filename);
 }
 
-
-// Strip the leadering directories from a filename
-std::string stripDirectories(const std::string& filename)
+// Strip the leading directory from a filename
+std::string stripDirectory(const std::string& filename)
 {
     size_t lastDirPos = filename.find_last_of('/');
     
     if(lastDirPos == std::string::npos)
-        return filename; // no directories
+        return filename; // no directory
     else
         return filename.substr(lastDirPos + 1);
 }
@@ -223,6 +211,25 @@ std::string getFileExtension(const std::string& filename)
         return "";
     else
         return filename.substr(suffixPos + 1);
+}
+
+// Strip the leading directory and
+// the last trailling suffix from a filename
+std::string getFilename(const std::string& filename)
+{
+    std::string out = stripDirectory(filename);
+    // Remove the gzip extension if necessary
+    if(isGzip(out))
+        out = stripExtension(out);
+    return stripExtension(out);
+}
+
+// Strip the leading directory from a filename
+std::string getDirectory(const std::string& filename)
+{
+    size_t lastDirPos = filename.find_last_of('/');
+    
+	return (lastDirPos == std::string::npos ? "." : filename.substr(0, lastDirPos)) + "/";
 }
 
 // Write out a fasta record
