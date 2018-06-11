@@ -210,10 +210,9 @@ libalgorithm_a-ErrorCorrectProcess.o: ErrorCorrectProcess.cpp \
  ../Bigraph/Vertex.h ../Util/QualityVector.h ../Util/SimpleAllocator.h \
  ../Util/SimplePool.h ../Bigraph/EdgeDesc.h ../Bigraph/Edge.h \
  ../Util/QualityTable.h ../Util/QualityCodec.h ../Util/KmerDistribution.h \
- /usr/include/c++/5/cstddef ../Concurrency/SequenceProcessFramework.h \
- ../Concurrency/ThreadWorker.h /usr/include/semaphore.h \
- /usr/include/x86_64-linux-gnu/bits/semaphore.h ../Util/Timer.h \
- /usr/include/x86_64-linux-gnu/sys/time.h \
+ ../Concurrency/SequenceProcessFramework.h ../Concurrency/ThreadWorker.h \
+ /usr/include/semaphore.h /usr/include/x86_64-linux-gnu/bits/semaphore.h \
+ ../Util/Timer.h /usr/include/x86_64-linux-gnu/sys/time.h \
  ../Concurrency/SequenceWorkItem.h ../Util/SeqReader.h \
  ../Concurrency/SequenceWorkItem.h ../Util/Metrics.h \
  ../SuffixTools/BWTIndexSet.h ../SuffixTools/SampledSuffixArray.h \
@@ -852,8 +851,6 @@ SearchSeed.h:
 ../Util/QualityCodec.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/5/cstddef:
 
 ../Concurrency/SequenceProcessFramework.h:
 

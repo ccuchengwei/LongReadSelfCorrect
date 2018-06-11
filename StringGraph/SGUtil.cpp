@@ -236,7 +236,7 @@ StringGraph* SGUtil::loadASQGVertex(const std::string& filename, const unsigned 
 
 StringGraph* SGUtil::loadASQGEdge(std::string ASQGFileName, const unsigned int minOverlap, bool allowContainments, size_t maxEdges, StringGraph* pGraph)
 {
-	std::string edgeFilePrefix = stripFilename(ASQGFileName);
+	std::string edgeFilePrefix = getFilename(ASQGFileName);
 	std::vector<std::istream*> EdgeFileVec;
 
 	//search for the edges files named with xxxx-thread??.edges.gz, if existed

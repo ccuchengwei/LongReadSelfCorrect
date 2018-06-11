@@ -209,7 +209,7 @@ void parseFMMergeOptions(int argc, char** argv)
 
     if(opt::prefix.empty())
     {
-        opt::prefix = stripFilename(opt::readsFile);
+        opt::prefix = getFilename(opt::readsFile);
     }
 
     if(opt::outFile.empty())

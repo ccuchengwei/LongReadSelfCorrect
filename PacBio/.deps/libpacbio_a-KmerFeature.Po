@@ -203,10 +203,16 @@ libpacbio_a-KmerFeature.o: KmerFeature.cpp /usr/include/stdc-predef.h \
  /usr/local/include/sparsehash/dense_hash_set ../Util/QualityTable.h \
  ../Util/QualityCodec.h ../SuffixTools/BWTAlgorithms.h \
  ../SuffixTools/BWTIndexSet.h ../Bigraph/GraphCommon.h \
+<<<<<<< HEAD
  ../Util/KmerDistribution.h /usr/include/c++/5/cstddef \
  /usr/include/c++/5/queue /usr/include/c++/5/deque \
  /usr/include/c++/5/bits/stl_deque.h /usr/include/c++/5/bits/deque.tcc \
  /usr/include/c++/5/bits/stl_queue.h
+=======
+ ../Util/KmerDistribution.h /usr/include/c++/6/queue \
+ /usr/include/c++/6/deque /usr/include/c++/6/bits/stl_deque.h \
+ /usr/include/c++/6/bits/deque.tcc /usr/include/c++/6/bits/stl_queue.h
+>>>>>>> master
 
 /usr/include/stdc-predef.h:
 
@@ -812,9 +818,13 @@ KmerFeature.h:
 
 ../Util/KmerDistribution.h:
 
+<<<<<<< HEAD
 /usr/include/c++/5/cstddef:
 
 /usr/include/c++/5/queue:
+=======
+/usr/include/c++/6/queue:
+>>>>>>> master
 
 /usr/include/c++/5/deque:
 

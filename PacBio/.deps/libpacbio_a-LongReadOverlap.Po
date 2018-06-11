@@ -214,12 +214,11 @@ libpacbio_a-LongReadOverlap.o: LongReadOverlap.cpp \
  ../Util/QualityCodec.h ../SuffixTools/SampledSuffixArray.h \
  ../SuffixTools/BWTAlgorithms.h ../SuffixTools/BWTIndexSet.h \
  ../Bigraph/GraphCommon.h ../Util/KmerDistribution.h \
- /usr/include/c++/5/cstddef /usr/include/c++/5/queue \
- /usr/include/c++/5/deque /usr/include/c++/5/bits/stl_deque.h \
- /usr/include/c++/5/bits/deque.tcc /usr/include/c++/5/bits/stl_queue.h \
- ../Util/BitVector.h ../Util/BitChar.h LongReadOverlap.h SeedFeature.h \
- PBOverlapTree.h ../SuffixTools/BWT.h ../FMIndexWalk/SAINode.h \
- IntervalTree.h
+ /usr/include/c++/5/queue /usr/include/c++/5/deque \
+ /usr/include/c++/5/bits/stl_deque.h /usr/include/c++/5/bits/deque.tcc \
+ /usr/include/c++/5/bits/stl_queue.h ../Util/BitVector.h \
+ ../Util/BitChar.h LongReadOverlap.h SeedFeature.h PBOverlapTree.h \
+ ../SuffixTools/BWT.h ../FMIndexWalk/SAINode.h IntervalTree.h
 
 /usr/include/stdc-predef.h:
 
@@ -852,8 +851,6 @@ libpacbio_a-LongReadOverlap.o: LongReadOverlap.cpp \
 ../Bigraph/GraphCommon.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/5/cstddef:
 
 /usr/include/c++/5/queue:
 

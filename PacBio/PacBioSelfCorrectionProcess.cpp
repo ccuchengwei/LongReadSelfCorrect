@@ -7,6 +7,7 @@
 // PacBioSelfCorrectionProcess.cpp - Self-correction using FM-index walk for PacBio reads
 //
 #include <algorithm>
+#include <numeric>
 #include <memory>
 #include "PacBioSelfCorrectionProcess.h"
 #include "LongReadProbe.h"
@@ -14,6 +15,7 @@
 #include "Util.h"
 #include "Timer.h"
 #include "KmerFeature.h"
+#include "BCode.h"
 
 // PacBio Self Correction by Ya and YTH, v20151202.
 // 1. Identify highly-accurate seeds within PacBio reads
@@ -26,9 +28,9 @@ PacBioSelfCorrectionResult PacBioSelfCorrectionProcess::process(const SequenceWo
 	const size_t readSeqLen = readSeq.length();
 	SeedFeature::SeedVector seedVec, pieceVec;
 
-	//allocate space for kmers on each position
-	for(auto& iter : m_params.kmerPool)
-		KmerFeature::kmerRec[iter] = std::unique_ptr<KmerFeature[]>(new KmerFeature[readSeqLen]);
+	//allocate space for kmers on the sequence
+	for(auto& iter : m_params.pool)
+		KmerFeature::Log()[iter] = std::unique_ptr<KmerFeature[]>(new KmerFeature[readSeqLen]);
 
 	//Part 1: start searching seeds
     Timer* seedTimer = new Timer("Seed Time", true);
@@ -41,8 +43,8 @@ PacBioSelfCorrectionResult PacBioSelfCorrectionProcess::process(const SequenceWo
 	//Part 2:start correcting sequence
     initCorrect(readSeq, seedVec, pieceVec, result);
 
-	//free space for kmers on each position
-	KmerFeature::kmerRec.clear();
+	//free space for kmers on the sequence
+	KmerFeature::Log().clear();
 
 	result.merge = !pieceVec.empty();
 	result.totalReadsLen = readSeq.length();
@@ -53,14 +55,18 @@ PacBioSelfCorrectionResult PacBioSelfCorrectionProcess::process(const SequenceWo
 //Correct sequence by FMWalk & MSAlignment; it's a workflow control module. Noted by KuanWeiLee 18/3/12
 void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFeature::SeedVector& seedVec, SeedFeature::SeedVector& pieceVec, PacBioSelfCorrectionResult& result)
 {
+	if(m_params.OnlySeed)
+	{
+		SeedFeature::Log()[result.readid] = seedVec;
+		return;
+	}
+	if(seedVec.size() < 2) return;
 	std::ostream* pExtWriter    = nullptr;
 	std::ostream* pDpWriter     = nullptr;
 	std::ostream* pExtDebugFile = nullptr;
 	std::ostream* pExtDebugSeed = nullptr;
 
 	SeedFeature::SeedVector::const_iterator srcSeedIter = seedVec.begin();
-
-	if(m_params.OnlySeed || seedVec.size() < 2) return;
 
 	//push first seed into vector and reserve space for fast expansion
 	pieceVec.push_back(seedVec[0]);
@@ -84,7 +90,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 							<< "FMStatus\tisDPSuccess\t"
 							<< "isIdentSrc\tisIdentTgt"
 							<< std::endl;
-*/
+//*/
 	}
 
 	int case_number = 1;
@@ -96,7 +102,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 		SeedFeature& source = pieceVec.back();
 		std::string mergedSeq;
 
-		for(int next = 0; next < m_params.numOfNextTarget && (iterTarget + next) != seedVec.end() ; next++)
+		for(int next = 0; next < m_params.nextTarget && (iterTarget + next) != seedVec.end() ; next++)
 		{
 			const SeedFeature& target = *(iterTarget + next);
 
@@ -126,27 +132,27 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 					bool isIdentSrc = extSrcSeq.substr(relSrcStrt) == oriSrcSeed.seedStr;
 					bool isIdentTgt = extTgtSeq.substr(reltgtStrt) == oriTgtSeed.seedStr;
 
-					(*pExtDebugSeed)    << result.readid << "\t" << case_number << "\t"
+					(*pExtDebugSeed)
+								<< result.readid << "\t" << case_number << "\t"
+								<< oriSrcSeed.seedStartPos       << "\t"
+								<< oriSrcSeed.seedEndPos         << "\t"
+								<< oriSrcSeed.seedStr            << "\t"
 
-										<< oriSrcSeed.seedStartPos       << "\t"
-										<< oriSrcSeed.seedEndPos         << "\t"
-										<< oriSrcSeed.seedStr            << "\t"
+								<< absSrcStrt                    << "\t"
+								<< oriSrcSeed.seedEndPos         << "\t"
+								<< extSrcSeq .substr(relSrcStrt) << "\t"
 
-										<< absSrcStrt                    << "\t"
-										<< oriSrcSeed.seedEndPos         << "\t"
-										<< extSrcSeq .substr(relSrcStrt) << "\t"
+								<< oriTgtSeed.seedStartPos       << "\t"
+								<< oriTgtSeed.seedEndPos         << "\t"
+								<< oriTgtSeed.seedStr            << "\t"
 
-										<< oriTgtSeed.seedStartPos       << "\t"
-										<< oriTgtSeed.seedEndPos         << "\t"
-										<< oriTgtSeed.seedStr            << "\t"
+								<< abstgtStrt                    << "\t"
+								<< oriTgtSeed.seedEndPos         << "\t"
+								<< extTgtSeq .substr(reltgtStrt) << "\t"
 
-										<< abstgtStrt                    << "\t"
-										<< oriTgtSeed.seedEndPos         << "\t"
-										<< extTgtSeq .substr(reltgtStrt) << "\t"
-
-										<< 0          << "\t" << "None"     << "\t"
-										<< isIdentSrc << "\t" << isIdentTgt << "\t"
-										<< mergedSeq  << std::endl;
+								<< 0          << "\t" << "None"     << "\t"
+								<< isIdentSrc << "\t" << isIdentTgt << "\t"
+								<< mergedSeq  << std::endl;
 				}
 				result.totalWalkNum++;
 				source.append(mergedSeq, target);
@@ -202,27 +208,27 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 				bool isIdentSrc = extSrcSeq.substr(relSrcStrt) == oriSrcSeed.seedStr;
 				bool isIdentTgt = extTgtSeq.substr(reltgtStrt) == oriTgtSeed.seedStr;
 
-				(*pExtDebugSeed)    << result.readid << "\t" << case_number << "\t"
+				(*pExtDebugSeed)    
+							<< result.readid << "\t" << case_number << "\t"
+							<< oriSrcSeed.seedStartPos       << "\t"
+							<< oriSrcSeed.seedEndPos         << "\t"
+							<< oriSrcSeed.seedStr            << "\t"
 
-									<< oriSrcSeed.seedStartPos       << "\t"
-									<< oriSrcSeed.seedEndPos         << "\t"
-									<< oriSrcSeed.seedStr            << "\t"
+							<< absSrcStrt                    << "\t"
+							<< oriSrcSeed.seedEndPos         << "\t"
+							<< extSrcSeq .substr(relSrcStrt) << "\t"
 
-									<< absSrcStrt                    << "\t"
-									<< oriSrcSeed.seedEndPos         << "\t"
-									<< extSrcSeq .substr(relSrcStrt) << "\t"
+							<< oriTgtSeed.seedStartPos       << "\t"
+							<< oriTgtSeed.seedEndPos         << "\t"
+							<< oriTgtSeed.seedStr            << "\t"
 
-									<< oriTgtSeed.seedStartPos       << "\t"
-									<< oriTgtSeed.seedEndPos         << "\t"
-									<< oriTgtSeed.seedStr            << "\t"
+							<< abstgtStrt                    << "\t"
+							<< oriTgtSeed.seedEndPos         << "\t"
+							<< extTgtSeq .substr(reltgtStrt) << "\t"
 
-									<< abstgtStrt                    << "\t"
-									<< oriTgtSeed.seedEndPos         << "\t"
-									<< extTgtSeq .substr(reltgtStrt) << "\t"
-
-									<< isFMExtensionSuccess << "\t" << isMSAlignmentSuccess << "\t"
-									<< isIdentSrc           << "\t" << isIdentTgt           << "\t"
-									<< mergedSeq            << std::endl;
+							<< isFMExtensionSuccess << "\t" << isMSAlignmentSuccess << "\t"
+							<< isIdentSrc           << "\t" << isIdentTgt           << "\t"
+							<< mergedSeq            << std::endl;
 			}
 
 			if(isMSAlignmentSuccess)
@@ -357,11 +363,10 @@ bool PacBioSelfCorrectionProcess::correctByMSAlignment
 //
 //
 //
-PacBioSelfCorrectionPostProcess::PacBioSelfCorrectionPostProcess(
-		std::string correctFile,
-		std::string discardFile,
-		const PacBioSelfCorrectionParameters& params)
+PacBioSelfCorrectionPostProcess::PacBioSelfCorrectionPostProcess(const PacBioSelfCorrectionParameters& params)
 :	m_params(params),
+	m_pCorrectWriter(nullptr),
+	m_pDiscardWriter(nullptr),
 	m_totalReadsLen(0),
 	m_correctedLen(0),
 	m_totalSeedNum(0),
@@ -375,43 +380,75 @@ PacBioSelfCorrectionPostProcess::PacBioSelfCorrectionPostProcess(
 	m_seedDis(0),
 	m_Timer_Seed(0),
 	m_Timer_FM(0),
-	m_Timer_DP(0)
+	m_Timer_DP(0),
+	m_pStatusWriter(nullptr),
+	m_status{0, 0, 0}
 {
-	m_pCorrectWriter = createWriter(correctFile);
-	m_pDiscardWriter = createWriter(discardFile);
+	if(m_params.OnlySeed)
+		m_pStatusWriter = fopen((m_params.directory + "total.seed").c_str(), "w");
+	else
+	{
+		m_pCorrectWriter = createWriter(m_params.directory + "correct.fa");
+		m_pDiscardWriter = createWriter(m_params.directory + "discard.fa");
+	}
 }
 
 //
 PacBioSelfCorrectionPostProcess::~PacBioSelfCorrectionPostProcess()
 {
-	m_OutcastNum = m_totalWalkNum - m_FMNum - m_DPNum;
-	if(m_totalWalkNum>0 && m_totalReadsLen>0)
+	if(m_params.OnlySeed)
 	{
+		summarize(stdout, m_status, "TOTAL");
+		fclose(m_pStatusWriter);
+	}
+	else if(m_totalWalkNum > 0 && m_totalReadsLen > 0)
+	{
+		m_OutcastNum = m_totalWalkNum - m_FMNum - m_DPNum;
 		std::cout << "\n"
-		<< "TotalReadsLen: " << m_totalReadsLen << "\n"
-		<< "CorrectedLen: " << m_correctedLen << ", ratio: " << (float)(m_correctedLen)/m_totalReadsLen << "\n"
-		<< "TotalSeedNum: " << m_totalSeedNum << "\n"
-		<< "TotalWalkNum: " << m_totalWalkNum << "\n"
-		<< "FMNum: "        << m_FMNum      << ", ratio: " << (float)(m_FMNum      * 100)/m_totalWalkNum << "%\n"
-		<< "DPNum: "        << m_DPNum      << ", ratio: " << (float)(m_DPNum      * 100)/m_totalWalkNum << "%\n"
-        << "OutcastNum: "   << m_OutcastNum << ", ratio: " << (float)(m_OutcastNum * 100)/m_totalWalkNum << "%\n"
+		<< "TotalReadsLen: "   << m_totalReadsLen  << "\n"
+		<< "CorrectedLen: "    << m_correctedLen   << ", ratio: " << (float)(m_correctedLen)/m_totalReadsLen << "\n"
+		<< "TotalSeedNum: "    << m_totalSeedNum   << "\n"
+		<< "TotalWalkNum: "    << m_totalWalkNum   << "\n"
+		<< "FMNum: "           << m_FMNum          << ", ratio: " << (float)(m_FMNum          * 100)/m_totalWalkNum           << "%\n"
+		<< "DPNum: "           << m_DPNum          << ", ratio: " << (float)(m_DPNum          * 100)/m_totalWalkNum           << "%\n"
+	        << "OutcastNum: "      << m_OutcastNum     << ", ratio: " << (float)(m_OutcastNum     * 100)/m_totalWalkNum           << "%\n"
 		<< "HighErrorNum: "    << m_highErrorNum   << ", ratio: " << (float)(m_highErrorNum   * 100)/(m_DPNum + m_OutcastNum) << "%\n"
 		<< "ExceedDepthNum: "  << m_exceedDepthNum << ", ratio: " << (float)(m_exceedDepthNum * 100)/(m_DPNum + m_OutcastNum) << "%\n"
 		<< "ExceedLeaveNum: "  << m_exceedLeaveNum << ", ratio: " << (float)(m_exceedLeaveNum * 100)/(m_DPNum + m_OutcastNum) << "%\n"
 		<< "DisBetweenSeeds: " << m_seedDis/m_totalWalkNum << "\n"
-        << "Time of searching Seeds: " << m_Timer_Seed  << "\n"
-        << "Time of searching FM: "    << m_Timer_FM  << "\n"
-        << "Time of searching DP: "    << m_Timer_DP  << "\n";
+		<< "Time of searching Seeds: " << m_Timer_Seed << "\n"
+		<< "Time of searching FM: "    << m_Timer_FM   << "\n"
+		<< "Time of searching DP: "    << m_Timer_DP   << "\n";
 	}
 	delete m_pCorrectWriter;
 	delete m_pDiscardWriter;
 }
 
-
 // Writting results for kmerize and validate
-void PacBioSelfCorrectionPostProcess::process(const SequenceWorkItem& item, const PacBioSelfCorrectionResult& result)
+void PacBioSelfCorrectionPostProcess::process(const SequenceWorkItem& workItem, const PacBioSelfCorrectionResult& result)
 {
-	if(result.merge)
+	if(m_params.OnlySeed)
+	{
+		int status[3]{0, 0, 0};
+		std::string id = workItem.read.id;
+		std::string seq = workItem.read.seq.toString();
+		for(const auto& s : SeedFeature::Log()[id])
+		{
+			int m = 2;
+			for(const auto& b : BCode::Log()[id])
+			{
+				if(s.seedStartPos >= b.getStart() && s.seedEndPos <= b.getEnd())
+				{
+					m = BCode::validate(s.seedStartPos, s.seedLen, b, seq) ? 0 : 1;
+					break;
+				}
+			}
+			status[m]++;
+		}
+		summarize(m_pStatusWriter, status, result.readid);
+		std::transform(m_status, (m_status + 3), status, m_status, [=](int x, int y)->int{return x + y;});
+	}
+	else if(result.merge)
 	{
 		m_totalReadsLen += result.totalReadsLen;
 		m_correctedLen += result.correctedLen;
@@ -432,7 +469,7 @@ void PacBioSelfCorrectionPostProcess::process(const SequenceWorkItem& item, cons
 			size_t index = iter - result.correctedStrs.begin();
 			SeqItem mergeSeq;
 			std::string flag = m_params.Split ? ("_" + std::to_string(index)) : "";
-			mergeSeq.id = item.read.id + flag;
+			mergeSeq.id = workItem.read.id + flag;
 			mergeSeq.seq = *iter;
 			mergeSeq.write(*m_pCorrectWriter);
 		}
@@ -441,8 +478,18 @@ void PacBioSelfCorrectionPostProcess::process(const SequenceWorkItem& item, cons
 	{
 		// write into discard.fa
 		SeqItem mergeSeq;
-		mergeSeq.id = item.read.id;
-		mergeSeq.seq = item.read.seq;
+		mergeSeq.id = workItem.read.id;
+		mergeSeq.seq = workItem.read.seq;
 		mergeSeq.write(*m_pDiscardWriter);
 	}
+}
+
+void PacBioSelfCorrectionPostProcess::summarize(FILE* out, const int* status, std::string subject)
+{
+	int sum = std::accumulate(status, (status + 3), 0);
+	float crt = (float)(100*status[0])/sum;
+	float err = (float)(100*status[1])/sum;
+	float non = (float)(100*status[2])/sum;
+	if(status[1] > 0)
+		fprintf(out, "%s [%d] %.2f%% %.2f%% %.2f%%\n", subject.c_str(), sum, crt, err, non);
 }

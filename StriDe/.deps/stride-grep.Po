@@ -206,12 +206,11 @@ stride-grep.o: grep.cpp /usr/include/stdc-predef.h \
  /usr/local/include/google/dense_hash_set \
  /usr/local/include/sparsehash/dense_hash_set ../Util/QualityTable.h \
  ../Util/QualityCodec.h ../Bigraph/GraphCommon.h \
- ../Util/KmerDistribution.h /usr/include/c++/5/cstddef \
- /usr/include/c++/5/queue /usr/include/c++/5/deque \
- /usr/include/c++/5/bits/stl_deque.h /usr/include/c++/5/bits/deque.tcc \
- /usr/include/c++/5/bits/stl_queue.h /usr/include/c++/5/iomanip \
- /usr/include/c++/5/locale /usr/include/c++/5/bits/locale_facets_nonio.h \
- /usr/include/c++/5/ctime \
+ ../Util/KmerDistribution.h /usr/include/c++/5/queue \
+ /usr/include/c++/5/deque /usr/include/c++/5/bits/stl_deque.h \
+ /usr/include/c++/5/bits/deque.tcc /usr/include/c++/5/bits/stl_queue.h \
+ /usr/include/c++/5/iomanip /usr/include/c++/5/locale \
+ /usr/include/c++/5/bits/locale_facets_nonio.h /usr/include/c++/5/ctime \
  /usr/include/x86_64-linux-gnu/c++/5/bits/time_members.h \
  /usr/include/x86_64-linux-gnu/c++/5/bits/messages_members.h \
  /usr/include/libintl.h /usr/include/c++/5/bits/locale_facets_nonio.tcc \
@@ -830,8 +829,6 @@ grep.h:
 ../Bigraph/GraphCommon.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/5/cstddef:
 
 /usr/include/c++/5/queue:
 

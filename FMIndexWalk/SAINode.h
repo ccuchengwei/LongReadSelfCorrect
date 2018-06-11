@@ -117,17 +117,7 @@ class SAINode
 			pAdded->extend(label);
 			return pAdded;
 		}
-
-		template<class T>
-		struct Caster
-		{
-			Caster(SAINode* _obj):obj(_obj){ }
-			~Caster(void) = default;
-			operator T* (){ return static_cast<T*>(obj); }
-			T* operator->(){ return static_cast<T*>(obj); }
-			SAINode* const obj;
-		};
-
+		
 	private:
 
 		//

@@ -102,22 +102,25 @@ stride-PacBioSelfCorrection.o: PacBioSelfCorrection.cpp \
  /usr/include/c++/5/bits/locale_facets.tcc \
  /usr/include/c++/5/bits/basic_ios.tcc \
  /usr/include/c++/5/bits/ostream.tcc /usr/include/c++/5/istream \
- /usr/include/c++/5/bits/istream.tcc /usr/include/c++/5/fstream \
- /usr/include/c++/5/bits/codecvt.h \
- /usr/include/x86_64-linux-gnu/c++/5/bits/basic_file.h \
- /usr/include/x86_64-linux-gnu/c++/5/bits/c++io.h \
- /usr/include/c++/5/bits/fstream.tcc /usr/include/c++/5/sstream \
- /usr/include/c++/5/bits/sstream.tcc /usr/include/c++/5/iterator \
- /usr/include/c++/5/bits/stream_iterator.h ../Util/Util.h \
- /usr/include/c++/5/vector /usr/include/c++/5/bits/stl_construct.h \
+ /usr/include/c++/5/bits/istream.tcc /usr/include/c++/5/array \
+ /usr/include/c++/5/set /usr/include/c++/5/bits/stl_tree.h \
+ /usr/include/c++/5/ext/aligned_buffer.h \
+ /usr/include/c++/5/bits/stl_set.h /usr/include/c++/5/bits/stl_multiset.h \
+ ../Util/Util.h /usr/include/c++/5/vector \
+ /usr/include/c++/5/bits/stl_construct.h \
  /usr/include/c++/5/bits/stl_uninitialized.h \
  /usr/include/c++/5/bits/stl_vector.h \
  /usr/include/c++/5/bits/stl_bvector.h /usr/include/c++/5/bits/vector.tcc \
  /usr/include/c++/5/list /usr/include/c++/5/bits/stl_list.h \
- /usr/include/c++/5/bits/list.tcc /usr/include/c++/5/cassert \
- /usr/include/assert.h /usr/include/c++/5/cstring /usr/include/string.h \
- /usr/include/x86_64-linux-gnu/bits/string3.h ../Util/DNAString.h \
- ../Thirdparty/gzstream.h /usr/local/include/zlib.h \
+ /usr/include/c++/5/bits/list.tcc /usr/include/c++/5/fstream \
+ /usr/include/c++/5/bits/codecvt.h \
+ /usr/include/x86_64-linux-gnu/c++/5/bits/basic_file.h \
+ /usr/include/x86_64-linux-gnu/c++/5/bits/c++io.h \
+ /usr/include/c++/5/bits/fstream.tcc /usr/include/c++/5/cassert \
+ /usr/include/assert.h /usr/include/c++/5/sstream \
+ /usr/include/c++/5/bits/sstream.tcc /usr/include/c++/5/cstring \
+ /usr/include/string.h /usr/include/x86_64-linux-gnu/bits/string3.h \
+ ../Util/DNAString.h ../Thirdparty/gzstream.h /usr/local/include/zlib.h \
  /usr/local/include/zconf.h \
  /usr/lib/gcc/x86_64-linux-gnu/5/include-fixed/limits.h \
  /usr/lib/gcc/x86_64-linux-gnu/5/include-fixed/syslimits.h \
@@ -147,19 +150,17 @@ stride-PacBioSelfCorrection.o: PacBioSelfCorrection.cpp \
  /usr/include/c++/5/bits/algorithmfwd.h \
  /usr/include/c++/5/bits/stl_heap.h /usr/include/c++/5/bits/stl_tempbuf.h \
  /usr/include/c++/5/bits/uniform_int_dist.h /usr/include/c++/5/limits \
- /usr/include/c++/5/map /usr/include/c++/5/bits/stl_tree.h \
- /usr/include/c++/5/ext/aligned_buffer.h \
- /usr/include/c++/5/bits/stl_map.h /usr/include/c++/5/tuple \
- /usr/include/c++/5/array /usr/include/c++/5/bits/uses_allocator.h \
- /usr/include/c++/5/bits/stl_multimap.h /usr/include/c++/5/set \
- /usr/include/c++/5/bits/stl_set.h /usr/include/c++/5/bits/stl_multiset.h \
- ../Util/Alphabet.h ../Util/Util.h ../SuffixTools/Occurrence.h \
- ../Util/EncodedString.h ../Util/DNACodec.h ../Util/Alphabet.h \
- ../Util/BWTCodec.h ../Util/BWT4Codec.h ../Util/NoCodec.h \
- ../SuffixTools/SuffixArray.h ../Util/ReadTable.h ../Util/SeqReader.h \
- ../Util/Match.h ../Util/SeqCoord.h ../Util/Interval.h \
- ../Util/QualityVector.h ../Util/DNADouble.h ../SuffixTools/HitData.h \
- ../Util/BitChar.h ../SuffixTools/BWTReader.h ../SuffixTools/FMMarkers.h \
+ /usr/include/c++/5/map /usr/include/c++/5/bits/stl_map.h \
+ /usr/include/c++/5/tuple /usr/include/c++/5/bits/uses_allocator.h \
+ /usr/include/c++/5/bits/stl_multimap.h ../Util/Alphabet.h \
+ /usr/include/c++/5/iterator /usr/include/c++/5/bits/stream_iterator.h \
+ ../Util/Util.h ../SuffixTools/Occurrence.h ../Util/EncodedString.h \
+ ../Util/DNACodec.h ../Util/Alphabet.h ../Util/BWTCodec.h \
+ ../Util/BWT4Codec.h ../Util/NoCodec.h ../SuffixTools/SuffixArray.h \
+ ../Util/ReadTable.h ../Util/SeqReader.h ../Util/Match.h \
+ ../Util/SeqCoord.h ../Util/Interval.h ../Util/QualityVector.h \
+ ../Util/DNADouble.h ../SuffixTools/HitData.h ../Util/BitChar.h \
+ ../SuffixTools/BWTReader.h ../SuffixTools/FMMarkers.h \
  ../SuffixTools/RLUnit.h ../SuffixTools/BWTAlgorithms.h \
  ../SuffixTools/BWTIndexSet.h ../SuffixTools/BWT.h \
  ../SuffixTools/BWTIntervalCache.h ../SuffixTools/BWTInterval.h \
@@ -203,11 +204,11 @@ stride-PacBioSelfCorrection.o: PacBioSelfCorrection.cpp \
  /usr/local/include/google/dense_hash_set \
  /usr/local/include/sparsehash/dense_hash_set ../Util/QualityTable.h \
  ../Util/QualityCodec.h ../Bigraph/GraphCommon.h \
- ../Util/KmerDistribution.h /usr/include/c++/5/cstddef \
- /usr/include/c++/5/queue /usr/include/c++/5/deque \
- /usr/include/c++/5/bits/stl_deque.h /usr/include/c++/5/bits/deque.tcc \
- /usr/include/c++/5/bits/stl_queue.h ../SuffixTools/SuffixArray.h \
- SGACommon.h ../Util/Timer.h /usr/include/x86_64-linux-gnu/sys/time.h \
+ ../Util/KmerDistribution.h /usr/include/c++/5/queue \
+ /usr/include/c++/5/deque /usr/include/c++/5/bits/stl_deque.h \
+ /usr/include/c++/5/bits/deque.tcc /usr/include/c++/5/bits/stl_queue.h \
+ ../SuffixTools/SuffixArray.h SGACommon.h ../Util/Timer.h \
+ /usr/include/x86_64-linux-gnu/sys/time.h \
  ../Concurrency/SequenceProcessFramework.h ../Concurrency/ThreadWorker.h \
  /usr/include/semaphore.h /usr/include/x86_64-linux-gnu/bits/semaphore.h \
  ../Concurrency/SequenceWorkItem.h ../Util/SeqReader.h \
@@ -217,7 +218,8 @@ stride-PacBioSelfCorrection.o: PacBioSelfCorrection.cpp \
  ../PacBio/LongReadCorrectByOverlap.h ../FMIndexWalk/SAINode.h \
  ../PacBio/IntervalTree.h ../PacBio/HashtableSearch.h \
  ../SuffixTools/BWTIntervalCache.h ../PacBio/KmerThreshold.h \
- ../PacBio/LongReadProbe.h
+ ../PacBio/LongReadProbe.h ../PacBio/KmerCheckProcess.h ../PacBio/BCode.h \
+ ../PacBio/KmerFeature.h ../PacBio/BCode.h
 
 /usr/include/stdc-predef.h:
 
@@ -497,23 +499,17 @@ stride-PacBioSelfCorrection.o: PacBioSelfCorrection.cpp \
 
 /usr/include/c++/5/bits/istream.tcc:
 
-/usr/include/c++/5/fstream:
+/usr/include/c++/5/array:
 
-/usr/include/c++/5/bits/codecvt.h:
+/usr/include/c++/5/set:
 
-/usr/include/x86_64-linux-gnu/c++/5/bits/basic_file.h:
+/usr/include/c++/5/bits/stl_tree.h:
 
-/usr/include/x86_64-linux-gnu/c++/5/bits/c++io.h:
+/usr/include/c++/5/ext/aligned_buffer.h:
 
-/usr/include/c++/5/bits/fstream.tcc:
+/usr/include/c++/5/bits/stl_set.h:
 
-/usr/include/c++/5/sstream:
-
-/usr/include/c++/5/bits/sstream.tcc:
-
-/usr/include/c++/5/iterator:
-
-/usr/include/c++/5/bits/stream_iterator.h:
+/usr/include/c++/5/bits/stl_multiset.h:
 
 ../Util/Util.h:
 
@@ -535,9 +531,23 @@ stride-PacBioSelfCorrection.o: PacBioSelfCorrection.cpp \
 
 /usr/include/c++/5/bits/list.tcc:
 
+/usr/include/c++/5/fstream:
+
+/usr/include/c++/5/bits/codecvt.h:
+
+/usr/include/x86_64-linux-gnu/c++/5/bits/basic_file.h:
+
+/usr/include/x86_64-linux-gnu/c++/5/bits/c++io.h:
+
+/usr/include/c++/5/bits/fstream.tcc:
+
 /usr/include/c++/5/cassert:
 
 /usr/include/assert.h:
+
+/usr/include/c++/5/sstream:
+
+/usr/include/c++/5/bits/sstream.tcc:
 
 /usr/include/c++/5/cstring:
 
@@ -637,27 +647,19 @@ PacBioSelfCorrection.h:
 
 /usr/include/c++/5/map:
 
-/usr/include/c++/5/bits/stl_tree.h:
-
-/usr/include/c++/5/ext/aligned_buffer.h:
-
 /usr/include/c++/5/bits/stl_map.h:
 
 /usr/include/c++/5/tuple:
-
-/usr/include/c++/5/array:
 
 /usr/include/c++/5/bits/uses_allocator.h:
 
 /usr/include/c++/5/bits/stl_multimap.h:
 
-/usr/include/c++/5/set:
-
-/usr/include/c++/5/bits/stl_set.h:
-
-/usr/include/c++/5/bits/stl_multiset.h:
-
 ../Util/Alphabet.h:
+
+/usr/include/c++/5/iterator:
+
+/usr/include/c++/5/bits/stream_iterator.h:
 
 ../Util/Util.h:
 
@@ -823,8 +825,6 @@ PacBioSelfCorrection.h:
 
 ../Util/KmerDistribution.h:
 
-/usr/include/c++/5/cstddef:
-
 /usr/include/c++/5/queue:
 
 /usr/include/c++/5/deque:
@@ -878,3 +878,11 @@ SGACommon.h:
 ../PacBio/KmerThreshold.h:
 
 ../PacBio/LongReadProbe.h:
+
+../PacBio/KmerCheckProcess.h:
+
+../PacBio/BCode.h:
+
+../PacBio/KmerFeature.h:
+
+../PacBio/BCode.h:

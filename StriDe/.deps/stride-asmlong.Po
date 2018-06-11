@@ -208,10 +208,9 @@ stride-asmlong.o: asmlong.cpp /usr/include/stdc-predef.h asmlong.h \
  ../SuffixTools/BWTInterval.h ../SuffixTools/SampledSuffixArray.h \
  ../Util/ReadInfoTable.h ../Util/QualityTable.h ../Util/QualityCodec.h \
  ../SuffixTools/BWTAlgorithms.h ../SuffixTools/BWTIndexSet.h \
- ../Bigraph/GraphCommon.h ../Util/KmerDistribution.h \
- /usr/include/c++/5/cstddef assemble.h /usr/include/c++/5/iomanip \
- /usr/include/c++/5/locale /usr/include/c++/5/bits/locale_facets_nonio.h \
- /usr/include/c++/5/ctime \
+ ../Bigraph/GraphCommon.h ../Util/KmerDistribution.h assemble.h \
+ /usr/include/c++/5/iomanip /usr/include/c++/5/locale \
+ /usr/include/c++/5/bits/locale_facets_nonio.h /usr/include/c++/5/ctime \
  /usr/include/x86_64-linux-gnu/c++/5/bits/time_members.h \
  /usr/include/x86_64-linux-gnu/c++/5/bits/messages_members.h \
  /usr/include/libintl.h /usr/include/c++/5/bits/locale_facets_nonio.tcc \
@@ -847,8 +846,6 @@ asmlong.h:
 ../Bigraph/GraphCommon.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/5/cstddef:
 
 assemble.h:
 

@@ -204,11 +204,11 @@ stride-kmerfreq.o: kmerfreq.cpp /usr/include/stdc-predef.h \
  /usr/local/include/google/dense_hash_set \
  /usr/local/include/sparsehash/dense_hash_set ../Util/QualityTable.h \
  ../Util/QualityCodec.h ../Bigraph/GraphCommon.h \
- ../Util/KmerDistribution.h /usr/include/c++/5/cstddef \
- /usr/include/c++/5/queue /usr/include/c++/5/deque \
- /usr/include/c++/5/bits/stl_deque.h /usr/include/c++/5/bits/deque.tcc \
- /usr/include/c++/5/bits/stl_queue.h ../PacBio/KmerFeature.h \
- ../SuffixTools/BWTIndexSet.h ../PacBio/KmerThreshold.h
+ ../Util/KmerDistribution.h /usr/include/c++/5/queue \
+ /usr/include/c++/5/deque /usr/include/c++/5/bits/stl_deque.h \
+ /usr/include/c++/5/bits/deque.tcc /usr/include/c++/5/bits/stl_queue.h \
+ ../PacBio/KmerFeature.h ../SuffixTools/BWTIndexSet.h \
+ ../PacBio/KmerThreshold.h
 
 /usr/include/stdc-predef.h:
 
@@ -817,8 +817,6 @@ kmerfreq.h:
 ../Bigraph/GraphCommon.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/5/cstddef:
 
 /usr/include/c++/5/queue:
 

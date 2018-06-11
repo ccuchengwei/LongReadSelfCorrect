@@ -111,19 +111,20 @@ libpacbio_a-LongReadProbe.o: LongReadProbe.cpp /usr/include/stdc-predef.h \
  /usr/include/c++/5/bits/locale_facets.tcc \
  /usr/include/c++/5/bits/basic_ios.tcc \
  /usr/include/c++/5/bits/ostream.tcc /usr/include/c++/5/istream \
- /usr/include/c++/5/bits/istream.tcc ../SuffixTools/BWTIndexSet.h \
+ /usr/include/c++/5/bits/istream.tcc /usr/include/c++/5/map \
+ /usr/include/c++/5/bits/stl_tree.h \
+ /usr/include/c++/5/ext/aligned_buffer.h \
+ /usr/include/c++/5/bits/stl_map.h /usr/include/c++/5/tuple \
+ /usr/include/c++/5/array /usr/include/c++/5/bits/uses_allocator.h \
+ /usr/include/c++/5/bits/stl_multimap.h ../SuffixTools/BWTIndexSet.h \
  ../SuffixTools/BWT.h ../SuffixTools/RLBWT.h ../SuffixTools/STCommon.h \
  ../SuffixTools/STGlobals.h /usr/include/c++/5/vector \
  /usr/include/c++/5/bits/stl_uninitialized.h \
  /usr/include/c++/5/bits/stl_vector.h \
  /usr/include/c++/5/bits/stl_bvector.h /usr/include/c++/5/bits/vector.tcc \
- /usr/include/c++/5/map /usr/include/c++/5/bits/stl_tree.h \
- /usr/include/c++/5/ext/aligned_buffer.h \
- /usr/include/c++/5/bits/stl_map.h /usr/include/c++/5/tuple \
- /usr/include/c++/5/array /usr/include/c++/5/bits/uses_allocator.h \
- /usr/include/c++/5/bits/stl_multimap.h /usr/include/c++/5/set \
- /usr/include/c++/5/bits/stl_set.h /usr/include/c++/5/bits/stl_multiset.h \
- /usr/include/assert.h ../Util/Alphabet.h /usr/include/math.h \
+ /usr/include/c++/5/set /usr/include/c++/5/bits/stl_set.h \
+ /usr/include/c++/5/bits/stl_multiset.h /usr/include/assert.h \
+ ../Util/Alphabet.h /usr/include/math.h \
  /usr/include/x86_64-linux-gnu/bits/huge_val.h \
  /usr/include/x86_64-linux-gnu/bits/huge_valf.h \
  /usr/include/x86_64-linux-gnu/bits/huge_vall.h \
@@ -206,10 +207,10 @@ libpacbio_a-LongReadProbe.o: LongReadProbe.cpp /usr/include/stdc-predef.h \
  /usr/local/include/sparsehash/dense_hash_set ../Util/QualityTable.h \
  ../Util/QualityCodec.h KmerFeature.h ../SuffixTools/BWTAlgorithms.h \
  ../SuffixTools/BWTIndexSet.h ../Bigraph/GraphCommon.h \
- ../Util/KmerDistribution.h /usr/include/c++/5/cstddef \
- /usr/include/c++/5/queue /usr/include/c++/5/deque \
- /usr/include/c++/5/bits/stl_deque.h /usr/include/c++/5/bits/deque.tcc \
- /usr/include/c++/5/bits/stl_queue.h KmerThreshold.h
+ ../Util/KmerDistribution.h /usr/include/c++/5/queue \
+ /usr/include/c++/5/deque /usr/include/c++/5/bits/stl_deque.h \
+ /usr/include/c++/5/bits/deque.tcc /usr/include/c++/5/bits/stl_queue.h \
+ KmerThreshold.h
 
 /usr/include/stdc-predef.h:
 
@@ -513,6 +514,22 @@ SeedFeature.h:
 
 /usr/include/c++/5/bits/istream.tcc:
 
+/usr/include/c++/5/map:
+
+/usr/include/c++/5/bits/stl_tree.h:
+
+/usr/include/c++/5/ext/aligned_buffer.h:
+
+/usr/include/c++/5/bits/stl_map.h:
+
+/usr/include/c++/5/tuple:
+
+/usr/include/c++/5/array:
+
+/usr/include/c++/5/bits/uses_allocator.h:
+
+/usr/include/c++/5/bits/stl_multimap.h:
+
 ../SuffixTools/BWTIndexSet.h:
 
 ../SuffixTools/BWT.h:
@@ -532,22 +549,6 @@ SeedFeature.h:
 /usr/include/c++/5/bits/stl_bvector.h:
 
 /usr/include/c++/5/bits/vector.tcc:
-
-/usr/include/c++/5/map:
-
-/usr/include/c++/5/bits/stl_tree.h:
-
-/usr/include/c++/5/ext/aligned_buffer.h:
-
-/usr/include/c++/5/bits/stl_map.h:
-
-/usr/include/c++/5/tuple:
-
-/usr/include/c++/5/array:
-
-/usr/include/c++/5/bits/uses_allocator.h:
-
-/usr/include/c++/5/bits/stl_multimap.h:
 
 /usr/include/c++/5/set:
 
@@ -818,8 +819,6 @@ KmerFeature.h:
 ../Bigraph/GraphCommon.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/5/cstddef:
 
 /usr/include/c++/5/queue:
 

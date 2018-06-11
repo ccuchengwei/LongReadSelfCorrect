@@ -207,10 +207,9 @@ libalgorithm_a-FMMergeProcess.o: FMMergeProcess.cpp \
  /usr/local/include/google/dense_hash_set \
  /usr/local/include/sparsehash/dense_hash_set ../Util/QualityTable.h \
  ../Util/QualityCodec.h ../Util/KmerDistribution.h \
- /usr/include/c++/5/cstddef ../Concurrency/SequenceProcessFramework.h \
- ../Concurrency/ThreadWorker.h /usr/include/semaphore.h \
- /usr/include/x86_64-linux-gnu/bits/semaphore.h ../Util/Timer.h \
- /usr/include/x86_64-linux-gnu/sys/time.h \
+ ../Concurrency/SequenceProcessFramework.h ../Concurrency/ThreadWorker.h \
+ /usr/include/semaphore.h /usr/include/x86_64-linux-gnu/bits/semaphore.h \
+ ../Util/Timer.h /usr/include/x86_64-linux-gnu/sys/time.h \
  ../Concurrency/SequenceWorkItem.h ../Util/SeqReader.h \
  ../Util/BitVector.h ../Util/BitChar.h ../StringGraph/SGUtil.h \
  ../SQG/ASQG.h ../SQG/SQG.h ../StringGraph/SGAlgorithms.h \
@@ -840,8 +839,6 @@ SearchSeed.h:
 ../Util/QualityCodec.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/5/cstddef:
 
 ../Concurrency/SequenceProcessFramework.h:
 

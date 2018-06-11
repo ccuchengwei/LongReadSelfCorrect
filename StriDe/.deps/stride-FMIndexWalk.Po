@@ -203,13 +203,13 @@ stride-FMIndexWalk.o: FMIndexWalk.cpp /usr/include/stdc-predef.h \
  /usr/local/include/google/dense_hash_set \
  /usr/local/include/sparsehash/dense_hash_set ../Util/QualityTable.h \
  ../Util/QualityCodec.h ../Bigraph/GraphCommon.h \
- ../Util/KmerDistribution.h /usr/include/c++/5/cstddef \
- /usr/include/c++/5/queue /usr/include/c++/5/deque \
- /usr/include/c++/5/bits/stl_deque.h /usr/include/c++/5/bits/deque.tcc \
- /usr/include/c++/5/bits/stl_queue.h ../SuffixTools/SuffixArray.h \
- SGACommon.h OverlapCommon.h overlap.h ../Algorithm/OverlapAlgorithm.h \
- ../Algorithm/OverlapBlock.h ../SuffixTools/BWTInterval.h \
- ../Algorithm/SearchHistory.h ../Algorithm/SearchSeed.h ../Util/Timer.h \
+ ../Util/KmerDistribution.h /usr/include/c++/5/queue \
+ /usr/include/c++/5/deque /usr/include/c++/5/bits/stl_deque.h \
+ /usr/include/c++/5/bits/deque.tcc /usr/include/c++/5/bits/stl_queue.h \
+ ../SuffixTools/SuffixArray.h SGACommon.h OverlapCommon.h overlap.h \
+ ../Algorithm/OverlapAlgorithm.h ../Algorithm/OverlapBlock.h \
+ ../SuffixTools/BWTInterval.h ../Algorithm/SearchHistory.h \
+ ../Algorithm/SearchSeed.h ../Util/Timer.h \
  /usr/include/x86_64-linux-gnu/sys/time.h ../SQG/ASQG.h ../SQG/SQG.h \
  ../Concurrency/SequenceProcessFramework.h ../Concurrency/ThreadWorker.h \
  /usr/include/semaphore.h /usr/include/x86_64-linux-gnu/bits/semaphore.h \
@@ -823,8 +823,6 @@ FMIndexWalk.h:
 ../Bigraph/GraphCommon.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/5/cstddef:
 
 /usr/include/c++/5/queue:
 

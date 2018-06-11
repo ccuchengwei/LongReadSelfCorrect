@@ -213,11 +213,10 @@ libpacbio_a-LongReadCorrectByOverlap.o: LongReadCorrectByOverlap.cpp \
  /usr/local/include/google/dense_hash_set \
  /usr/local/include/sparsehash/dense_hash_set ../Util/QualityTable.h \
  ../Util/QualityCodec.h ../Bigraph/GraphCommon.h \
- ../Util/KmerDistribution.h /usr/include/c++/5/cstddef \
- /usr/include/c++/5/queue /usr/include/c++/5/deque \
- /usr/include/c++/5/bits/stl_deque.h /usr/include/c++/5/bits/deque.tcc \
- /usr/include/c++/5/bits/stl_queue.h ../FMIndexWalk/SAINode.h \
- IntervalTree.h HashtableSearch.h SeedFeature.h \
+ ../Util/KmerDistribution.h /usr/include/c++/5/queue \
+ /usr/include/c++/5/deque /usr/include/c++/5/bits/stl_deque.h \
+ /usr/include/c++/5/bits/deque.tcc /usr/include/c++/5/bits/stl_queue.h \
+ ../FMIndexWalk/SAINode.h IntervalTree.h HashtableSearch.h SeedFeature.h \
  ../SuffixTools/BWTIndexSet.h KmerFeature.h ../Thirdparty/stdaln.h \
  LongReadOverlap.h ../Thirdparty/multiple_alignment.h \
  ../Thirdparty/overlapper.h ../FMIndexWalk/FMIndexWalkProcess.h \
@@ -858,8 +857,6 @@ LongReadCorrectByOverlap.h:
 ../Bigraph/GraphCommon.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/5/cstddef:
 
 /usr/include/c++/5/queue:
 

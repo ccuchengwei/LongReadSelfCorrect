@@ -206,9 +206,9 @@ libalgorithm_a-OverlapAlgorithm.o: OverlapAlgorithm.cpp \
  /usr/local/include/sparsehash/sparse_hash_set \
  /usr/local/include/google/dense_hash_set \
  /usr/local/include/sparsehash/dense_hash_set ../Util/QualityTable.h \
- ../Util/QualityCodec.h ../Util/KmerDistribution.h \
- /usr/include/c++/5/cstddef ../SQG/ASQG.h ../SQG/SQG.h \
- ../FMIndexWalk/SAIOverlapTree.h ../FMIndexWalk/SAINode.h OverlapBlock.h
+ ../Util/QualityCodec.h ../Util/KmerDistribution.h ../SQG/ASQG.h \
+ ../SQG/SQG.h ../FMIndexWalk/SAIOverlapTree.h ../FMIndexWalk/SAINode.h \
+ OverlapBlock.h
 
 /usr/include/stdc-predef.h:
 
@@ -831,8 +831,6 @@ SearchSeed.h:
 ../Util/QualityCodec.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/5/cstddef:
 
 ../SQG/ASQG.h:
 

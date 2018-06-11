@@ -1,32 +1,45 @@
-/***************************/
-/*** Seed Feature Body *****/
-/***************************/
 #include "SeedFeature.h"
 #include "BWTAlgorithms.h"
 #include "Util.h"
-/*************************/
-//Legacy code
+
+std::map<std::string, SeedFeature::SeedVector>& SeedFeature::Log()
+{
+	static std::map<std::string, SeedVector> log;
+	return log;
+}
+
+std::ostream& operator<<(std::ostream& out, const SeedFeature::SeedVector& vec)
+{
+	for(const auto& iter : vec)
+		out
+		<< iter.seedStr << '\t'
+		<< iter.maxFixedMerFreq << '\t' 
+		<< iter.seedStartPos << '\t'
+		<< (iter.isRepeat ? "Yes" : "No") << '\n';
+	return out;
+}
+
 SeedFeature::SeedFeature(
-		size_t startPos,
 		std::string str,
+		int startPos,
+		int frequency,
 		bool repeat,
-		size_t staticKmerSize,
-		size_t repeatCutoff,
-		size_t maxFixedMerFreq)
+		int kmerSize,
+		int PBcoverage)
 :	seedStr(str),
+	seedLen(seedStr.length()),
 	seedStartPos(startPos),
-	maxFixedMerFreq(maxFixedMerFreq),
+	seedEndPos(startPos + seedLen - 1),
+	maxFixedMerFreq(frequency),
 	isRepeat(repeat),
 	isHitchhiked(false),
-	minKmerSize(staticKmerSize),
-	freqUpperBound(repeatCutoff),
-	freqLowerBound(repeatCutoff>>1)
-{
-	seedLen = seedStr.length();
-	seedEndPos = seedStartPos + seedLen -1;
-	startBestKmerSize = endBestKmerSize = staticKmerSize;
-}
-/*************************/
+	startBestKmerSize(kmerSize),
+	endBestKmerSize(kmerSize),
+	sizeUpperBound(seedLen),
+	sizeLowerBound(kmerSize),
+	freqUpperBound(PBcoverage >> 1),
+	freqLowerBound(PBcoverage >> 2){ }
+
 void SeedFeature::estimateBestKmerSize(const BWTIndexSet& indices)
 {
 	modifyKmerSize(indices, true);
@@ -48,8 +61,8 @@ void SeedFeature::modifyKmerSize(const BWTIndexSet& indices, bool pole)
 		bit = -1;
 	else
 		return;
-	const int freqBound = bit > 0 ? freqUpperBound : freqLowerBound;
-	const int compFreqBound = bit > 0 ? freqLowerBound : freqUpperBound;
+	const int freqBound     = bit > 0 ? freqUpperBound : freqLowerBound;
+	const int corsFreqBound = bit > 0 ? freqLowerBound : freqUpperBound;
 	const int sizeBound = bit > 0 ? sizeUpperBound : sizeLowerBound;
 	
 	while((bit^kmerFreq) > (bit^freqBound) && (bit^kmerSize) < (bit^sizeBound))
@@ -57,10 +70,34 @@ void SeedFeature::modifyKmerSize(const BWTIndexSet& indices, bool pole)
 		kmerSize += bit;
 		kmerFreq = BWTAlgorithms::countSequenceOccurrences(seed.substr(seedLen - kmerSize), pSelBWT);
 	}
-	if((bit^kmerFreq) < (bit^compFreqBound))
+	if((bit^kmerFreq) < (bit^corsFreqBound))
 	{
 		kmerSize -= bit;
 		kmerFreq = BWTAlgorithms::countSequenceOccurrences(seed.substr(seedLen - kmerSize), pSelBWT);
 	}
 }
+
+//Legacy part
+/***********/
+SeedFeature::SeedFeature(
+		size_t startPos,
+		std::string str,
+		bool repeat,
+		size_t staticKmerSize,
+		size_t repeatCutoff,
+		size_t maxFixedMerFreq)
+:	seedStr(str),
+	seedStartPos(startPos),
+	maxFixedMerFreq(maxFixedMerFreq),
+	isRepeat(repeat),
+	isHitchhiked(false),
+	minKmerSize(staticKmerSize),
+	freqUpperBound(repeatCutoff),
+	freqLowerBound(repeatCutoff>>1)
+{
+	seedLen = seedStr.length();
+	seedEndPos = seedStartPos + seedLen -1;
+	startBestKmerSize = endBestKmerSize = staticKmerSize;
+}
+/***********/
 

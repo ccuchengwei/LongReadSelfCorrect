@@ -15,31 +15,23 @@ IntervalTree<T,K>::IntervalTree(
 {
 	K leftp = leftextent, rightp = rightextent, centerp = 0;
 	if(leftp == 0 && rightp == 0)
-	{
-		IntervalStartSorter<T,K> intervalStartSorter;
-		std::sort(ivals.begin(), ivals.end(), intervalStartSorter);
-	}
+		std::sort(ivals.begin(), ivals.end(), std::greater<interval>());
 	
 	if(--depth == 0 || ivals.size() < minbucket)
 		intervals = ivals;
 	else
 	{
-		leftp = ivals.front().start;
-		std::vector<K> stops;
-		stops.resize(ivals.size());
-		transform(ivals.begin(), ivals.end(), stops.begin(), intervalStop<T,K>);
-		rightp = *max_element(stops.begin(), stops.end());
+		leftp = ivals.back().start;
+		rightp = max_element(ivals.begin(), ivals.end())->stop;
 		
-		//centerp = (leftp + rightp) >> 1;
 		centerp = ivals[ivals.size() >> 1].start;
 		center = centerp;
 
 		intervalVector lefts;
 		intervalVector rights;
 
-		for (typename intervalVector::const_iterator i = ivals.begin(); i != ivals.end(); ++i)
+		for(const auto& interval : ivals)
 		{
-			const interval& interval = *i;
 			if(interval.stop < center)
 				lefts.push_back(interval);
 			else if(interval.start > center)
@@ -56,8 +48,7 @@ IntervalTree<T,K>::IntervalTree(
 }
 
 template <class T, typename K>
-IntervalTree<T,K>& 
-IntervalTree<T,K>::operator=
+typename IntervalTree<T,K>::intervalTree& IntervalTree<T,K>::operator=
 (const typename IntervalTree<T,K>::intervalTree& other)
 {
 	center = other.center;
@@ -70,8 +61,7 @@ IntervalTree<T,K>::operator=
 //if these two strings have common (prefix/suffix); it's impossible to find two realistic intervals
 //'interleave' each other. Noted by KuanWeiLee 18/4/10
 template <class T, typename K>
-typename IntervalTree<T,K>::intervalVector
-IntervalTree<T,K>::findOverlapping
+typename IntervalTree<T,K>::intervalVector IntervalTree<T,K>::findOverlapping
 (K start, K stop) const
 {
 	intervalVector ov;
@@ -80,15 +70,13 @@ IntervalTree<T,K>::findOverlapping
 }
 
 template <class T, typename K>
-void
-IntervalTree<T,K>::findOverlapping
+void IntervalTree<T,K>::findOverlapping
 (K start, K stop, intervalVector& overlapping) const
 {
-	if(!intervals.empty() && ! (stop < intervals.front().start))
+	if(!intervals.empty() && ! (stop < intervals.back().start))
 	{
-		for(typename intervalVector::const_iterator i = intervals.begin(); i != intervals.end(); ++i)
+		for(const auto& interval : intervals)
 		{
-			const interval& interval = *i;
 			if (interval.start <= start && interval.stop >= stop)
 				overlapping.push_back(interval);
 		}
@@ -103,8 +91,7 @@ IntervalTree<T,K>::findOverlapping
 }
 
 template <class T, typename K>
-typename IntervalTree<T,K>::intervalVector
-IntervalTree<T,K>::findContained
+typename IntervalTree<T,K>::intervalVector IntervalTree<T,K>::findContained
 (K start, K stop) const
 {
 	intervalVector contained;
@@ -113,15 +100,13 @@ IntervalTree<T,K>::findContained
 }
 
 template <class T, typename K>
-void
-IntervalTree<T,K>::findContained
+void IntervalTree<T,K>::findContained
 (K start, K stop, intervalVector& contained) const
 {
-	if(!intervals.empty() && ! (stop < intervals.front().start))
+	if(!intervals.empty() && ! (stop < intervals.back().start))
 	{
-		for(typename intervalVector::const_iterator i = intervals.begin(); i != intervals.end(); ++i)
+		for(const auto& interval : intervals)
 		{
-			const interval& interval = *i;
 			if(interval.start >= start && interval.stop <= stop)
 				contained.push_back(interval);
 		}
@@ -136,8 +121,7 @@ IntervalTree<T,K>::findContained
 }
 
 template <class T, typename K>
-std::unique_ptr<typename IntervalTree<T,K>::intervalTree>
-IntervalTree<T,K>::copyTree
+std::unique_ptr<typename IntervalTree<T,K>::intervalTree> IntervalTree<T,K>::copyTree
 (const typename IntervalTree<T,K>::intervalTree& orig)
 {
 	return std::unique_ptr<intervalTree>(new intervalTree(orig));

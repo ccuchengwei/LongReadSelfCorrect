@@ -240,5 +240,5 @@ void parseOviewOptions(int argc, char** argv)
     opt::asqgFile = argv[optind++];
 
     if(opt::prefix.empty())
-        opt::prefix = stripFilename(opt::asqgFile);
+        opt::prefix = getFilename(opt::asqgFile);
 }

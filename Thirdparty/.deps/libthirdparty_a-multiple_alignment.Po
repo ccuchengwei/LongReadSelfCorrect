@@ -213,10 +213,10 @@ libthirdparty_a-multiple_alignment.o: multiple_alignment.cpp \
  ../Util/QualityCodec.h ../SuffixTools/SampledSuffixArray.h \
  ../SuffixTools/BWTAlgorithms.h ../SuffixTools/BWTIndexSet.h \
  ../Bigraph/GraphCommon.h ../Util/KmerDistribution.h \
- /usr/include/c++/5/cstddef /usr/include/c++/5/queue \
- /usr/include/c++/5/deque /usr/include/c++/5/bits/stl_deque.h \
- /usr/include/c++/5/bits/deque.tcc /usr/include/c++/5/bits/stl_queue.h \
- ../Util/BitVector.h ../Util/BitChar.h
+ /usr/include/c++/5/queue /usr/include/c++/5/deque \
+ /usr/include/c++/5/bits/stl_deque.h /usr/include/c++/5/bits/deque.tcc \
+ /usr/include/c++/5/bits/stl_queue.h ../Util/BitVector.h \
+ ../Util/BitChar.h
 
 /usr/include/stdc-predef.h:
 
@@ -847,8 +847,6 @@ gzstream.h:
 ../Bigraph/GraphCommon.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/5/cstddef:
 
 /usr/include/c++/5/queue:
 

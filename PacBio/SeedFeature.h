@@ -2,52 +2,51 @@
 #define SeedFeature_H
 
 #include <iostream>
+#include <map>
 #include "BWTIndexSet.h"
 class SeedFeature
 {
 	public:
-		/*************************/
-		//Legacy code
-		SeedFeature(size_t startPos, std::string str, bool repeat, size_t kmerSize, size_t repeatCutoff, size_t maxFixedMerFreq=0);
-		/*************************/
-		SeedFeature(
-				std::string str,
-				size_t startPos,
-				size_t frequency,
-				bool repeat,
-				size_t kmerSize,
-				size_t PBcoverage)
-		:	seedStr(str),
-			seedLen(seedStr.length()),
-			seedStartPos(startPos),
-			seedEndPos(startPos + seedLen - 1),
-			maxFixedMerFreq(frequency),
-			isRepeat(repeat),
-			isHitchhiked(false),
-			startBestKmerSize(kmerSize),
-			endBestKmerSize(kmerSize),
-			sizeUpperBound(seedLen),
-			sizeLowerBound(kmerSize),
-			freqUpperBound(PBcoverage >> 1),
-			freqLowerBound(PBcoverage >> 2){ }
-				
-		~SeedFeature(){ }
+		
+		typedef std::vector<SeedFeature> SeedVector;
+		static std::map<std::string, SeedVector>& Log();
+		friend std::ostream& operator<<(std::ostream& out, const SeedVector& vec);
+		
+		SeedFeature(std::string str, int startPos, int frequency, bool repeat, int kmerSize, int PBcoverage);
+		~SeedFeature(void) = default;
+		
+		// adjust start/end kmer for future FMWalk
+		void estimateBestKmerSize(const BWTIndexSet& indices);
 		
 		// append current seed string with extendedStr
 		inline void append(std::string extendedStr, const SeedFeature& target)
 		{
 			seedStr += extendedStr;
 			seedLen += extendedStr.length();
-			//Upadate seed features in source to target
+			//Upadate seed features of source into target
 			startBestKmerSize = target.startBestKmerSize;
 			endBestKmerSize = target.endBestKmerSize;
 			isRepeat = target.isRepeat;
 			maxFixedMerFreq = target.maxFixedMerFreq;
 			seedStartPos = target.seedStartPos;
 			seedEndPos = target.seedEndPos;
-		};
-		/*************************/
-		//Legacy code
+		}
+		
+		std::string seedStr;
+		int seedLen;
+		int seedStartPos;
+		int seedEndPos;
+        int maxFixedMerFreq;
+		bool isRepeat;
+		bool isHitchhiked;
+		int startBestKmerSize;
+		int endBestKmerSize;
+		int startKmerFreq;
+		int endKmerFreq;
+		
+		//Legacy part
+		/***********/
+		SeedFeature(size_t startPos, std::string str, bool repeat, size_t kmerSize, size_t repeatCutoff, size_t maxFixedMerFreq=0);
 		inline void append(std::string extendedStr)
 		{
 			seedStr += extendedStr;
@@ -59,38 +58,18 @@ class SeedFeature
 		inline void setBestKmerSize(size_t staticKmerSize)
 		{
 			startBestKmerSize = endBestKmerSize = staticKmerSize;;
-		};
-		/*************************/
-		void estimateBestKmerSize(const BWTIndexSet& indices);
+		}
 		
-		std::string seedStr;
-		size_t seedLen;
-		int seedStartPos;
-		size_t seedEndPos;
-        size_t maxFixedMerFreq;
-		bool isRepeat;
-		bool isHitchhiked;
-		/*************************/
-		//Unknown usage
 		bool isPBSeed;
 		bool isNextRepeat = false;
         bool isLargeVar = false;
-		/*************************/
-		// estimated by calling estimateBestKmerSize
-		int startBestKmerSize;
-		int endBestKmerSize;
-		int startKmerFreq;
-		int endKmerFreq;
-		
-		typedef std::vector<SeedFeature> SeedVector;
-		
+		int minKmerSize;
+		/***********/
 	private:
-		size_t minKmerSize;
 		int sizeUpperBound;
 		int sizeLowerBound;
 		int freqUpperBound;
 		int freqLowerBound;
-		//size_t stepSize;
 		void modifyKmerSize(const BWTIndexSet& indices, bool which);
 };
 

@@ -205,11 +205,10 @@ libfmindexwalk_a-SAIOverlapTree.o: SAIOverlapTree.cpp \
  /usr/local/include/google/dense_hash_set \
  /usr/local/include/sparsehash/dense_hash_set ../Util/QualityTable.h \
  ../Util/QualityCodec.h ../Bigraph/GraphCommon.h \
- ../Util/KmerDistribution.h /usr/include/c++/5/cstddef \
- /usr/include/c++/5/queue /usr/include/c++/5/deque \
- /usr/include/c++/5/bits/stl_deque.h /usr/include/c++/5/bits/deque.tcc \
- /usr/include/c++/5/bits/stl_queue.h SAINode.h \
- ../Algorithm/OverlapBlock.h ../SuffixTools/BWTInterval.h \
+ ../Util/KmerDistribution.h /usr/include/c++/5/queue \
+ /usr/include/c++/5/deque /usr/include/c++/5/bits/stl_deque.h \
+ /usr/include/c++/5/bits/deque.tcc /usr/include/c++/5/bits/stl_queue.h \
+ SAINode.h ../Algorithm/OverlapBlock.h ../SuffixTools/BWTInterval.h \
  ../Algorithm/SearchHistory.h
 
 /usr/include/stdc-predef.h:
@@ -815,8 +814,6 @@ SAIOverlapTree.h:
 ../Bigraph/GraphCommon.h:
 
 ../Util/KmerDistribution.h:
-
-/usr/include/c++/5/cstddef:
 
 /usr/include/c++/5/queue:
 

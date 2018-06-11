@@ -53,6 +53,7 @@ libpacbio_a-PacBioSelfCorrectionProcess.o: \
  /usr/include/c++/5/bits/alloc_traits.h \
  /usr/include/c++/5/bits/memoryfwd.h \
  /usr/include/c++/5/bits/uniform_int_dist.h /usr/include/c++/5/limits \
+ /usr/include/c++/5/numeric /usr/include/c++/5/bits/stl_numeric.h \
  /usr/include/c++/5/memory /usr/include/c++/5/bits/allocator.h \
  /usr/include/x86_64-linux-gnu/c++/5/bits/c++allocator.h \
  /usr/include/c++/5/ext/new_allocator.h \
@@ -206,18 +207,18 @@ libpacbio_a-PacBioSelfCorrectionProcess.o: \
  ../Util/QualityCodec.h ../SuffixTools/SampledSuffixArray.h \
  ../SuffixTools/BWTAlgorithms.h ../SuffixTools/BWTIndexSet.h \
  ../Bigraph/GraphCommon.h ../Util/KmerDistribution.h \
- /usr/include/c++/5/cstddef /usr/include/c++/5/queue \
- /usr/include/c++/5/deque /usr/include/c++/5/bits/stl_deque.h \
- /usr/include/c++/5/bits/deque.tcc /usr/include/c++/5/bits/stl_queue.h \
- SeedFeature.h LongReadCorrectByOverlap.h ../SuffixTools/BWT.h \
- ../FMIndexWalk/SAINode.h IntervalTree.h HashtableSearch.h \
- LongReadProbe.h LongReadOverlap.h ../Thirdparty/multiple_alignment.h \
- ../Thirdparty/overlapper.h ../FMIndexWalk/FMIndexWalkProcess.h \
+ /usr/include/c++/5/queue /usr/include/c++/5/deque \
+ /usr/include/c++/5/bits/stl_deque.h /usr/include/c++/5/bits/deque.tcc \
+ /usr/include/c++/5/bits/stl_queue.h SeedFeature.h \
+ LongReadCorrectByOverlap.h ../SuffixTools/BWT.h ../FMIndexWalk/SAINode.h \
+ IntervalTree.h HashtableSearch.h LongReadProbe.h LongReadOverlap.h \
+ ../Thirdparty/multiple_alignment.h ../Thirdparty/overlapper.h \
+ ../FMIndexWalk/FMIndexWalkProcess.h \
  ../Concurrency/SequenceProcessFramework.h ../Concurrency/ThreadWorker.h \
  /usr/include/semaphore.h /usr/include/x86_64-linux-gnu/bits/semaphore.h \
  ../Util/Timer.h /usr/include/x86_64-linux-gnu/sys/time.h \
  ../Concurrency/SequenceWorkItem.h ../Util/Metrics.h ../Util/BitVector.h \
- ../Util/BitChar.h ../Algorithm/KmerOverlaps.h KmerFeature.h
+ ../Util/BitChar.h ../Algorithm/KmerOverlaps.h KmerFeature.h BCode.h
 
 /usr/include/stdc-predef.h:
 
@@ -356,6 +357,10 @@ libpacbio_a-PacBioSelfCorrectionProcess.o: \
 /usr/include/c++/5/bits/uniform_int_dist.h:
 
 /usr/include/c++/5/limits:
+
+/usr/include/c++/5/numeric:
+
+/usr/include/c++/5/bits/stl_numeric.h:
 
 /usr/include/c++/5/memory:
 
@@ -829,8 +834,6 @@ PacBioSelfCorrectionProcess.h:
 
 ../Util/KmerDistribution.h:
 
-/usr/include/c++/5/cstddef:
-
 /usr/include/c++/5/queue:
 
 /usr/include/c++/5/deque:
@@ -886,3 +889,5 @@ LongReadOverlap.h:
 ../Algorithm/KmerOverlaps.h:
 
 KmerFeature.h:
+
+BCode.h:
