@@ -236,7 +236,15 @@ bool PacBioSelfCorrectionProcess::correctByMSAlignment
 
 
 	if(maquery.getNumRows() <= 3) return false;
+	//maquery.print(100); 
 	out = maquery.calculateBaseConsensus(min_call_coverage, -1);
+	
+	//not to modify target seed
+	unsigned int trg_pos = out.length()-trg.length();
+	unsigned int trg_len = trg.length();
+	out.erase(trg_pos, trg_len);
+	out.append(trg);
+	
 	out.erase(0,extendKmerSize);
 	result.correctedLen += out.length();
 	result.seedDis += interval;

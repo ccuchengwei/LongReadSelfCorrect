@@ -589,7 +589,7 @@ void LongReadOverlap::findOverlapInexact(const std::string& query, size_t srcKme
 	// pbOvlTree.printAll();
 }
 
-//
+/* Banded DP
 void LongReadOverlap::retrieveMatches(const std::string& query,
 									size_t k,
 									size_t min_overlap,
@@ -659,6 +659,218 @@ void LongReadOverlap::retrieveMatches(const std::string& query,
         }
        
     }
+}
+*/
+
+//Edlib DP
+void LongReadOverlap::retrieveMatches(const std::string& query,
+									size_t k,
+									size_t min_overlap,
+									double min_identity,
+									size_t coverage,
+									const BWTIndexSet& indices,
+									bool isRC,
+									SequenceOverlapPairVector& overlap_vector)
+{
+    assert(indices.pBWT != nullptr);
+    assert(indices.pRBWT != nullptr);
+    assert(indices.pSSA != nullptr);
+
+	std::vector<std::string> ovlStr;
+
+	// retrive overlap reads
+	size_t maxLength = query.length()*1.1+20;
+	retrieveStr(query, k, maxLength, indices, isRC, coverage, ovlStr);
+
+	
+    // Refine the matches by computing proper overlaps between the sequences
+    // Use the overlaps that meet the thresholds to build a multiple alignment
+    for(std::vector<std::string>::iterator iter = ovlStr.begin(); iter != ovlStr.end(); ++iter)
+    {
+        std::string match_sequence = *iter;
+			
+        // Ignore identical sequence from forward or backward extension
+        if( (!isRC && match_sequence.substr(0,query.length()) == query) || 
+			(isRC && match_sequence.length() >= query.length() && match_sequence.substr(match_sequence.length()-query.length()) == query))
+            continue;
+
+        // Use Edlib bit-vector algorithm to do DP 
+		EdlibAlignMode modeCode;        //NW(global), SHW(prefix), HW(infix)
+		EdlibAlignResult edlib_overlap;
+		const char* c_query  = query.c_str();
+        const char* c_match_sequence = match_sequence.c_str();
+		
+		if(!isRC && query.length() < match_sequence.length())
+		{	
+			modeCode = EDLIB_MODE_SHW;
+			edlib_overlap = edlibAlign(c_query, query.length(), c_match_sequence, match_sequence.length(), 
+										edlibNewAlignConfig(-1,modeCode,EDLIB_TASK_PATH,NULL, 0) );			
+		} 
+		else if(isRC && query.length() < match_sequence.length())
+		{
+			modeCode = EDLIB_MODE_HW;	
+			edlib_overlap = edlibAlign(c_query, query.length(), c_match_sequence, match_sequence.length(), 
+										edlibNewAlignConfig(-1,modeCode,EDLIB_TASK_PATH,NULL, 0) );
+		}
+		else if(!isRC && query.length() >= match_sequence.length())
+		{
+			modeCode = EDLIB_MODE_SHW;	
+			edlib_overlap = edlibAlign(c_match_sequence, match_sequence.length(), c_query, query.length(),
+										edlibNewAlignConfig(-1,modeCode,EDLIB_TASK_PATH,NULL, 0) );
+		}
+		else // isRC && query.length() >= match_sequence.length()
+		{
+			modeCode = EDLIB_MODE_HW;	
+			edlib_overlap = edlibAlign(c_match_sequence, match_sequence.length(), c_query, query.length(),
+										edlibNewAlignConfig(-1,modeCode,EDLIB_TASK_PATH,NULL, 0) );
+		}
+		
+		// when DP Complete
+		if (edlib_overlap.status == EDLIB_STATUS_OK) {
+			//transform structure EdlibAlignResult to SequenceOverlap	
+			SequenceOverlap overlap;
+			
+			if(query.length() < match_sequence.length())
+			{			
+				char* c_cigar = edlibAlignmentToCigar(edlib_overlap.alignment, edlib_overlap.alignmentLength, EDLIB_CIGAR_STANDARD);
+				std::string cigar(c_cigar);
+				std::string converted_cigar = convert_cigar(cigar); // convert I to D and D to I ,because edlibAlign(S1,S2) cigar is for S1 
+								
+				//check cigar's last symbol is deletion or not
+				//if yes, do eliminate 
+				int last_del_num = 0;
+				if(converted_cigar[converted_cigar.length()-1] == 'D')
+				{
+					last_del_num = converted_cigar[converted_cigar.length()-2]-'0';	//ASCII decimal to char
+					std::string cigar_no_del = converted_cigar.substr(0,converted_cigar.length()-2);
+					overlap.cigar = cigar_no_del;
+					
+					int* query_locations = get_S1_locations(edlib_overlap.alignment, edlib_overlap.alignmentLength,
+														edlib_overlap.endLocations[0], modeCode );
+					overlap.match[0].start = query_locations[0];
+					overlap.match[0].end   = query_locations[1]-last_del_num;
+					delete[] query_locations;
+					
+					overlap.match[1].start = edlib_overlap.startLocations[0];
+					overlap.match[1].end   = edlib_overlap.endLocations[0]-last_del_num;
+					
+					overlap.score = 0-edlib_overlap.editDistance+last_del_num;//for finding max score
+					overlap.edit_distance = edlib_overlap.editDistance-last_del_num;
+					overlap.total_columns = edlib_overlap.alignmentLength-last_del_num;
+					
+				} else {
+					overlap.cigar = converted_cigar;
+					
+					int* query_locations = get_S1_locations(edlib_overlap.alignment, edlib_overlap.alignmentLength,
+														edlib_overlap.endLocations[0], modeCode );
+					overlap.match[0].start = query_locations[0];
+					overlap.match[0].end   = query_locations[1];
+					delete[] query_locations;
+					
+					overlap.match[1].start = edlib_overlap.startLocations[0];
+					overlap.match[1].end   = edlib_overlap.endLocations[0];
+					
+					overlap.score = 0-edlib_overlap.editDistance;//for finding max score
+					overlap.edit_distance = edlib_overlap.editDistance;
+					overlap.total_columns = edlib_overlap.alignmentLength;
+				}			
+			}
+			else //query.length() >= match_sequence.length()
+			{
+				overlap.match[0].start = edlib_overlap.startLocations[0];
+				overlap.match[0].end   = edlib_overlap.endLocations[0];
+				
+				int* match_seq_locations = get_S1_locations(edlib_overlap.alignment, edlib_overlap.alignmentLength,
+															edlib_overlap.endLocations[0], modeCode );
+				overlap.match[1].start = match_seq_locations[0];
+				overlap.match[1].end   = match_seq_locations[1];
+				delete[] match_seq_locations;
+				
+				char* c_cigar = edlibAlignmentToCigar(edlib_overlap.alignment, edlib_overlap.alignmentLength, EDLIB_CIGAR_STANDARD);
+				std::string cigar(c_cigar);
+				overlap.cigar = cigar;
+				
+				overlap.score = 0-edlib_overlap.editDistance;//for finding max score
+				overlap.edit_distance = edlib_overlap.editDistance;
+				overlap.total_columns = edlib_overlap.alignmentLength;
+			}
+		
+			overlap.length[0] = query.length();
+			overlap.length[1] = match_sequence.length();
+
+			bool bPassedOverlap = (size_t)overlap.getOverlapLength() >= (size_t) min_overlap;
+			bool bPassedIdentity = overlap.getPercentIdentity() / 100 >= min_identity;
+
+			// std::cout << ">" << overlap.getPercentIdentity() / 100 << ":" << overlap.getOverlapLength() << "\n" 
+					// << match_sequence << "\n";
+
+			if(bPassedOverlap && bPassedIdentity)
+			{
+				// if(!isRC)
+				// std::cout << "k:" << k << "\t" << "Src\n" << "Cigar:" << overlap.cigar << "\n"
+						// << "Query:\n" << query << "\n" << "Match sequence:\n" << match_sequence << "\n";
+				// else
+				// std::cout << "k:" << k << "\t" << "Tar\n" << "Cigar:" << overlap.cigar << "\n"
+						// << "Query:\n" << query << "\n" << "Match sequence:\n" << match_sequence << "\n";			
+				
+				// std::cout << ">" << overlap.getPercentIdentity() / 100 << ":" << overlap.getOverlapLength() << "\n" 
+				// << match_sequence <<" " << min_identity<< "\n" ;
+				SequenceOverlapPair op;
+				//op.sequence[0] = query;
+				op.sequence[1] = match_sequence;
+				op.overlap = overlap;
+				op.is_reversed = false;
+				overlap_vector.push_back(op);
+			}
+		}
+		edlibFreeAlignResult(edlib_overlap);//free memory
+    }
+}
+
+int* LongReadOverlap::get_S1_locations(const unsigned char* alignment, const int alignmentLength,
+                    const int position, const EdlibAlignMode modeCode) {
+	int* Locations = new int[2]; 
+	int tIdx = -1;
+    int qIdx = -1;
+	int tmp = 1;
+    if (modeCode == EDLIB_MODE_HW) {
+        tIdx = position;
+        for (int i = 0; i < alignmentLength; i++) {
+            if (alignment[i] != EDLIB_EDOP_INSERT)
+                tIdx--;
+        }
+    }
+    for (int start = 0; start < alignmentLength; start += 50) {
+        int startQIdx = qIdx;	
+        for (int j = start; j < start + 50 && j < alignmentLength; j++) {
+            if (alignment[j] != EDLIB_EDOP_DELETE)
+                ++qIdx;
+            if (j == start)
+                startQIdx = qIdx;
+        }
+        //printf(" (%d - %d)\n\n", std::max(startQIdx, 0), qIdx);		
+		if(std::max(startQIdx, 0) < tmp){
+			tmp = std::max(startQIdx, 0);
+			Locations[0] = tmp;	
+		}		
+    }
+	Locations[1] = qIdx;
+	return Locations;
+}
+
+std::string LongReadOverlap::convert_cigar(std::string cigar)
+{
+     for(int i = 0; i < (int)cigar.length(); i++){
+          switch( cigar[i] ){
+                case 'D':
+               		cigar[i] = 'I';
+               		break;
+               	case 'I' :
+               		cigar[i] = 'D';
+               		break;
+          }
+     }   
+     return cigar;
 }
 
 // LF-mapping of each SA index in the interval independently using loop instead of BFS tree expansion

@@ -18,6 +18,7 @@ libthirdparty_a_SOURCES = \
         overlapper.h overlapper.cpp \
         multiple_alignment.h multiple_alignment.cpp \
         bcr.h bcr.c \
+		edlib.h edlib.cpp \
 	ropebwt2/mrope.h ropebwt2/mrope.c \
 	ropebwt2/rle.h ropebwt2/rle.c \
 	ropebwt2/rope.h ropebwt2/rope.c \

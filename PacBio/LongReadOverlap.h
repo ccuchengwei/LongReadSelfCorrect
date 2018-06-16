@@ -15,7 +15,7 @@
 #include "SampledSuffixArray.h"
 #include "KmerOverlaps.h"
 #include "SeedFeature.h"
-
+#include "edlib.h"
 
 namespace LongReadOverlap
 {
@@ -93,6 +93,9 @@ namespace LongReadOverlap
 							std::vector<std::string>& ovlStr);
 							
 	void filterOverlap(SequenceOverlapPairVector& overlap_vector);
+	int* get_S1_locations(const unsigned char* alignment, const int alignmentLength,
+                    const int position, const EdlibAlignMode modeCode);
+	std::string convert_cigar(std::string cigar);
 };
 
 #endif
