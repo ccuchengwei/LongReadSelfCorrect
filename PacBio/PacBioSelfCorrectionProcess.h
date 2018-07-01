@@ -25,13 +25,13 @@ struct PacBioSelfCorrectionParameters
 {
 	BWTIndexSet indices;
 	std::string directory;
-	
+
 	// PACBIO
 	int PBcoverage;
     double ErrorRate;
 
 	int startKmerLen;
-	
+
 	// tree search parameters
 //	int minOverlap;
 //	int maxOverlap;
@@ -39,15 +39,17 @@ struct PacBioSelfCorrectionParameters
 	int maxLeaves;
     int idmerLen;
 	int minKmerLen;
-	
+
 	std::set<int> pool;
-    
+
 	bool Split;
     bool DebugExtend;
     bool DebugSeed;
 	bool OnlySeed;
 	bool NoDp;
-	
+
+	bool isSpecifiedPath;
+	std::string extendPath;
 	FMextendParameters FM_params;
 
 };
@@ -75,7 +77,7 @@ struct PacBioSelfCorrectionResult
 
 	std::string readid;
 	bool merge;
-	
+
 	// PacBio reads correction by Ya, v20151001.
 	std::vector<DNAString> correctedStrs;
 	int64_t totalReadsLen;
@@ -97,14 +99,14 @@ struct PacBioSelfCorrectionResult
 class PacBioSelfCorrectionProcess
 {
 	public:
-	
+
 		PacBioSelfCorrectionProcess(const PacBioSelfCorrectionParameters& params):m_params(params){ }
 		~PacBioSelfCorrectionProcess(){ }
 		PacBioSelfCorrectionResult process(const SequenceWorkItem& workItem);
 
 	private:
 		const PacBioSelfCorrectionParameters m_params;
-	
+
 		//correct sequence
 		void initCorrect(std::string& readSeq, const SeedFeature::SeedVector& seedVec, SeedFeature::SeedVector& pieceVec, PacBioSelfCorrectionResult& result);
 		int correctByFMExtension(const SeedFeature& source, const SeedFeature& target, const std::string& in, std::string& out, PacBioSelfCorrectionResult& result, debugExtInfo& debug);
@@ -118,13 +120,13 @@ class PacBioSelfCorrectionPostProcess
 		PacBioSelfCorrectionPostProcess(const PacBioSelfCorrectionParameters& params);
 		~PacBioSelfCorrectionPostProcess();
 		void process(const SequenceWorkItem& item, const PacBioSelfCorrectionResult& result);
-	
+
 	private:
 		PacBioSelfCorrectionParameters m_params;
-		
+
 		std::ostream* m_pCorrectWriter;
 		std::ostream* m_pDiscardWriter;
-	
+
 		int64_t m_totalReadsLen;
 		int64_t m_correctedLen;
 		int64_t m_totalSeedNum;
@@ -139,10 +141,10 @@ class PacBioSelfCorrectionPostProcess
 		double m_Timer_Seed;
 		double m_Timer_FM;
 	    double m_Timer_DP;
-		
+
 		FILE* m_pStatusWriter;
 		int m_status[3];
-		
+
 		void summarize(FILE* out, const int* status, std::string subject);
 };
 

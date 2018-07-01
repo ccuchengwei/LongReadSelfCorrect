@@ -61,6 +61,43 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 		return;
 	}
 	if(seedVec.size() < 2) return;
+
+	std::string fileName;
+	if (m_params.DebugSeed || m_params.DebugExtend)
+	{
+		fileName = result.readid;
+		while(true)
+		{
+			size_t found = fileName.find("/");
+			if(found == std::string::npos)
+				break;
+			fileName = fileName.replace(found,1,"%");
+		}
+	}
+
+	std::vector<std::string> specifiedPaths;
+	if (m_params.isSpecifiedPath)
+	{
+		// Read the specific path.
+			std::string fullFileName = m_params.extendPath + fileName + ".txt";
+			std::string currSpecifiedPath;
+			std::ifstream pathFile;
+			pathFile.open(fullFileName);
+
+			if (pathFile.fail())
+			{
+				std::cerr << "\"" << fullFileName << "\" do NOT exist." << std::endl;
+				exit(EXIT_FAILURE);
+			}
+			while(pathFile.peek()!=EOF) 
+			{   
+				getline(pathFile, currSpecifiedPath);
+				specifiedPaths.push_back(currSpecifiedPath);
+			}
+
+			pathFile.close();
+	}
+
 	std::ostream* pExtWriter    = nullptr;
 	std::ostream* pDpWriter     = nullptr;
 	std::ostream* pExtDebugFile = nullptr;
@@ -71,16 +108,17 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 	//push first seed into vector and reserve space for fast expansion
 	pieceVec.push_back(seedVec[0]);
 	pieceVec.back().seedStr.reserve(readSeq.length());
+
 	if(m_params.DebugSeed)
 	{
-		pExtWriter    = createWriter(m_params.directory + "extend/" + result.readid + ".ext");
-		pDpWriter     = createWriter(m_params.directory + "extend/" + result.readid + ".dp");
+		pExtWriter    = createWriter(m_params.directory + "extend/" + fileName + ".ext");
+		pDpWriter     = createWriter(m_params.directory + "extend/" + fileName + ".dp");
 	}
 
 	if(m_params.DebugExtend)
 	{
-		pExtDebugFile = createWriter(m_params.directory + "extensionFile/" + result.readid + ".fa");
-		pExtDebugSeed = createWriter(m_params.directory + "extensionFile/" + result.readid + ".txt");
+		pExtDebugFile = createWriter(m_params.directory + "extensionFile/" + fileName + ".fa");
+		pExtDebugSeed = createWriter(m_params.directory + "extensionFile/" + fileName + ".txt");
 /*
 		(*pExtDebugSeed)    << "readName\tcaseNum\t"
 							<< "oriSrcStart\toriSrcEnd\toriSrcSeq\t"
@@ -101,12 +139,17 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 		int isFMExtensionSuccess = 0, firstFMExtensionType = 0;
 		SeedFeature& source = pieceVec.back();
 		std::string mergedSeq;
+		std::string currSpecifiedPath;
 
 		for(int next = 0; next < m_params.nextTarget && (iterTarget + next) != seedVec.end() ; next++)
 		{
 			const SeedFeature& target = *(iterTarget + next);
 
-			debugExtInfo debug( m_params.DebugExtend, pExtDebugFile, result.readid, case_number);
+			forceExtInfo ref;
+			if (m_params.isSpecifiedPath)
+				ref.setSpecPath(m_params.isSpecifiedPath, specifiedPaths.at(case_number-1));
+			debugExtInfo debug( m_params.DebugExtend, pExtDebugFile, result.readid, case_number, ref);
+
 			isFMExtensionSuccess = correctByFMExtension(source, target, readSeq, mergedSeq, result, debug);
 
 			firstFMExtensionType = (next == 0 ? isFMExtensionSuccess : firstFMExtensionType);
@@ -282,6 +325,7 @@ int PacBioSelfCorrectionProcess::correctByFMExtension
 		{
 			extSeeds.reverseSeed();
 			readPath = reverseComplement(readPath);
+			debug.ref.RCSeq();
 		}
 
 	// Set the normal threshold by extension
@@ -291,11 +335,14 @@ int PacBioSelfCorrectionProcess::correctByFMExtension
 		else
 			min_SA_threshold = 3;
 
+	// Set the reduced Size
+		size_t reducedSize = initExtSize + 2;
+
 	// FM extension
 		Timer* FMTimer = new Timer("FM Time",true);
 			FMWalkResult2 fmwalkresult;
 			LongReadSelfCorrectByOverlap OverlapTree
-				(extSeeds, readPath, seedDistance, initExtSize, initExtSize + 2, m_params.FM_params, min_SA_threshold, debug);
+				(extSeeds, readPath, seedDistance, initExtSize, reducedSize, m_params.FM_params, min_SA_threshold, debug);
 			isFMExtensionSuccess = OverlapTree.extendOverlap(fmwalkresult);
 			result.Timer_FM += FMTimer->getElapsedWallTime();
 		delete FMTimer;

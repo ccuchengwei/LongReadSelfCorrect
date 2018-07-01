@@ -31,8 +31,8 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap
 				):
 					m_extSeeds(extSeeds),
 					m_sourceSeed(extSeeds.source.seq),
-					m_targetSeed(extSeeds.target.seq),
 					m_strBetweenSrcTarget(strBetweenSrcTarget),
+					m_targetSeed(extSeeds.target.seq),
 					m_disBetweenSrcTarget(disBetweenSrcTarget),
 					m_initkmersize(initkmersize),
 					m_minOverlap(params.minKmerLength),
@@ -71,10 +71,10 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap
 //*
 	if(m_Debug.isDebug)
 	{
-		std::cout   << m_Debug.caseNum << "\tBE: " 
-					<< m_extSeeds.source.seq << " " 
+		std::cout   << m_Debug.caseNum << "\tBE: "
+					<< m_extSeeds.source.seq << " "
 					<< m_extSeeds.target.seq << " "
-					<< m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size() << "|" 
+					<< m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size() << "|"
 					<< disBetweenSrcTarget <<"\n";
 	}
 //*/
@@ -97,6 +97,7 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap
 			buildOverlapbyFMindex(m_fwdIntervalTree ,m_rvcIntervalTree ,m_seedSize);
 		// build overlap tree to match 5-mer
 			buildOverlapbyFMindex(m_fwdIntervalTree2,m_rvcIntervalTree2,5);
+
 }
 
 LongReadSelfCorrectByOverlap::~LongReadSelfCorrectByOverlap()
@@ -168,7 +169,7 @@ int LongReadSelfCorrectByOverlap::extendOverlap(FMWalkResult2& FMWResult)
 /*
 		if(m_Debug.isDebug)
 		{
-			std::cout   << m_Debug.caseNum << "\t" << m_step_number 
+			std::cout   << m_Debug.caseNum << "\t" << m_step_number
 						<< " Leaves number for extension:" << m_leaves.size() << std::endl;
 			std::cout << "\t(Rel) Leaves number to trim branch:" << m_leaves.size() << std::endl;
 			std::cout << "\t";
@@ -209,6 +210,16 @@ int LongReadSelfCorrectByOverlap::extendOverlap(FMWalkResult2& FMWResult)
 			isTerminated(results);
 
 		m_step_number++;
+
+		if (m_Debug.ref.isSpecifiedPath)
+		{
+			if (m_Debug.ref.isIllegalLen(m_step_number-1))
+			{
+				m_leaves.clear();
+				break;
+			}
+		}
+
 	}
 
 	// reach the terminal kmer
@@ -411,6 +422,9 @@ void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves, const boo
 	leafList::iterator iter = m_leaves.begin();
 	while(iter != m_leaves.end())
 	{
+		if (m_Debug.ref.isSpecifiedPath)
+			break;
+
 		SAIOverlapNode3* leaf = (*iter).leafNodePtr;
 		double errorRateDiff  = (leaf->LocalErrorRateRecord.back()) - minimumErrorRate;
 		if((errorRateDiff > 0.05 && m_currentLength > m_localSimilarlykmerSize/2)
@@ -449,7 +463,7 @@ void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves, const boo
 					strand = '-';
 
 				*(m_Debug.debug_file)   << ">" << m_Debug.readID
-										<< "|" << m_extSeeds.source.start 
+										<< "|" << m_extSeeds.source.start
 										<< "|" << m_extSeeds.source.end
 										<< "|" << m_extSeeds.target.start
 										<< "|" << m_extSeeds.target.end
@@ -459,7 +473,7 @@ void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves, const boo
 										<< "|" << currLeavesNum       << "|" << ((*iter).lastLeafID)
 										<< "&" << m_currentKmerSize   << "|" <<  kmer_freq
 										<< "&" << std::fixed          << std::setprecision(5)
-										<< 100*(leaf ->LocalErrorRateRecord.back() ) << "|" 
+										<< 100*(leaf ->LocalErrorRateRecord.back() ) << "|"
 										<< 100*(leaf ->GlobalErrorRateRecord.back()) << "&";
 			}
 
@@ -510,7 +524,7 @@ void LongReadSelfCorrectByOverlap::updateLeaves(leafList& newLeaves,extArray& ex
 			//inherit accumulated kmerCount from parent
 				pChildNode->addKmerCount( pNode->getKmerCount() );
 /*
-			// Remove the bug while changing the seed by FM-Extend 
+			// Remove the bug while changing the seed by FM-Extend
 				if (i != 0)
 					(pChildNode -> resultindex).first = -1;
 //*/
@@ -582,7 +596,7 @@ bool LongReadSelfCorrectByOverlap::PrunedBySeedSupport(leafList& newLeaves)
 
 		// speedup by skipping dissimilar reads
 		// This is the 2nd filter less reliable than the 1st one
-		if(currErrorRate > m_errorRate) //testcw
+		if((!m_Debug.ref.isSpecifiedPath) && (currErrorRate > m_errorRate)) //testcw
 		{
 			iter = newLeaves.erase(iter);
 			continue;
@@ -813,6 +827,27 @@ extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const leafInfo& curr
 				output.emplace_back(b,fwdInterval,rvcInterval);
 		}
 	}
+	if(m_Debug.ref.isSpecifiedPath)
+	{
+		if (!(m_step_number == 1 || m_Debug.ref.isMatchBase(currLeaf.tailLetter, m_step_number-2)))
+		{
+			output.clear();
+		}
+		else if(!output.empty() || !printDebugInfo)
+		{
+			// output is empty, and the k-mer size reduced
+			// output is not empty
+
+			output.clear();
+			for(int i = 1; i < BWT_ALPHABET::size; ++i)
+			{
+				BWTInterval fwdInterval = totalExt.at(i-1).getFwdInterval();
+				BWTInterval rvcInterval = totalExt.at(i-1).getRvcInterval();
+				char b = BWT_ALPHABET::getChar(i);
+				output.emplace_back(b,fwdInterval,rvcInterval);
+			}
+		}
+	}
 
 	if(m_Debug.isDebug && printDebugInfo)
 	{
@@ -875,7 +910,8 @@ bool LongReadSelfCorrectByOverlap::isTerminated(SAIntervalNodeResultVector& resu
 		BWTInterval currfwd = leaf -> fwdInterval;
 		BWTInterval currrvc = leaf -> rvcInterval;
 
-		assert(currfwd.isValid() || currrvc.isValid());
+		if (!m_Debug.ref.isSpecifiedPath)
+			assert(currfwd.isValid() || currrvc.isValid());
 
 		//The current SA interval stands for a string >= terminating kmer
 		//If terminating kmer is a substr, the current SA interval is a sub-interval of the terminating interval

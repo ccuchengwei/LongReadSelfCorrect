@@ -18,6 +18,8 @@
 #include "HashtableSearch.h"
 #include "SeedFeature.h"
 
+// Define int type.
+	typedef int64_t KmerFreqType;
 
 struct FMWalkResult2
 {
@@ -53,7 +55,7 @@ struct simpleSeedFeature
 		simpleSeedFeature(const SeedFeature& seed, bool isHead):
 			seq     (seed.seedStr),
 			end     (seed.seedEndPos),
-			isRepeat(seed.isRepeat) 
+			isRepeat(seed.isRepeat)
 			{
 				if (isHead)
 					start = seed.seedEndPos - seed.seedLen+1;
@@ -105,6 +107,49 @@ struct seedPair
 		bool    isPosStrand;
 };
 
+struct forceExtInfo
+{
+	forceExtInfo():
+					isSpecifiedPath(false),
+					specifiedPath(""){};
+
+	void setSpecPath(
+						const bool& isSpecifiedPath,
+						const std::string& specifiedPath
+					)
+					{
+						this -> isSpecifiedPath = isSpecifiedPath;
+						this -> specifiedPath   = specifiedPath;
+					};
+
+	bool isMatchBase(const std::string& currBase, size_t position)
+	{
+		return (currBase.back() == specifiedPath.at(position));
+	}
+
+	bool isIllegalLen(size_t position)
+	{
+		return (position >= specifiedPath.length());
+	}
+
+	void RCSeq()
+	{
+		if (!specifiedPath.empty())
+			specifiedPath = reverseComplement(specifiedPath);
+	}
+
+	std::string getSpecifiedPath()
+	{
+		return specifiedPath;
+	}
+
+		bool isSpecifiedPath;
+
+	private:
+		std::string specifiedPath;
+
+};
+
 struct debugExtInfo
 {
 	public:
@@ -112,17 +157,20 @@ struct debugExtInfo
 						bool isDebug = false,
 						std::ostream* debug_file = NULL,
 						std::string readID = "",
-						int  caseNum = 0
+						int  caseNum = 0,
+						forceExtInfo ref = forceExtInfo()
 					):
 						isDebug(isDebug),
 						debug_file(debug_file),
 						readID(readID),
-						caseNum(caseNum){};
+						caseNum(caseNum),
+						ref(ref) {};
 
 		const bool isDebug;
 		std::ostream* debug_file;
 		std::string   readID;
-		size_t  caseNum;
+		size_t        caseNum;
+		forceExtInfo  ref;
 };
 
 struct FMidx
@@ -143,8 +191,8 @@ struct FMidx
 					const BWTInterval& fwdInterval,
 					const BWTInterval& rvcInterval
 				):
-					SearchLetters(std::string(1,c)), 
-					fwdInterval(fwdInterval), 
+					SearchLetters(std::string(1,c)),
+					fwdInterval(fwdInterval),
 					rvcInterval(rvcInterval),
 					kmerFrequency(fwdInterval.size() + rvcInterval.size())
 				{};
@@ -154,15 +202,18 @@ struct FMidx
 				this -> rvcInterval   = rvcInterval;
 				this -> kmerFrequency = fwdInterval.size() + rvcInterval.size();
 			}
+
 		BWTInterval getFwdInterval()
 			{
 				return fwdInterval;
 			}
+
 		BWTInterval getRvcInterval()
 			{
 				return rvcInterval;
 			}
-		int getKmerFrequency()
+
+		KmerFreqType getKmerFrequency()
 			{
 				return kmerFrequency;
 			}
@@ -172,12 +223,17 @@ struct FMidx
 				return SearchLetters[0];
 			}
 
+		bool isVaildIntervals()
+			{
+				return (fwdInterval.isValid() || rvcInterval.isValid());
+			}
+
 		const std::string SearchLetters;
 
 	private:
 		BWTInterval fwdInterval;
 		BWTInterval rvcInterval;
-		int kmerFrequency;
+		KmerFreqType kmerFrequency;
 
 };
 typedef std::vector<FMidx> extArray;
@@ -201,7 +257,7 @@ struct leafInfo
 						break;
 				}
 
-				kmerFrequency =   (leafNode -> fwdInterval).size() 
+				kmerFrequency =   (leafNode -> fwdInterval).size()
 								+ (leafNode -> rvcInterval).size();
 			}
 		leafInfo(SAIOverlapNode3* currNode, const leafInfo& leaf, FMidx& extension, const size_t currLeavesNum)
@@ -240,7 +296,7 @@ struct leafInfo
 
 		SAIOverlapNode3* leafNodePtr;
 		size_t lastLeafID;
-		int kmerFrequency;
+		KmerFreqType kmerFrequency;
 
 		std::string tailLetter;
 		size_t tailLetterCount;
@@ -264,13 +320,13 @@ struct dominantBase
 				int  currFreq = currExt.getKmerFrequency();
 				char currBase = currExt.getLetter();
 
-				if( currFreq >  freqs[0] 
+				if( currFreq >  freqs[0]
 				|| (currFreq == freqs[0] && currBase == identicalBase))
 				{
 					std::swap(freqs[0], currFreq);
 					std::swap(bases[0], currBase);
 				}
-				if( currFreq >  freqs[1] 
+				if( currFreq >  freqs[1]
 				|| (currFreq == freqs[1] && currBase == identicalBase))
 				{
 					std::swap(freqs[1], currFreq);
@@ -385,7 +441,7 @@ class LongReadSelfCorrectByOverlap
 
 		// debug tools
 			debugExtInfo m_Debug;
-			int m_step_number;
+			size_t m_step_number;
 
 		size_t m_maxIndelSize;
 		double* freqsOfKmerSize;

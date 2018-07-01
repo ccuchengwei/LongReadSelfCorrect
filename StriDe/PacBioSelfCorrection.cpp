@@ -54,6 +54,7 @@ static const char *CORRECT_USAGE_MESSAGE =
 "      -s, --min-kmer-size=N            The minimum length of the kmer to use. (default: 13.)\n"
 "      -g, --genome=(5/10/100)[m]       Genome size of the species (default: 10m)\n"
 "      -m, --mode=(0/1/2)               Mode in seed-searching (default: 1)\n"
+"      -f, --force=DIR                  Force to extend the specific path.\n"
 "      -v, --verbose                    Display verbose output\n"
 "      --help                           Display this help and exit\n"
 "      --version                        Display version and exit\n"
@@ -91,6 +92,10 @@ namespace opt
 
 	static int genome = 10;
 	static int mode = 1;
+
+	static bool isForce = false;
+	static std::string force;
+
 	static int verbose = 0;
 	static bool Split = false;
     static bool DebugExtend = false;
@@ -98,6 +103,7 @@ namespace opt
 	static bool OnlySeed = false;
 	static bool NoDp = false;
 	static bool Manual = false;
+
 
 	//variables for auto set
 	static bool Adjust = false;
@@ -107,7 +113,7 @@ namespace opt
 	static std::set<int> pool = {5, 9, 19}; // (5 & 9) -> fragment; 19 -> scan-window
 }
 
-static const char* shortopts = "t:p:o:b:c:e:k:u:r:n:l:i:s:g:m:v";
+static const char* shortopts = "t:p:o:b:c:e:k:u:r:n:l:i:s:g:m:f:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_SPLIT, OPT_FIRST, OPT_DEBUGEXTEND, OPT_DEBUGSEED, OPT_ONLYSEED, OPT_NODP };
 
@@ -127,6 +133,7 @@ static const struct option longopts[] = {
 	{ "min-kmer-size",      required_argument, nullptr, 's' },
 	{ "genome",             required_argument, nullptr, 'g' },
 	{ "mode",               required_argument, nullptr, 'm' },
+	{ "force",              required_argument, nullptr, 'f' },
 	{ "verbose",            no_argument,       nullptr, 'v' },
 	{ "help",               no_argument,       nullptr, OPT_HELP },
 	{ "version",            no_argument,       nullptr, OPT_VERSION },
@@ -186,6 +193,9 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	ecParams.DebugExtend = opt::DebugExtend;
 	ecParams.DebugSeed   = opt::DebugSeed;
 
+	ecParams.isSpecifiedPath = opt::isForce;
+	ecParams.extendPath      = opt::force;
+
 	if(opt::OnlySeed) BCode::load(opt::barcode);
 	ecParams.OnlySeed    = opt::OnlySeed;
 	ecParams.NoDp        = opt::NoDp;
@@ -223,7 +233,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 			opt::pool,
 			opt::DebugSeed,
 			opt::Manual);
-	
+
 	//Initialize KmerThreshold
 	KmerThreshold::Instance().initialize(-1, 50, opt::PBcoverage, opt::directory);
 
@@ -232,7 +242,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	<< "number of threads:\t"   << opt::thread       << "\n"
 	<< "PB reads coverage:\t"   << opt::PBcoverage   << "\n"
 	<< "num of next Targets:\t" << opt::nextTarget   << "\n"
-	<< "large kmer size:\t"     << opt::startKmerLen << "\n" 
+	<< "large kmer size:\t"     << opt::startKmerLen << "\n"
 	<< "small kmer size:\t"     << opt::minKmerLen   << "\n"
 	<< "max leaves:\t"          << opt::maxLeaves    << "\n"
 	<< "max depth:\t1.2~0.8* (length between two seeds +- 20)" << "\n";
@@ -247,7 +257,7 @@ int PacBioSelfCorrectionMain(int argc, char** argv)
 	PacBioSelfCorrectionProcess,
 	PacBioSelfCorrectionPostProcess,
 	PacBioSelfCorrectionParameters>(opt::thread, opt::readsFile, ecParams);
-	
+
 	delete pTimer;
 	return 0;
 }
@@ -290,6 +300,11 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 			case 'i': arg >> opt::idmerLen;   break;
 			case 's': arg >> opt::minKmerLen; break;
 			case 'g': arg >> opt::genome;     break;
+			case 'f':
+				arg >> opt::force;
+				opt::isForce = true;
+				opt::DebugExtend = true;
+				break;
 			case 'm':
 				arg >> opt::mode;
 				opt::Manual = true;
@@ -358,7 +373,7 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 				subdir.push_back(std::string("extensionFile/"));
 			}
 		}
-		
+
 		for(auto& iter : subdir)
 		{
 			if(system(("mkdir -p " + opt::directory + iter).c_str()) != 0)
@@ -423,12 +438,27 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 		die = true;
 	}
 
+
+	if(opt::DebugExtend && opt::isForce)
+	{
+		if (opt::force.empty())
+		{
+			std::cerr << SUBPROGRAM ": invalid expected extend file (-f)\n";
+			die = true;
+		}
+		else
+		{
+			if (opt::force.back() != '/')
+				opt::force += "/";
+		}
+	}
+
 	if(opt::OnlySeed && opt::barcode.empty())
 	{
 		std::cerr << SUBPROGRAM ": no barcode\n";
 		die = true;
 	}
-	
+
 	if(die)
 	{
 		std::cerr << "\n" << CORRECT_USAGE_MESSAGE;
@@ -437,6 +467,6 @@ void parsePacBioSelfCorrectionOptions(int argc, char** argv)
 
 	opt::readsFile = argv[optind++];
 //	std::string out_prefix = getFilename(opt::readsFile);
-	
+
 }
 
