@@ -841,10 +841,20 @@ extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const leafInfo& curr
 			output.clear();
 			for(int i = 1; i < BWT_ALPHABET::size; ++i)
 			{
-				BWTInterval fwdInterval = totalExt.at(i-1).getFwdInterval();
-				BWTInterval rvcInterval = totalExt.at(i-1).getRvcInterval();
+				FMidx&             currExt     = totalExt.at(i-1);
+				const BWTInterval& fwdInterval = currExt.getFwdInterval();
+				const BWTInterval& rvcInterval = currExt.getRvcInterval();
 				char b = BWT_ALPHABET::getChar(i);
-				output.emplace_back(b,fwdInterval,rvcInterval);
+
+				if  (m_step_number == 1)
+					{
+						if (currExt.isVaildIntervals())
+							output.emplace_back(b,fwdInterval,rvcInterval);
+					}
+				else if  (currExt.isVaildIntervals() || m_Debug.ref.isMatchBase(b, m_step_number-1))
+					{
+						output.emplace_back(b,fwdInterval,rvcInterval);
+					}
 			}
 		}
 	}

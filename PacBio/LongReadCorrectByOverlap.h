@@ -122,9 +122,19 @@ struct forceExtInfo
 						this -> specifiedPath   = specifiedPath;
 					};
 
-	bool isMatchBase(const std::string& currBase, size_t position)
+	bool isEmpty()
+	{
+		return specifiedPath.empty();
+	}
+
+	bool isMatchBase(const std::string& currBase, const size_t position)
 	{
 		return (currBase.back() == specifiedPath.at(position));
+	}
+
+	bool isMatchBase(const char currBase, const size_t position)
+	{
+		return (currBase == specifiedPath.at(position));
 	}
 
 	bool isIllegalLen(size_t position)
@@ -134,7 +144,7 @@ struct forceExtInfo
 
 	void RCSeq()
 	{
-		if (!specifiedPath.empty())
+		if (!isEmpty())
 			specifiedPath = reverseComplement(specifiedPath);
 	}
 

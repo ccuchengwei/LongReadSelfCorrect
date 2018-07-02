@@ -89,8 +89,8 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 				std::cerr << "\"" << fullFileName << "\" do NOT exist." << std::endl;
 				exit(EXIT_FAILURE);
 			}
-			while(pathFile.peek()!=EOF) 
-			{   
+			while(pathFile.peek()!=EOF)
+			{
 				getline(pathFile, currSpecifiedPath);
 				specifiedPaths.push_back(currSpecifiedPath);
 			}
@@ -162,10 +162,10 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 
 					const std::string& extSrcSeq =   source.seedStr;
 					const std::string& extTgtSeq =   mergedSeq     ;
-					
+
 					int srcOffset  = (int)extSrcSeq.length() - (int) oriSrcSeed.seedStr.length();
 					int tgtOffset  = (int)extTgtSeq.length() - (int) oriTgtSeed.seedStr.length();
-					
+
 					int relSrcStrt = std::max(srcOffset,0);
 					int reltgtStrt = std::max(tgtOffset,0);
 
@@ -237,11 +237,17 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 				const SeedFeature& oriTgtSeed =   target        ;
 
 				const std::string& extSrcSeq =   source.seedStr;
-				const std::string& extTgtSeq =   mergedSeq     ;
-				
+				std::string        extTgtSeq;
+				std::string        extSeq;
+
+				if (isMSAlignmentSuccess)
+					extTgtSeq = mergedSeq;
+				else
+					extTgtSeq = readSeq.substr((source.seedEndPos + 1), (target.seedEndPos - source.seedEndPos));
+
 				int srcOffset  = (int)extSrcSeq.length() - (int) oriSrcSeed.seedStr.length();
 				int tgtOffset  = (int)extTgtSeq.length() - (int) oriTgtSeed.seedStr.length();
-				
+
 				int relSrcStrt = std::max(srcOffset,0);
 				int reltgtStrt = std::max(tgtOffset,0);
 
@@ -251,7 +257,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 				bool isIdentSrc = extSrcSeq.substr(relSrcStrt) == oriSrcSeed.seedStr;
 				bool isIdentTgt = extTgtSeq.substr(reltgtStrt) == oriTgtSeed.seedStr;
 
-				(*pExtDebugSeed)    
+				(*pExtDebugSeed)
 							<< result.readid << "\t" << case_number << "\t"
 							<< oriSrcSeed.seedStartPos       << "\t"
 							<< oriSrcSeed.seedEndPos         << "\t"
@@ -271,7 +277,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 
 							<< isFMExtensionSuccess << "\t" << isMSAlignmentSuccess << "\t"
 							<< isIdentSrc           << "\t" << isIdentTgt           << "\t"
-							<< mergedSeq            << std::endl;
+							<< extTgtSeq            << std::endl;
 			}
 
 			if(isMSAlignmentSuccess)
