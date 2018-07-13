@@ -68,16 +68,17 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap
 		freqsOfKmerSize = new double[100 + 1]{0};
 		for(int i = m_minOverlap ; i <= 100 ; i++)
 			freqsOfKmerSize[i] = pow(1 - m_PacBioErrorRate, i) * m_PBcoverage;
-//*
+
 	if(m_Debug.isDebug)
 	{
-		std::cout   << m_Debug.caseNum << "\tBE: "
+		(*m_Debug.debug_finalSeq)
+					<< m_Debug.caseNum << "\tBE: "
 					<< m_extSeeds.source.seq << " "
 					<< m_extSeeds.target.seq << " "
 					<< m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size() << "|"
 					<< disBetweenSrcTarget <<"\n";
 	}
-//*/
+
 	// PacBio reads are longer than real length due to insertions
 		m_maxLength =          (1.2*(m_disBetweenSrcTarget+10))+2*m_initkmersize     ;
 		m_minLength = std::max((0.8*(m_disBetweenSrcTarget-20))+2*m_initkmersize,0.0);
@@ -225,10 +226,6 @@ int LongReadSelfCorrectByOverlap::extendOverlap(FMWalkResult2& FMWResult)
 	// reach the terminal kmer
 	if(results.size() > 0)
 		return findTheBestPath(results, FMWResult); // find the path with maximum match percent or kmer coverage
-/*
-	if(m_Debug.isDebug)
-			std::cout << "\tERROR\t" << std::endl;
-//*/
 
 	// Did not reach the terminal kmer
 	if(m_leaves.empty())	//high error
@@ -249,12 +246,14 @@ int LongReadSelfCorrectByOverlap::findTheBestPath(const SAIntervalNodeResultVect
 	for (size_t i = 0 ; i < results.size() ;i++)
 	{
 		const std::string& candidateSeq = results[i].thread;
-//*
+
 		if(m_Debug.isDebug)
-			{
-				std::cout << "Final Seqs:" << results[i].thread << "\tError Rate:" << results[i].errorRate << std::endl;
-			}
-//*/
+		{
+			(*m_Debug.debug_finalSeq)
+							<< "Final Seqs: "  << results[i].thread
+							<< "\tError Rate:" << results[i].errorRate << std::endl;
+		}
+
 		if(results[i].errorRate < minErrorRate )
 		{
 			minErrorRate = results[i].errorRate;
@@ -327,7 +326,7 @@ size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(const size_t LowerBound,
 		BWTInterval Rvcinterval = BWTAlgorithms::findInterval(m_pRBWT, reverseComplement(reverse(startkmer)));
 
 		maxKmerArray.emplace_back(maxKmer,Fwdinterval,Rvcinterval);
-		FMidx& currKmer = maxKmerArray.back();
+		FMidx_t& currKmer = maxKmerArray.back();
 
 		if(currKmer.getKmerFrequency() > tempmaxfmfreqs ) //check interval size
 			tempmaxfmfreqs = currKmer.getKmerFrequency();
@@ -713,15 +712,21 @@ double LongReadSelfCorrectByOverlap::computeErrorRate(SAIOverlapNode3* currNode)
 extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const leafInfo& currLeaf,const bool printDebugInfo)
 {
 	SAIOverlapNode3* leaf = currLeaf.leafNodePtr;
+
+// Set the array data which is reserved.
 	extArray output;
 		output.reserve(4);
 	extArray totalExt;
 		totalExt.reserve(4);
+	MatchArray extMatch;
+		extMatch.reserve(4);
+	debugPerExtArray debugData;
+		debugData.reserve(4);
 
-	size_t IntervalSizeCutoff = m_min_SA_threshold;    //min freq at fwd and rvc bwt, >=3 is equal to >=2 kmer freq
-
-	totalcount = 0;
+	size_t IntervalSizeCutoff = m_min_SA_threshold;
+						//min freq at fwd and rvc bwt, >=3 is equal to >=2 kmer freq
 	int maxfreqsofleaf = 0;
+	totalcount = 0;
 	dominantBase maxFreqOfLeaves(currLeaf.tailLetter);
 /*
 	if(m_Debug.isDebug)
@@ -734,32 +739,25 @@ extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const leafInfo& curr
 	{
 		//update forward Interval using extension b
 			char b = BWT_ALPHABET::getChar(i);
-			BWTInterval fwdProbe = leaf->fwdInterval;
-			if(fwdProbe.isValid())
-				BWTAlgorithms::updateInterval(fwdProbe,b,m_pRBWT);
+			BWTInterval fwdInterval = leaf->fwdInterval;
+			if(fwdInterval.isValid())
+				BWTAlgorithms::updateInterval(fwdInterval,b,m_pRBWT);
 
 		//update reverse complement Interval using extension rcb
 			char rcb=BWT_ALPHABET::getChar(5-i);
-			BWTInterval rvcProbe = leaf->rvcInterval;
-			if(rvcProbe.isValid())
-				BWTAlgorithms::updateInterval(rvcProbe,rcb,m_pBWT);
+			BWTInterval rvcInterval = leaf->rvcInterval;
+			if(rvcInterval.isValid())
+				BWTAlgorithms::updateInterval(rvcInterval,rcb,m_pBWT);
 
-		FMidx currExt = FMidx(b,fwdProbe,rvcProbe);
+		FMidx_t currExt = FMidx_t(b,fwdInterval,rvcInterval);
+		match_t isMatchedLast = ismatchedbykmer(fwdInterval,rvcInterval);
 
 		totalcount += currExt.getKmerFrequency();
 
-		if(m_Debug.isDebug && printDebugInfo)
-		{
-			*(m_Debug.debug_file) << currExt.getKmerFrequency();
-			if(i < BWT_ALPHABET::size-1)
-				*(m_Debug.debug_file) << "|";
-			else
-				*(m_Debug.debug_file) << "&";
-		}
-
 		maxFreqOfLeaves.setFreq(currExt);
-
 		totalExt.push_back(currExt);
+		extMatch.push_back(isMatchedLast);
+		debugData.emplace_back(currExt, isMatchedLast);
 
 	}// end of ACGT
 
@@ -769,9 +767,10 @@ extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const leafInfo& curr
 	for(int i = 1; i < BWT_ALPHABET::size; ++i)
 	{
 		// Get the information
-		size_t kmerFreq         = totalExt.at(i-1).getKmerFrequency();
-		BWTInterval fwdInterval = totalExt.at(i-1).getFwdInterval();
-		BWTInterval rvcInterval = totalExt.at(i-1).getRvcInterval();
+		size_t kmerFreq          = totalExt.at(i-1).getKmerFrequency();
+		BWTInterval fwdInterval  = totalExt.at(i-1).getFwdInterval();
+		BWTInterval rvcInterval  = totalExt.at(i-1).getRvcInterval();
+		const bool isMatchedLast = extMatch.at(i-1).isMatched;
 
 		// Compute the k-mer ratio arguments
 		const double kmerRatioNotPass = 2;
@@ -781,7 +780,6 @@ extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const leafInfo& curr
 		char b = BWT_ALPHABET::getChar(i);
 
 		bool isHomopolymer = (currLeaf.tailLetterCount >= 3);
-		bool isMatchedBy5mer = ismatchedbykmer(fwdInterval,rvcInterval);
 
 		bool isDominant     = maxFreqOfLeaves.isDominant();
 		bool isFreqPass     = kmerFreq   >= IntervalSizeCutoff;
@@ -791,42 +789,59 @@ extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const leafInfo& curr
 		bool isLowlyRepeat  = maxfreqsofleaf >  50;
 
 		// matched case
-			if  ( isMatchedBy5mer &&  isHighlyRepeat )
+			if  ( isMatchedLast &&  isHighlyRepeat )
+			{
 				kmerRatioCutoff = 0.125;
-		else if ( isMatchedBy5mer &&  isLowlyRepeat  )
+				debugData.at(i-1).setErrorData(kmerRatio, "MHR");   // Match High Repeat
+			}
+		else if ( isMatchedLast &&  isLowlyRepeat  )
+			{
 				kmerRatioCutoff = 0.2  ;
+				debugData.at(i-1).setErrorData(kmerRatio, "MLR");   // Match Low Repeat
+			}
 		// unmatched case
 		else if ( isFreqPass )
+			{
 				kmerRatioCutoff = 0.25 ;
+				debugData.at(i-1).setErrorData(kmerRatio, "NCU");   // Normal Coverage Unique
+			}
 		else if ( isLowCoverage )
+			{
 				kmerRatioCutoff = 0.6  ;
+				debugData.at(i-1).setErrorData(kmerRatio, "NLC");   // Normal Low Coverage
+			}
 		else
+			{
 				kmerRatioCutoff = kmerRatioNotPass;
+				debugData.at(i-1).setErrorData(kmerRatio, "TLC");   // Too Low Coverage
+			}
 
 		// Homopolymer case
 			if  ( isHomopolymer   &&  isRepeat )
-				kmerRatioCutoff = std::max(kmerRatioCutoff,0.3);
+			{
+				if (kmerRatioCutoff <= 0.3)
+				{
+					kmerRatioCutoff = 0.3;
+					debugData.at(i-1).setErrorData(kmerRatio, "HRR"); // Homopolymer Repeat Region
+				}
+			}
 		else if ( isHomopolymer )
-				kmerRatioCutoff = std::max(kmerRatioCutoff,0.6);
-/*
-			if (isDominant)
-				kmerRatioCutoff = std::max(kmerRatioCutoff,0.4);
-//*/
-		if(m_Debug.isDebug && printDebugInfo)
-		{
-			*(m_Debug.debug_file) << kmerRatio;
-			if(i < BWT_ALPHABET::size-1)
-				*(m_Debug.debug_file) << "|";
-			else
-				*(m_Debug.debug_file) << "&";
-		}
+			{
+				if (kmerRatioCutoff <= 0.6)
+				{
+					kmerRatioCutoff = 0.6;
+					// debugData.at(i-1).setErrorData(kmerRatio, "HUR"); // Homopolymer Unique Region
+				}
+			}
 
 		if( kmerRatio >=   kmerRatioCutoff )
 		{
 			// extend to b
 				output.emplace_back(b,fwdInterval,rvcInterval);
+				debugData.at(i-1).extSuccessSet();
 		}
 	}
+
 	if(m_Debug.ref.isSpecifiedPath)
 	{
 		if (!(m_step_number == 1 || m_Debug.ref.isMatchBase(currLeaf.tailLetter, m_step_number-2)))
@@ -841,7 +856,7 @@ extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const leafInfo& curr
 			output.clear();
 			for(int i = 1; i < BWT_ALPHABET::size; ++i)
 			{
-				FMidx&             currExt     = totalExt.at(i-1);
+				FMidx_t&             currExt     = totalExt.at(i-1);
 				const BWTInterval& fwdInterval = currExt.getFwdInterval();
 				const BWTInterval& rvcInterval = currExt.getRvcInterval();
 				char b = BWT_ALPHABET::getChar(i);
@@ -861,6 +876,7 @@ extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const leafInfo& curr
 
 	if(m_Debug.isDebug && printDebugInfo)
 	{
+		printDebugData(debugData);
 		*(m_Debug.debug_file)
 			<< maxfreqsofleaf  << "|"
 			<< totalcount      << "&"
@@ -872,7 +888,7 @@ extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const leafInfo& curr
 }
 
 // Determine if the current sequence is matched 5-mer raw read.
-bool LongReadSelfCorrectByOverlap::ismatchedbykmer(BWTInterval currFwdInterval,BWTInterval currRvcInterval)
+match_t LongReadSelfCorrectByOverlap::ismatchedbykmer(BWTInterval currFwdInterval,BWTInterval currRvcInterval)
 {
 	bool match = false;
 
@@ -905,7 +921,16 @@ bool LongReadSelfCorrectByOverlap::ismatchedbykmer(BWTInterval currFwdInterval,B
 		}
 	}
 
-	return match;
+	kmerFreq_t matchNum  = resultsFwd.size() + resultsRvc.size();
+
+	kmerFreq_t matchFreq = 0;
+	if (resultsFwd.size()!=0)
+		matchFreq += (kmerFreq_t) resultsFwd.at(0).stop - (kmerFreq_t) resultsFwd.at(0).start + 1;
+	if (resultsRvc.size()!=0)
+		matchFreq += (kmerFreq_t) resultsRvc.at(0).stop - (kmerFreq_t) resultsRvc.at(0).start + 1;
+	match_t matchResult(match, matchNum, matchFreq);
+
+	return matchResult;
 }
 
 // Check for leaves whose extension has terminated.
@@ -965,6 +990,64 @@ bool LongReadSelfCorrectByOverlap::isTerminated(SAIntervalNodeResultVector& resu
 	}
 
 	return found;
+}
+
+void LongReadSelfCorrectByOverlap::printDebugData(debugPerExtArray& currDebugData)
+{
+// Print the error type.
+	for(int i = 1; i < BWT_ALPHABET::size; ++i)
+	{
+		*(m_Debug.debug_file) << currDebugData.at(i-1).errorType;
+		if (i != BWT_ALPHABET::size-1)
+				*(m_Debug.debug_file) << "|";
+			else
+				*(m_Debug.debug_file) << "&";
+	}
+// Print the k-mer frequency.
+	for(int i = 1; i < BWT_ALPHABET::size; ++i)
+	{
+		*(m_Debug.debug_file) << currDebugData.at(i-1).kmerFreq;
+		if (i != BWT_ALPHABET::size-1)
+				*(m_Debug.debug_file) << "|";
+			else
+				*(m_Debug.debug_file) << "&";
+	}
+// Print the k-mer ratio.
+	for(int i = 1; i < BWT_ALPHABET::size; ++i)
+	{
+		*(m_Debug.debug_file) << currDebugData.at(i-1).kmerRatio;
+		if (i != BWT_ALPHABET::size-1)
+				*(m_Debug.debug_file) << "|";
+			else
+				*(m_Debug.debug_file) << "&";
+	}
+// Print "is matched".
+	for(int i = 1; i < BWT_ALPHABET::size; ++i)
+	{
+		*(m_Debug.debug_file) << currDebugData.at(i-1).matchInfo.isMatched;
+		if (i != BWT_ALPHABET::size-1)
+				*(m_Debug.debug_file) << "|";
+			else
+				*(m_Debug.debug_file) << "&";
+	}
+// Print "total matched number".
+	for(int i = 1; i < BWT_ALPHABET::size; ++i)
+	{
+		*(m_Debug.debug_file) << currDebugData.at(i-1).matchInfo.totalNum;
+		if (i != BWT_ALPHABET::size-1)
+			*(m_Debug.debug_file) << "|";
+		else
+			*(m_Debug.debug_file) << "&";
+	}
+// Print "total matched frequency".
+	for(int i = 1; i < BWT_ALPHABET::size; ++i)
+	{
+		*(m_Debug.debug_file) << currDebugData.at(i-1).matchInfo.matchFreq;
+		if (i != BWT_ALPHABET::size-1)
+			*(m_Debug.debug_file) << "|";
+		else
+			*(m_Debug.debug_file) << "&";
+	}
 }
 
 void LongReadSelfCorrectByOverlap::printErrorRate(leafList& currLeaves)

@@ -19,7 +19,7 @@
 #include "SeedFeature.h"
 
 // Define int type.
-	typedef int64_t KmerFreqType;
+	typedef int64_t kmerFreq_t;
 
 struct FMWalkResult2
 {
@@ -165,28 +165,32 @@ struct debugExtInfo
 	public:
 		debugExtInfo(
 						bool isDebug = false,
-						std::ostream* debug_file = NULL,
+						std::ostream* debug_file     = nullptr,
+						std::ostream* debug_finalSeq = nullptr,
 						std::string readID = "",
 						int  caseNum = 0,
 						forceExtInfo ref = forceExtInfo()
 					):
 						isDebug(isDebug),
 						debug_file(debug_file),
+						debug_finalSeq(debug_finalSeq),
 						readID(readID),
 						caseNum(caseNum),
 						ref(ref) {};
 
 		const bool isDebug;
 		std::ostream* debug_file;
+		std::ostream* debug_finalSeq;
 		std::string   readID;
 		size_t        caseNum;
 		forceExtInfo  ref;
+
 };
 
-struct FMidx
+struct FMidx_t
 {
 	public:
-		FMidx  (
+		FMidx_t  (
 					const std::string& s,
 					const BWTInterval& fwdInterval,
 					const BWTInterval& rvcInterval
@@ -196,7 +200,7 @@ struct FMidx
 					rvcInterval(rvcInterval),
 					kmerFrequency(fwdInterval.size() + rvcInterval.size())
 				{};
-		FMidx   (
+		FMidx_t   (
 					const char c,
 					const BWTInterval& fwdInterval,
 					const BWTInterval& rvcInterval
@@ -223,7 +227,7 @@ struct FMidx
 				return rvcInterval;
 			}
 
-		KmerFreqType getKmerFrequency()
+		kmerFreq_t getKmerFrequency()
 			{
 				return kmerFrequency;
 			}
@@ -243,10 +247,10 @@ struct FMidx
 	private:
 		BWTInterval fwdInterval;
 		BWTInterval rvcInterval;
-		KmerFreqType kmerFrequency;
+		kmerFreq_t kmerFrequency;
 
 };
-typedef std::vector<FMidx> extArray;
+typedef std::vector<FMidx_t> extArray;
 
 struct leafInfo
 {
@@ -270,7 +274,7 @@ struct leafInfo
 				kmerFrequency =   (leafNode -> fwdInterval).size()
 								+ (leafNode -> rvcInterval).size();
 			}
-		leafInfo(SAIOverlapNode3* currNode, const leafInfo& leaf, FMidx& extension, const size_t currLeavesNum)
+		leafInfo(SAIOverlapNode3* currNode, const leafInfo& leaf, FMidx_t& extension, const size_t currLeavesNum)
 			{
 				const std::string& extLabel = extension.SearchLetters;
 
@@ -306,7 +310,7 @@ struct leafInfo
 
 		SAIOverlapNode3* leafNodePtr;
 		size_t lastLeafID;
-		KmerFreqType kmerFrequency;
+		kmerFreq_t kmerFrequency;
 
 		std::string tailLetter;
 		size_t tailLetterCount;
@@ -325,7 +329,7 @@ struct dominantBase
 				return freqs[0];
 			}
 
-		void setFreq(FMidx currExt)
+		void setFreq(FMidx_t currExt)
 			{
 				int  currFreq = currExt.getKmerFrequency();
 				char currBase = currExt.getLetter();
@@ -353,6 +357,56 @@ struct dominantBase
 		char bases[2] = {0,0};
 		char identicalBase = 0;
 };
+
+struct match_t
+{
+	match_t   (
+					bool isMatched=false,
+					kmerFreq_t totalNum  = 0,
+					kmerFreq_t matchFreq = 0
+				):
+					isMatched(isMatched),
+					totalNum(totalNum),
+					matchFreq(matchFreq) {};
+
+		const bool isMatched;
+		const kmerFreq_t totalNum;
+		const kmerFreq_t matchFreq;
+};
+typedef std::vector<match_t> MatchArray;
+
+struct debugPerExtInfo
+{
+	debugPerExtInfo (
+						FMidx_t currExt,
+						match_t matchInfo = 0
+					):
+						matchInfo(matchInfo)
+					{
+						(this  -> kmerFreq ) = currExt.getKmerFrequency();
+						(this -> errorType ).reserve(4);
+						(this  -> kmerRatio) = 0;
+					}
+
+	void setErrorData   (
+							const double       kmerRatio,
+							const std::string& errorString
+						)
+					{
+						(this -> kmerRatio) = kmerRatio;
+						(this -> errorType) = "X" + errorString;
+					}
+	void extSuccessSet()
+					{
+						(this -> errorType).front() = 'O';
+					}
+
+	std::string errorType;
+	kmerFreq_t  kmerFreq;
+	double      kmerRatio;
+	match_t     matchInfo;
+};
+typedef std::vector<debugPerExtInfo> debugPerExtArray;
 
 class LongReadSelfCorrectByOverlap
 {
@@ -423,10 +477,12 @@ class LongReadSelfCorrectByOverlap
 
 			bool isOverlapAcceptable(SAIOverlapNode3* currNode);
 			bool isSupportedByNewSeed(SAIOverlapNode3* currNode, size_t smallSeedIdx, size_t largeSeedIdx);
-			bool ismatchedbykmer(BWTInterval currFwdInterval,BWTInterval currRvcInterval);
+			match_t ismatchedbykmer(BWTInterval currFwdInterval,BWTInterval currRvcInterval);
 			double computeErrorRate(SAIOverlapNode3* currNode);
 
+			void printDebugData(debugPerExtArray& currDebugData);
 			void printErrorRate(leafList& currLeaves);
+
 		//
 		// Data
 		//

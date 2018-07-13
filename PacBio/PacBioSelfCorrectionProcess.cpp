@@ -102,6 +102,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 	std::ostream* pDpWriter     = nullptr;
 	std::ostream* pExtDebugFile = nullptr;
 	std::ostream* pExtDebugSeed = nullptr;
+	std::ostream* pExtFinalSeq  = nullptr;
 
 	SeedFeature::SeedVector::const_iterator srcSeedIter = seedVec.begin();
 
@@ -119,6 +120,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 	{
 		pExtDebugFile = createWriter(m_params.directory + "extensionFile/" + fileName + ".fa");
 		pExtDebugSeed = createWriter(m_params.directory + "extensionFile/" + fileName + ".txt");
+		pExtFinalSeq  = createWriter(m_params.directory + "extensionFile/" + fileName + ".final");
 /*
 		(*pExtDebugSeed)    << "readName\tcaseNum\t"
 							<< "oriSrcStart\toriSrcEnd\toriSrcSeq\t"
@@ -148,7 +150,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 			forceExtInfo ref;
 			if (m_params.isSpecifiedPath)
 				ref.setSpecPath(m_params.isSpecifiedPath, specifiedPaths.at(case_number-1));
-			debugExtInfo debug( m_params.DebugExtend, pExtDebugFile, result.readid, case_number, ref);
+			debugExtInfo debug( m_params.DebugExtend, pExtDebugFile, pExtFinalSeq, result.readid, case_number, ref);
 
 			isFMExtensionSuccess = correctByFMExtension(source, target, readSeq, mergedSeq, result, debug);
 
@@ -303,6 +305,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 	delete pDpWriter;
 	delete pExtDebugFile;
 	delete pExtDebugSeed;
+	delete pExtFinalSeq;
 }
 
 int PacBioSelfCorrectionProcess::correctByFMExtension
