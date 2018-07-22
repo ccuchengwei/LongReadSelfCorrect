@@ -358,30 +358,13 @@ struct dominantBase
 		char identicalBase = 0;
 };
 
-struct match_t
-{
-	match_t   (
-					bool isMatched=false,
-					kmerFreq_t totalNum  = 0,
-					kmerFreq_t matchFreq = 0
-				):
-					isMatched(isMatched),
-					totalNum(totalNum),
-					matchFreq(matchFreq) {};
-
-		const bool isMatched;
-		const kmerFreq_t totalNum;
-		const kmerFreq_t matchFreq;
-};
-typedef std::vector<match_t> MatchArray;
-
 struct debugPerExtInfo
 {
 	debugPerExtInfo (
 						FMidx_t currExt,
-						match_t matchInfo = 0
+						bool    isMatched = 0
 					):
-						matchInfo(matchInfo)
+						isMatched(isMatched)
 					{
 						(this  -> kmerFreq ) = currExt.getKmerFrequency();
 						(this -> errorType ).reserve(4);
@@ -404,7 +387,7 @@ struct debugPerExtInfo
 	std::string errorType;
 	kmerFreq_t  kmerFreq;
 	double      kmerRatio;
-	match_t     matchInfo;
+	bool        isMatched;
 };
 typedef std::vector<debugPerExtInfo> debugPerExtArray;
 
@@ -477,7 +460,7 @@ class LongReadSelfCorrectByOverlap
 
 			bool isOverlapAcceptable(SAIOverlapNode3* currNode);
 			bool isSupportedByNewSeed(SAIOverlapNode3* currNode, size_t smallSeedIdx, size_t largeSeedIdx);
-			match_t ismatchedbykmer(BWTInterval currFwdInterval,BWTInterval currRvcInterval);
+			bool ismatchedbykmer(BWTInterval currFwdInterval,BWTInterval currRvcInterval);
 			double computeErrorRate(SAIOverlapNode3* currNode);
 
 			void printDebugData(debugPerExtArray& currDebugData);
@@ -535,6 +518,10 @@ class LongReadSelfCorrectByOverlap
 		IntervalTree<size_t> m_rvcIntervalTree2;
 
 		size_t RemainedMaxLength;
+		size_t m_totalExtNum;
+		size_t m_currTotalExtNum;
+		size_t m_currExtNum;
+		size_t m_accumLeaves;
 
 };
 
