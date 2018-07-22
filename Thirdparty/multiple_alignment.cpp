@@ -37,7 +37,7 @@
 
 
 //#define MA_DEBUG 1
-//#define MA_DEBUG_CONSENSUS 1
+// #define MA_DEBUG_CONSENSUS 1
 
 // Initialize static members
 const char* MultipleAlignment::m_alphabet = "ACGTN-";
@@ -582,6 +582,108 @@ std::string MultipleAlignment::calculateBaseConsensus(int min_call_coverage, int
         }
 #ifdef MA_DEBUG_CONSENSUS
         printf("CALL: %c\n", consensus_symbol);
+#endif
+    }
+
+    if(last_good_base != -1)
+        consensus_sequence.erase(last_good_base + 1);
+    else
+        consensus_sequence.clear();
+
+    return consensus_sequence;
+}
+std::string MultipleAlignment::calculateBaseConsensusGC(int min_call_coverage, int min_trim_coverage, bool ishighGC)
+{
+    assert(!m_sequences.empty());
+    std::string consensus_sequence;
+    MultipleAlignmentElement& base_element = m_sequences.front();
+    size_t start_column = base_element.getStartColumn();
+    size_t end_column = base_element.getEndColumn();
+    // std::cout << start_column <<":" << end_column << ":"<< base_element.getNumColumns() <<"\n";
+    // This index records the last base in the consensus that had coverage greater than
+    // min_trim_coverage. After the consensus calculation the read is trimmed back to this position
+    int last_good_base = -1;
+
+    for(size_t c = start_column; c <= end_column; ++c) {
+        std::vector<int> counts = getColumnBaseCounts(c);
+
+        char max_symbol = '\0';
+        int max_count = -1;
+        int total_depth = 0;
+        
+#ifdef MA_DEBUG_CONSENSUS
+        printf("%zu\t", c);
+#endif
+        for(size_t a = 0; a < m_alphabet_size; ++a) {
+            char symbol = m_alphabet[a];
+            total_depth += counts[a];
+            
+            // std::cout << counts[a] <<symbol << "   ";
+            
+            if(symbol != 'N' && counts[a] >= max_count) {
+                max_symbol = symbol;
+                max_count = counts[a];
+            }
+#ifdef MA_DEBUG_CONSENSUS
+            printf("%c:%d ", symbol, counts[a]);
+#endif      
+
+            
+        }
+            
+        char base_symbol = base_element.getColumnSymbol(c);
+        int base_count = counts[symbol2index(base_symbol)];
+		int g_count = counts[symbol2index('G')];
+	
+		bool isGG = c!=end_column  && c!=start_column && base_symbol == 'G' && (base_element.getColumnSymbol(c+1)=='G' || base_element.getColumnSymbol(c-1)=='G');
+		bool isGapEqGG = isGG && max_symbol == '-' && max_count == base_count;
+		
+		bool isGGapG = c!=end_column  && c!=start_column && base_symbol == '-' && (base_element.getColumnSymbol(c+1)=='G' || base_element.getColumnSymbol(c-1)=='G');
+		bool isGGapGEqGG = isGGapG && g_count == base_count;
+		
+		// bool isGG2 = c<end_column-1  && c>start_column+1 && base_symbol == 'G' && ((base_element.getColumnSymbol(c+1)=='-' && base_element.getColumnSymbol(c+2)=='G') || (base_element.getColumnSymbol(c-1)=='-' && base_element.getColumnSymbol(c-2)=='G'));
+		// bool isGapEqGG2 = isGG2 && max_symbol == '-' && max_count == base_count;
+		
+        // Choose a consensus base for this column. Only change a base
+        // if has been seen less than min_call_coverage times and the max
+        // base in the column has been seen more times than the base symbol
+        char consensus_symbol;
+		if(ishighGC)
+		{
+			if(max_count >= base_count && base_count < min_call_coverage && !isGapEqGG && !isGGapGEqGG)
+			{   
+				consensus_symbol = max_symbol;
+			}	
+			else
+			{
+				if(isGGapGEqGG)
+					consensus_symbol ='G';
+				else
+					consensus_symbol = base_symbol;
+			}
+		}
+		else
+		{
+			if(max_count >= base_count && base_count < min_call_coverage)			  
+				consensus_symbol = max_symbol;				
+			else			
+				consensus_symbol = base_symbol;			
+		}
+		
+        // Output a symbol to the consensus. Skip padding symbols and leading
+        // bases that are less than the minimum required depth to avoid trimming
+        if(consensus_symbol != '-' &&
+            (!consensus_sequence.empty() || total_depth >= min_trim_coverage))
+                consensus_sequence.push_back(consensus_symbol);
+
+        // Record the position of the last good base
+        if(total_depth >= min_trim_coverage) {
+            int consensus_index = consensus_sequence.size() - 1;
+            if(consensus_index > last_good_base)
+                last_good_base = consensus_index;
+        }
+#ifdef MA_DEBUG_CONSENSUS
+        printf("BASE: %c CALL: %c\n", base_symbol, consensus_symbol);
 #endif
     }
 

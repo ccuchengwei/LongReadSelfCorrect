@@ -226,7 +226,13 @@ bool PacBioSelfCorrectionProcess::correctByMSAlignment
 	identity += (totalMaxFixedMerFreq > 50  ? 0.05 : 0);
 	identity += (totalMaxFixedMerFreq > 100 ? 0.05 : 0);
 	min_call_coverage = totalMaxFixedMerFreq > 50 ? totalMaxFixedMerFreq * 0.4 : min_call_coverage;
-
+	
+	
+	// std::cout << "\nSourceSeedStart:" << source.seedStartPos << "\t" << "TargetSeedStart:" << target.seedStartPos << "\t"
+				// << "totalMaxFixedMerFreq:" << totalMaxFixedMerFreq <<"\n";
+	// std::cout << "SourceSeed:" << src << "\n" << "TargetSeed:" << trg << "\n";	
+				
+				
 	Timer* DPTimer = new Timer("DP Time", true);
 	MultipleAlignment maquery =
 	LongReadOverlap::buildMultipleAlignment
@@ -234,16 +240,45 @@ bool PacBioSelfCorrectionProcess::correctByMSAlignment
 	result.Timer_DP += DPTimer->getElapsedWallTime();
 	delete DPTimer;
 
+	// std::cout << "Pass:" << maquery.getNumRows()-1 << "\n";
+	
+	if(maquery.getNumRows() <= 3){ 
+			// std::cout<<"raw reads <=3\n";
+			return false;
+	}
+	
 
-	if(maquery.getNumRows() <= 3) return false;
-	//maquery.print(100); 
-	out = maquery.calculateBaseConsensus(min_call_coverage, -1);
+	double num_g = 0.0f;
+	double num_c = 0.0f;
+    for(size_t i = 0; i < path.length(); ++i)
+    {
+		switch( path[i] ){
+                case 'C':
+               		++num_c;
+               		break;
+               	case 'G' :
+               		++num_g;
+               		break;
+          }	
+    }
+	bool ishighGC = (num_g+num_c) / path.length() > 0.5;
+	bool ishighG  = (num_g-num_c) /(num_g+num_c) > 0;
+	// if(ishighGC)
+		// std::cout<<"GC: " << (num_g+num_c) / path.length() << "\tGCSkew: " << (num_g-num_c) /(num_g+num_c) << "\n";	
+	// if((num_g-num_c) /(num_g+num_c)==0)
+		// std::cout<<"\tG: " << num_g << "\tC: " << num_c << "\n";
+	
+	out = maquery.calculateBaseConsensusGC(min_call_coverage, -1, ishighGC && ishighG );
+	
+	// maquery.print(100); 
 	
 	//not to modify target seed
 	unsigned int trg_pos = out.length()-trg.length();
 	unsigned int trg_len = trg.length();
 	out.erase(trg_pos, trg_len);
 	out.append(trg);
+	
+	// std::cout << "\nout:" << out << "\n\n";
 	
 	out.erase(0,extendKmerSize);
 	result.correctedLen += out.length();

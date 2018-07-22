@@ -682,7 +682,8 @@ void LongReadOverlap::retrieveMatches(const std::string& query,
 	size_t maxLength = query.length()*1.1+20;
 	retrieveStr(query, k, maxLength, indices, isRC, coverage, ovlStr);
 
-	
+	// std::cout << "\novlStr: " << ovlStr.size()-1 << "\n";
+	// std::cout << "Query:\n" << query << "\n";
     // Refine the matches by computing proper overlaps between the sequences
     // Use the overlaps that meet the thresholds to build a multiple alignment
     for(std::vector<std::string>::iterator iter = ovlStr.begin(); iter != ovlStr.end(); ++iter)
@@ -729,7 +730,7 @@ void LongReadOverlap::retrieveMatches(const std::string& query,
 		if (edlib_overlap.status == EDLIB_STATUS_OK) {
 			//transform structure EdlibAlignResult to SequenceOverlap	
 			SequenceOverlap overlap;
-			
+			std::string cigar_ex;
 			if(query.length() < match_sequence.length())
 			{			
 				char* c_cigar = edlibAlignmentToCigar(edlib_overlap.alignment, edlib_overlap.alignmentLength, EDLIB_CIGAR_STANDARD);
@@ -773,7 +774,13 @@ void LongReadOverlap::retrieveMatches(const std::string& query,
 					overlap.score = 0-edlib_overlap.editDistance;//for finding max score
 					overlap.edit_distance = edlib_overlap.editDistance;
 					overlap.total_columns = edlib_overlap.alignmentLength;
-				}			
+				}
+
+				// char* c_cigar_ex = edlibAlignmentToCigar(edlib_overlap.alignment, edlib_overlap.alignmentLength, EDLIB_CIGAR_EXTENDED);
+				// cigar_ex=c_cigar_ex;
+				// cigar_ex = convert_cigar(cigar_ex);
+
+				
 			}
 			else //query.length() >= match_sequence.length()
 			{
@@ -793,6 +800,11 @@ void LongReadOverlap::retrieveMatches(const std::string& query,
 				overlap.score = 0-edlib_overlap.editDistance;//for finding max score
 				overlap.edit_distance = edlib_overlap.editDistance;
 				overlap.total_columns = edlib_overlap.alignmentLength;
+				
+				
+				// char* c_cigar_ex = edlibAlignmentToCigar(edlib_overlap.alignment, edlib_overlap.alignmentLength, EDLIB_CIGAR_EXTENDED);
+				// cigar_ex=c_cigar_ex;
+				
 			}
 		
 			overlap.length[0] = query.length();
@@ -801,20 +813,30 @@ void LongReadOverlap::retrieveMatches(const std::string& query,
 			bool bPassedOverlap = (size_t)overlap.getOverlapLength() >= (size_t) min_overlap;
 			bool bPassedIdentity = overlap.getPercentIdentity() / 100 >= min_identity;
 
-			// std::cout << ">" << overlap.getPercentIdentity() / 100 << ":" << overlap.getOverlapLength() << "\n" 
-					// << match_sequence << "\n";
+			
+		
 
+			// std::string expanded;
+			// std::stringstream parser(cigar_ex);
+			// int length;
+			// char code;
+			// while(parser >> length >> code){
+				// expanded.append(length, code);
+			// }
+
+			
+			
 			if(bPassedOverlap && bPassedIdentity)
 			{
-				// if(!isRC)
-				// std::cout << "k:" << k << "\t" << "Src\n" << "Cigar:" << overlap.cigar << "\n"
-						// << "Query:\n" << query << "\n" << "Match sequence:\n" << match_sequence << "\n";
-				// else
-				// std::cout << "k:" << k << "\t" << "Tar\n" << "Cigar:" << overlap.cigar << "\n"
-						// << "Query:\n" << query << "\n" << "Match sequence:\n" << match_sequence << "\n";			
+				// std::cout << "\nIdentity:" << overlap.getPercentIdentity() / 100 << "\t" <<  "min_identity:" << min_identity << "\n" 
+					// << "Overlap Length:" << overlap.getOverlapLength() << "\t" << "query length:" << query.length() << "\n";
+				// std::cout << "edit_distance:" << overlap.edit_distance << "\n";
+				// std::cout << "num_mismatch:" << std::count(expanded.begin(), expanded.end(),'X') << "\n";
+				// std::cout << "num_insertion:" << std::count(expanded.begin(), expanded.end(),'I') << "\n";
+				// std::cout << "num_deletion:" << std::count(expanded.begin(), expanded.end(),'D') << "\n";
 				
-				// std::cout << ">" << overlap.getPercentIdentity() / 100 << ":" << overlap.getOverlapLength() << "\n" 
-				// << match_sequence <<" " << min_identity<< "\n" ;
+				// std::cout << "Match sequence:" << match_sequence << "\n";
+				
 				SequenceOverlapPair op;
 				//op.sequence[0] = query;
 				op.sequence[1] = match_sequence;

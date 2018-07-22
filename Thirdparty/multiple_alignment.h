@@ -207,7 +207,8 @@ class MultipleAlignment
         // min_trim_coverage depth at the ends of the base sequence.
         std::string calculateBaseConsensus(int min_call_coverage, int min_trim_coverage);
         std::string calculateBaseConsensus2(int min_call_coverage, int min_trim_coverage);
-
+		std::string calculateBaseConsensusGC(int min_call_coverage, int min_trim_coverage, bool ishighGC);
+		
         std::string calculateBaseConsensus(KmerContext &kc, size_t KmerThreshold);
 
         // Calculate consensus sequence of the base element that maximizes the likelihood of the multiple alignment
