@@ -18,8 +18,15 @@
 #include "HashtableSearch.h"
 #include "SeedFeature.h"
 
+
 // Define int type.
 	typedef int64_t kmerFreq_t;
+
+// Define class
+	class SAIOverlapNode3;
+
+// Define class group.
+	typedef std::list<SAIOverlapNode3*> SONode3PtrList;
 
 struct FMWalkResult2
 {
@@ -158,6 +165,92 @@ struct forceExtInfo
 	private:
 		std::string specifiedPath;
 
+};
+
+class SAIOverlapNode3 : public SAINode
+{
+	public:
+		// Functions
+				SAIOverlapNode3(const std::string* pQuery, SAIOverlapNode3* parent):
+					SAINode(pQuery,parent),
+					lastOverlapLen(0), currOverlapLen   (0), queryOverlapLen(0),
+					lastSeedIdx   (0), lastSeedIdxOffset(0),
+					numRedeemSeed (0), totalSeeds       (0), numOfErrors    (0)
+					{};
+
+				~SAIOverlapNode3()
+				{
+					// Delete children
+					for(SONode3PtrList::iterator iter = m_children3.begin(); iter != m_children3.end(); ++iter)
+						delete *iter;
+
+				};
+
+			// Add a child node to this node with the given label
+			// Returns a pointer to the created node
+				SAIOverlapNode3* createChild(const std::string& label)
+				{
+					SAIOverlapNode3* pAdded = new SAIOverlapNode3(m_pQuery, this);
+					pAdded->extend(label);
+
+					// still lack of a copy constructor
+					pAdded->lastSeedIdx = this->lastSeedIdx;
+					pAdded->lastOverlapLen = this->lastOverlapLen;
+					pAdded->totalSeeds = this->totalSeeds;
+					pAdded->currOverlapLen = this->currOverlapLen;
+					pAdded->queryOverlapLen = this->queryOverlapLen;
+					pAdded->numOfErrors = this->numOfErrors;
+					pAdded->lastSeedIdxOffset = this->lastSeedIdxOffset;
+					pAdded->initSeedIdx = this->initSeedIdx;
+					pAdded->numRedeemSeed = this->numRedeemSeed;
+					pAdded->LocalErrorRateRecord = this->LocalErrorRateRecord;
+					pAdded->GlobalErrorRateRecord = this->GlobalErrorRateRecord;
+					pAdded->resultindex = this->resultindex;
+
+					// pAdded->currkmersize = this->currkmersize;
+					m_children3.push_back(pAdded);
+
+					return pAdded;
+				}
+
+		// Variables
+			// BWTIntervals
+				BWTInterval fwdInterval;
+				BWTInterval rvcInterval;
+			// Match Variables
+				// lengths
+					// last overlap length when matching last seed
+						size_t lastOverlapLen;
+					// current overlap length on the subject increases wrt each FM-index extension
+						size_t currOverlapLen;
+					// current overlap length on the query
+						size_t queryOverlapLen;
+				// locations
+					// index of the init seed
+						int initSeedIdx;
+					// last matched seed index
+						size_t lastSeedIdx;
+					// error seed begin idx
+						// size_t errorSeedBeginIdx;
+					// index offset to the center
+						int lastSeedIdxOffset;
+				// match
+					// number of redeem seeds
+						double numRedeemSeed;
+					// number of real matches
+						size_t totalSeeds;
+					// number of SNPs or indels
+						size_t numOfErrors;
+				// Error Rates
+					std::vector<double> LocalErrorRateRecord;
+					std::vector<double> GlobalErrorRateRecord;
+			// Result
+				// index of the result and index of the matchpoint
+				std::pair <int,int> resultindex = std::make_pair(-1,-1);
+			// Others
+				// size_t currkmersize;
+			// Children
+				SONode3PtrList m_children3;
 };
 
 struct debugExtInfo
@@ -409,7 +502,7 @@ class LongReadSelfCorrectByOverlap
 										size_t localSimilarlykmerSize = 100
 									);
 
-        ~LongReadSelfCorrectByOverlap();
+		~LongReadSelfCorrectByOverlap();
 
 		// extend all leaves one base pair during overlap computation
 			int extendOverlap(FMWalkResult2& FMWResult);
@@ -432,7 +525,7 @@ class LongReadSelfCorrectByOverlap
 		size_t SelectFreqsOfrange(const size_t LowerBound, const size_t UpperBound, leafList& newLeaves);
 
 		std::pair<size_t,size_t> alnscore;
-    private:
+	private:
 
 		//
 		// Functions
