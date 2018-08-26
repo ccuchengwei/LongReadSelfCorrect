@@ -64,7 +64,7 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap
 
 	// push new node into roots and leaves vector
 		m_RootNodes.push_back(m_pRootNode);
-		m_leaves.emplace_back(m_pRootNode,1);
+		m_leaves.emplace_back(m_pRootNode);
 
 	//frequencies of correspond k
 		freqsOfKmerSize = new double[100 + 1]{0};
@@ -118,18 +118,10 @@ void LongReadSelfCorrectByOverlap::initialRootNode(const std::string& beginningk
 {
 	// create one root node
 		m_pRootNode = new SAIOverlapNode3(&m_sourceSeed, NULL);
+		m_pRootNode -> setRoot(beginningkmer, m_initkmersize, m_seedSize, m_pBWT, m_pRBWT);
 
-	// store initial str of root
-		m_pRootNode->computeInitial(beginningkmer);
-		m_pRootNode->fwdInterval = BWTAlgorithms::findInterval(m_pRBWT, reverse(beginningkmer));
-		m_pRootNode->rvcInterval = BWTAlgorithms::findInterval(m_pBWT , reverseComplement(beginningkmer));
-		m_pRootNode->lastOverlapLen = m_currentLength = m_pRootNode->currOverlapLen = m_pRootNode->queryOverlapLen = m_currentKmerSize = m_initkmersize;
-		m_pRootNode->lastSeedIdx = m_pRootNode->initSeedIdx = m_initkmersize - m_seedSize;
-		m_pRootNode->totalSeeds = m_initkmersize - m_seedSize + 1;
-		m_pRootNode->numRedeemSeed = 0;
-		m_pRootNode->LocalErrorRateRecord.push_back(0);
-		m_pRootNode->GlobalErrorRateRecord.push_back(0);
 		m_maxfreqs = m_pRootNode->fwdInterval.size() + m_pRootNode->rvcInterval.size();
+		m_currentLength = m_currentKmerSize = m_initkmersize;
 }
 
 //Build the overlap tree
@@ -180,7 +172,7 @@ int LongReadSelfCorrectByOverlap::extendOverlap(FMWalkResult2& FMWResult)
 		}
 /*/
 		// ACGT-extend the leaf nodes via updating existing SA interval
-			leafList newLeaves;
+			SONode3PtrList newLeaves;
 			extendLeaves(newLeaves);
 /*
 
@@ -285,7 +277,7 @@ int LongReadSelfCorrectByOverlap::findTheBestPath(const SAIntervalNodeResultVect
 						<< m_Debug.readID        << "\t"
 						<< m_Debug.caseNum       << "\t"
 						<< FMWResult.mergedSeq.length() << "\t"
-						<< realCandiNum          << "\t" 
+						<< realCandiNum          << "\t"
 						<< mismatchSNum          << "\t"
 						<< m_accumLeaves         << std::endl;
 	}
@@ -296,7 +288,7 @@ int LongReadSelfCorrectByOverlap::findTheBestPath(const SAIntervalNodeResultVect
 }
 
 // Extend all Leaves by FM-index
-void LongReadSelfCorrectByOverlap::extendLeaves(leafList& newLeaves)
+void LongReadSelfCorrectByOverlap::extendLeaves(SONode3PtrList& newLeaves)
 {
 	//resize if length too long
 	if(m_currentKmerSize > m_maxOverlap)
@@ -340,14 +332,13 @@ void LongReadSelfCorrectByOverlap::extendLeaves(leafList& newLeaves)
 }
 
 // Determine the size of the reduced k-mer in leaves when the max freq of them approach to the expected one.
-size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(const size_t LowerBound, const size_t UpperBound, leafList& newLeaves)
+size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(const size_t LowerBound, const size_t UpperBound, SONode3PtrList& newLeaves)
 {
 	extArray maxKmerArray;
 	int tempmaxfmfreqs = 0;
 
-	for(auto& iter : newLeaves)
+	for(auto& leaf : newLeaves)
 	{
-		SAIOverlapNode3* leaf    = iter.leafNodePtr;
 		std::string    maxKmer = leaf -> getSuffix(UpperBound);
 
 		std::string startkmer  = maxKmer.substr(UpperBound - LowerBound); //  string of lower bound kmer size
@@ -393,14 +384,14 @@ size_t LongReadSelfCorrectByOverlap::SelectFreqsOfrange(const size_t LowerBound,
 }
 
 // Determine if frequencies in leaves are too low to perform the next extension.
-bool LongReadSelfCorrectByOverlap::isInsufficientFreqs(leafList& newLeaves)
+bool LongReadSelfCorrectByOverlap::isInsufficientFreqs(SONode3PtrList& newLeaves)
 {
 	size_t highfreqscount = 0;
-	for(auto& iter : newLeaves)
+	for(auto& leaf : newLeaves)
 	{
-		int highfreqThreshold = m_PBcoverage > 60 ? (size_t)(m_PBcoverage/60)*3 : 3;
+		size_t highfreqThreshold = m_PBcoverage > 60 ? (size_t)(m_PBcoverage/60)*3 : 3;
 
-		if( iter.kmerFrequency > highfreqThreshold)
+		if( (leaf -> getLastKmerCount()) > highfreqThreshold)
 			highfreqscount++;
 	}
 
@@ -414,12 +405,10 @@ bool LongReadSelfCorrectByOverlap::isInsufficientFreqs(leafList& newLeaves)
 }
 
 // Refine SA intervals of each leave with a new k-mer
-void LongReadSelfCorrectByOverlap::refineSAInterval(leafList& leaves, const size_t newKmerSize)
+void LongReadSelfCorrectByOverlap::refineSAInterval(SONode3PtrList& leaves, const size_t newKmerSize)
 {
-	for(auto& iter : leaves)
+	for(auto& leaf : leaves)
 	{
-		SAIOverlapNode3* leaf = iter.leafNodePtr;
-
 		// reset the SA intervals using newKmerSize
 			std::string reducedKmer = leaf -> getSuffix(newKmerSize);
 
@@ -432,7 +421,7 @@ void LongReadSelfCorrectByOverlap::refineSAInterval(leafList& leaves, const size
 
 // Keep the leaves whose highly-correct rates are relative to the others.
 // And attempt to extend those leaves.
-void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves, const bool isSuccessToReduce)
+void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList& newLeaves, const bool isSuccessToReduce)
 {
 	double minimumErrorRate = 1.0;
 	double maximumAverfreqs = 0.0;
@@ -442,21 +431,20 @@ void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves, const boo
 	std::vector<size_t> frequencies;
 
 	// Compute the min error rate
-	for(auto& iter : m_leaves)
+	for(auto& leaf : m_leaves)
 	{
-		SAIOverlapNode3* leaf = iter.leafNodePtr;
 		if( leaf->LocalErrorRateRecord.back() < minimumErrorRate)
 			minimumErrorRate = leaf->LocalErrorRateRecord.back();
 	}
 
 	// Compute the errorRateDiff to trim leaves whose error rates relative to the others is high.
-	leafList::iterator iter = m_leaves.begin();
+	SONode3PtrList::iterator iter = m_leaves.begin();
 	while(iter != m_leaves.end())
 	{
 		if (m_Debug.ref.isSpecifiedPath)
 			break;
 
-		SAIOverlapNode3* leaf = (*iter).leafNodePtr;
+		SAIOverlapNode3* leaf = (*iter);
 		double errorRateDiff  = (leaf->LocalErrorRateRecord.back()) - minimumErrorRate;
 		if((errorRateDiff > 0.05 && m_currentLength > m_localSimilarlykmerSize/2)
 		|| (errorRateDiff > 0.1  && m_currentLength > 15))
@@ -473,9 +461,8 @@ void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves, const boo
 
 	if (m_Debug.isDebug && isSuccessToReduce)
 	{
-		for(auto& iter : m_leaves)
+		for(auto& leaf : m_leaves)
 		{
-			SAIOverlapNode3* leaf = iter.leafNodePtr;
 			kmerFreq_t allKmer_freq = leaf -> getKmerCount();
 			double     aveKmer_freq = (double) allKmer_freq/(double) m_currentLength;
 
@@ -490,7 +477,7 @@ void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves, const boo
 	{
 		extArray extensions;
 		int count = 0;
-		SAIOverlapNode3* leaf = (*iter).leafNodePtr;
+		SAIOverlapNode3* leaf = (*iter);
 		bool isReduced = isSuccessToReduce;
 		while(count < 2)
 		{
@@ -534,7 +521,7 @@ void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves, const boo
 
 										<< "&" << m_leaves.size()
 										<< "|" << currLeavesNum
-										<< "|" << ((*iter).lastLeafID)
+										<< "|" << (leaf -> lastLeafID)
 										<< "&" << m_accumLeaves
 										<< "|" << m_totalExtNum
 
@@ -557,7 +544,7 @@ void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves, const boo
 										<< "&";
 			}
 
-			extensions = getFMIndexExtensions(*iter,isReduced);
+			extensions = getFMIndexExtensions(leaf, isReduced);
 
 			if (m_Debug.isDebug && isReduced)
 			{
@@ -566,7 +553,7 @@ void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves, const boo
 
 			if(extensions.size() > 0)
 			{
-				updateLeaves(newLeaves, extensions, *iter,currLeavesNum);
+				updateLeaves(newLeaves, extensions, leaf, currLeavesNum);
 				break;
 			}
 			isReduced = false;
@@ -587,29 +574,30 @@ void LongReadSelfCorrectByOverlap::attempToExtend(leafList& newLeaves, const boo
 }
 
 // Update the leaves after the extension is successful.
-void LongReadSelfCorrectByOverlap::updateLeaves(leafList& newLeaves,extArray& extensions,leafInfo& leaf,size_t currLeavesNum)
+void LongReadSelfCorrectByOverlap::updateLeaves(SONode3PtrList& newLeaves,extArray& extensions,SAIOverlapNode3* leaf,size_t currLeavesNum)
 {
-	SAIOverlapNode3* pNode    = leaf.leafNodePtr;
 	if(extensions.size() == 1)
 	{
 		// Single extension, do not branch
-			pNode->extend(extensions.front().SearchLetters);
-			newLeaves.emplace_back(pNode, leaf, extensions.front(), currLeavesNum);
+			leaf -> extend (extensions.front().SearchLetters);
+			leaf -> setNode(extensions.front(), currLeavesNum, leaf);
+			newLeaves.emplace_back(leaf);
 	}
 	else if(extensions.size() > 1)
 	{
 		// Branch
 		for(size_t i = 0; i < extensions.size(); ++i)
 		{
-			SAIOverlapNode3* pChildNode = pNode->createChild(extensions[i].SearchLetters);
+			SAIOverlapNode3* pChildNode = leaf -> createChild(extensions[i].SearchLetters);
 			//inherit accumulated kmerCount from parent
-				pChildNode->addKmerCount( pNode->getKmerCount() );
+				pChildNode -> addKmerCount( leaf -> getKmerCount() );
+			pChildNode -> setNode(extensions[i], currLeavesNum, leaf);
 /*
 			// Remove the bug while changing the seed by FM-Extend
 				if (i != 0)
 					(pChildNode -> resultindex).first = -1;
 //*/
-			newLeaves.emplace_back(pChildNode, leaf, extensions[i], currLeavesNum);
+			newLeaves.emplace_back(pChildNode);
 		}
 
 		m_accumLeaves--;
@@ -618,7 +606,7 @@ void LongReadSelfCorrectByOverlap::updateLeaves(leafList& newLeaves,extArray& ex
 }
 
 // Compute the error rates and keep the leaves whose error rates <= expected error rate.
-bool LongReadSelfCorrectByOverlap::PrunedBySeedSupport(leafList& newLeaves)
+bool LongReadSelfCorrectByOverlap::PrunedBySeedSupport(SONode3PtrList& newLeaves)
 {
 	// the seed index in m_TerminatedIntervals for m_currentLength
 	// the m_currentLength is the same for all leaves
@@ -640,11 +628,11 @@ bool LongReadSelfCorrectByOverlap::PrunedBySeedSupport(leafList& newLeaves)
 						  (m_query.length()-m_seedSize):currSeedIdx+indelOffset;
 
 	// check range of last seed and find new seeds for each interval
-	leafList::iterator iter = newLeaves.begin();
+	SONode3PtrList::iterator iter = newLeaves.begin();
 	while(iter != newLeaves.end())
 	{
 		bool isNewSeedFound = false;
-		SAIOverlapNode3* leaf = (*iter).leafNodePtr;
+		SAIOverlapNode3* leaf = (*iter);
 
 		if (m_currentLength - leaf -> lastOverlapLen > m_seedSize
 		||  m_currentLength - leaf -> lastOverlapLen <= 1 )
@@ -794,10 +782,8 @@ double LongReadSelfCorrectByOverlap::computeErrorRate(SAIOverlapNode3* currNode)
 }
 
 // Attempt to the extension in the current leaf and get the extension information.
-extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const leafInfo& currLeaf,const bool printDebugInfo)
+extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const SAIOverlapNode3* leaf,const bool printDebugInfo)
 {
-	SAIOverlapNode3* leaf = currLeaf.leafNodePtr;
-
 // Set the array data which is reserved.
 	extArray output;
 		output.reserve(4);
@@ -813,13 +799,13 @@ extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const leafInfo& curr
 	int maxfreqsofleaf = 0;
 	totalcount = 0;
 	m_currExtNum = 0;
-	dominantBase maxFreqOfLeaves(currLeaf.tailLetter);
+	dominantBase maxFreqOfLeaves(leaf -> tailLetter);
 /*
 	if(m_Debug.isDebug)
 		std::cout   << leaf->getFullString() <<" || Local Error Rate: "
 					<< leaf->LocalErrorRateRecord.back()  <<"\n"
 					<< leaf->getSuffix(m_currentKmerSize) << " || k-mer freqs: "
-					<< currLeaf.kmerFrequency << std::endl;
+					<< leaf->getLastKmerCount()           << std::endl;
 */
 	for(int i = 1; i < BWT_ALPHABET::size; ++i) //i=A,C,G,T
 	{
@@ -869,7 +855,7 @@ extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const leafInfo& curr
 
 		char b = BWT_ALPHABET::getChar(i);
 
-		bool isHomopolymer = (currLeaf.tailLetterCount >= 3);
+		bool isHomopolymer = ((leaf -> tailLetterCount) >= 3);
 
 		bool isDominant     = maxFreqOfLeaves.isDominant();
 		bool isFreqPass     = kmerFreq   >= IntervalSizeCutoff;
@@ -934,7 +920,7 @@ extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const leafInfo& curr
 
 	if(m_Debug.ref.isSpecifiedPath)
 	{
-		if (!(m_step_number == 1 || m_Debug.ref.isMatchBase(currLeaf.tailLetter, m_step_number-2)))
+		if (!(m_step_number == 1 || m_Debug.ref.isMatchBase(leaf -> tailLetter, m_step_number-2)))
 		{
 			output.clear();
 		}
@@ -1018,9 +1004,8 @@ bool LongReadSelfCorrectByOverlap::isTerminated(SAIntervalNodeResultVector& resu
 {
 	bool found = false;
 
-	for(leafList::iterator iter = m_leaves.begin(); iter != m_leaves.end(); ++iter)
+	for(auto leaf : m_leaves)
 	{
-		SAIOverlapNode3* leaf = (*iter).leafNodePtr;
 		BWTInterval currfwd = leaf -> fwdInterval;
 		BWTInterval currrvc = leaf -> rvcInterval;
 
@@ -1112,13 +1097,12 @@ void LongReadSelfCorrectByOverlap::printDebugData(debugPerExtArray& currDebugDat
 
 }
 
-void LongReadSelfCorrectByOverlap::printErrorRate(leafList& currLeaves)
+void LongReadSelfCorrectByOverlap::printErrorRate(SONode3PtrList& currLeaves)
 {
 	std::cout << std::fixed << std::setprecision(5);
 
-	for(auto& iter : currLeaves)
+	for(auto& leaf : currLeaves)
 	{
-		SAIOverlapNode3* leaf = iter.leafNodePtr;
 		std::cout << 100*(leaf->LocalErrorRateRecord.back()) << "\t";
 	}
 
