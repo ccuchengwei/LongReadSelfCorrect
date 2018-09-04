@@ -59,6 +59,15 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap
 		else
 			m_maxIndelSize  =  20;
 
+	//frequencies of correspond k
+		freqsOfKmerSize = new double[100 + 1]{0};
+		for(int i = m_minOverlap ; i <= 100 ; i++)
+			freqsOfKmerSize[i] = pow(1 - m_PacBioErrorRate, i) * m_PBcoverage;
+
+	// PacBio reads are longer than real length due to insertions
+		m_maxLength =          (1.2*(m_disBetweenSrcTarget+10))+2*m_initkmersize     ;
+		m_minLength = std::max((0.8*(m_disBetweenSrcTarget-20))+2*m_initkmersize,0.0);
+
 	//initialRootNode
 		initialRootNode(m_extSeeds.source.seq);
 
@@ -66,10 +75,14 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap
 		m_RootNodes.push_back(m_pRootNode);
 		m_leaves.emplace_back(m_pRootNode);
 
-	//frequencies of correspond k
-		freqsOfKmerSize = new double[100 + 1]{0};
-		for(int i = m_minOverlap ; i <= 100 ; i++)
-			freqsOfKmerSize[i] = pow(1 - m_PacBioErrorRate, i) * m_PBcoverage;
+		totalPathInfo.reserve(m_maxLength+1);
+		pathInfo_t  pathInfo(m_extSeeds.source.seq);
+		totalPathInfo.emplace_back
+			(
+				leafTable_t ({
+								{m_pRootNode, pathInfo}
+							})
+			);
 //*
 	if(m_Debug.isDebug)
 	{
@@ -81,9 +94,6 @@ LongReadSelfCorrectByOverlap::LongReadSelfCorrectByOverlap
 					<< disBetweenSrcTarget <<"\n";
 	}
 //*/
-	// PacBio reads are longer than real length due to insertions
-		m_maxLength =          (1.2*(m_disBetweenSrcTarget+10))+2*m_initkmersize     ;
-		m_minLength = std::max((0.8*(m_disBetweenSrcTarget-20))+2*m_initkmersize,0.0);
 
 	// initialize the ending SA intervals with kmer length = m_minOverlap
 		for(size_t i =0 ;i <= m_targetSeed.length()-m_minOverlap; i++)
@@ -423,42 +433,47 @@ void LongReadSelfCorrectByOverlap::refineSAInterval(SONode3PtrList& leaves, cons
 // And attempt to extend those leaves.
 void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList& newLeaves, const bool isSuccessToReduce)
 {
-	double minimumErrorRate = 1.0;
-	double maximumAverfreqs = 0.0;
+
+	const   leafTable_t& lastPathInfo = totalPathInfo.back();
+			leafTable_t  currPathInfo;     // the max branches = 4 per leaf.
+				currPathInfo.reserve(4 * lastPathInfo.size());
 
 	m_maxfreqs = 0;
 
 	std::vector<size_t> frequencies;
 
+
 	// Compute the min error rate
-	for(auto& leaf : m_leaves)
-	{
-		if( leaf->LocalErrorRateRecord.back() < minimumErrorRate)
-			minimumErrorRate = leaf->LocalErrorRateRecord.back();
-	}
+		double minimumErrorRate = 1.0;
+		for(auto& leaf : m_leaves)
+		{
+			if( lastPathInfo.at(leaf).localErrorRate < minimumErrorRate)
+				minimumErrorRate = lastPathInfo.at(leaf).localErrorRate;
+		}
 
 	// Compute the errorRateDiff to trim leaves whose error rates relative to the others is high.
-	SONode3PtrList::iterator iter = m_leaves.begin();
-	while(iter != m_leaves.end())
-	{
-		if (m_Debug.ref.isSpecifiedPath)
-			break;
-
-		SAIOverlapNode3* leaf = (*iter);
-		double errorRateDiff  = (leaf->LocalErrorRateRecord.back()) - minimumErrorRate;
-		if((errorRateDiff > 0.05 && m_currentLength > m_localSimilarlykmerSize/2)
-		|| (errorRateDiff > 0.1  && m_currentLength > 15))
+		SONode3PtrList::iterator iter = m_leaves.begin();
+		while(iter != m_leaves.end())
 		{
-			iter = m_leaves.erase(iter);
-			continue;
+			if (m_Debug.ref.isSpecifiedPath)
+				break;
+
+			SAIOverlapNode3* leaf = (*iter);
+			double errorRateDiff  = lastPathInfo.at(leaf).localErrorRate - minimumErrorRate;
+			if((errorRateDiff > 0.05 && m_currentLength > m_localSimilarlykmerSize/2)
+			|| (errorRateDiff > 0.1  && m_currentLength > 15))
+			{
+				iter = m_leaves.erase(iter);
+				continue;
+			}
+			++iter;
 		}
-		++iter;
-	}
 
 	minTotalcount = 10000000;
 	size_t currLeavesNum = 1;
 	m_currTotalExtNum  = 0;
 
+	double maximumAverfreqs = 0.0;
 	if (m_Debug.isDebug && isSuccessToReduce)
 	{
 		for(auto& leaf : m_leaves)
@@ -482,21 +497,27 @@ void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList& newLeaves, con
 		while(count < 2)
 		{
 			if	( count == 1
-			&& !(leaf->LocalErrorRateRecord.back() == minimumErrorRate && m_leaves.size() > 1))
+			&& !(lastPathInfo.at(leaf).localErrorRate == minimumErrorRate && m_leaves.size() > 1))
 				break;
 
 			if (m_Debug.isDebug && isReduced)
 			{
-				kmerFreq_t kmer_freqs   = leaf->fwdInterval.size() + leaf->rvcInterval.size();
-				kmerFreq_t allKmer_freq = leaf -> getKmerCount();
+				kmerFreq_t kmer_freqs   =  leaf -> fwdInterval.size() + leaf->rvcInterval.size();
+				kmerFreq_t allKmer_freq =  leaf -> getKmerCount();
 				double     aveKmer_freq = (double) allKmer_freq/(double) m_currentLength;
 				double     kmer_ratio   = aveKmer_freq / maximumAverfreqs;
 
-				std::string currString  = leaf -> getSuffix(m_currentKmerSize);
-				kmerFreq_t  GCNum       = std::count(currString.begin(), currString.end(), 'G')
-										+ std::count(currString.begin(), currString.end(), 'C');
-				double      GCContent   = (double) GCNum / (double) m_currentKmerSize;
+				std::string currString  =  leaf -> getSuffix(m_currentKmerSize);
 
+				size_t currLen     = totalPathInfo.size();
+				size_t GCNumber    = (lastPathInfo.at(leaf).GCNumber   );
+				size_t Homopolymer = (lastPathInfo.at(leaf).Homopolymer);
+
+				if (currLen >= m_localSimilarlykmerSize)
+				{
+					size_t startLoc = currLen - m_localSimilarlykmerSize;
+					GCNumber -= (leaf -> getParentInfo(totalPathInfo,startLoc)).GCNumber;
+				}
 
 				char strand;
 				if(m_extSeeds.isPosStrand)
@@ -527,20 +548,22 @@ void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList& newLeaves, con
 
 										<< "&" << m_currentKmerSize
 										<< "|" << m_currentLength
-										// << "|" << GCContent
+
+										<< "&" << GCNumber
+										<< "|" << Homopolymer
 
 										<< "&" << kmer_freqs
 										<< "|" << allKmer_freq
 										<< "|" << kmer_ratio
 
-										<< "&" << 100*(leaf ->LocalErrorRateRecord .back())
-										<< "|" << 100*(leaf ->GlobalErrorRateRecord.back())
+										<< "&" << 100*(lastPathInfo.at(leaf).localErrorRate )
+										<< "|" << 100*(lastPathInfo.at(leaf).globalErrorRate)
 
-										<< "&" << (leaf->totalSeeds) + m_seedSize-1
-										<< "|" << (leaf->numRedeemSeed)
-										<< "|" << (leaf->lastSeedIdxOffset)
-										<< "|" << (leaf->lastOverlapLen)
-										<< "|" << (leaf->queryOverlapLen)
+										<< "&" << (leaf -> totalSeeds) + m_seedSize-1
+										<< "|" << (leaf -> numRedeemSeed)
+										<< "|" << (leaf -> lastSeedIdxOffset)
+										<< "|" << (leaf -> lastOverlapLen)
+										<< "|" << (leaf -> queryOverlapLen)
 										<< "&";
 			}
 
@@ -553,7 +576,7 @@ void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList& newLeaves, con
 
 			if(extensions.size() > 0)
 			{
-				updateLeaves(newLeaves, extensions, leaf, currLeavesNum);
+				updateLeaves(newLeaves, extensions, leaf, lastPathInfo, currPathInfo, currLeavesNum);
 				break;
 			}
 			isReduced = false;
@@ -571,10 +594,14 @@ void LongReadSelfCorrectByOverlap::attempToExtend(SONode3PtrList& newLeaves, con
 		++iter;
 		++currLeavesNum;
 	}
+	if (!newLeaves.empty())
+	{
+		totalPathInfo.emplace_back(currPathInfo);
+	}
 }
 
 // Update the leaves after the extension is successful.
-void LongReadSelfCorrectByOverlap::updateLeaves(SONode3PtrList& newLeaves,extArray& extensions,SAIOverlapNode3* leaf,size_t currLeavesNum)
+void LongReadSelfCorrectByOverlap::updateLeaves(SONode3PtrList& newLeaves,extArray& extensions,SAIOverlapNode3* leaf, const leafTable_t& lastPathInfo, leafTable_t& currPathInfo, size_t currLeavesNum)
 {
 	if(extensions.size() == 1)
 	{
@@ -582,22 +609,29 @@ void LongReadSelfCorrectByOverlap::updateLeaves(SONode3PtrList& newLeaves,extArr
 			leaf -> extend (extensions.front().SearchLetters);
 			leaf -> setNode(extensions.front(), currLeavesNum, leaf);
 			newLeaves.emplace_back(leaf);
+
+			pathInfo_t  pathInfo( lastPathInfo.at(leaf), extensions.front());
+			currPathInfo.emplace( leaf, pathInfo);
 	}
 	else if(extensions.size() > 1)
 	{
 		// Branch
+		const pathInfo_t& lastLeafInfo = lastPathInfo.at(leaf);
 		for(size_t i = 0; i < extensions.size(); ++i)
 		{
 			SAIOverlapNode3* pChildNode = leaf -> createChild(extensions[i].SearchLetters);
 			//inherit accumulated kmerCount from parent
 				pChildNode -> addKmerCount( leaf -> getKmerCount() );
-			pChildNode -> setNode(extensions[i], currLeavesNum, leaf);
+			pChildNode -> setNode(extensions[i], currLeavesNum, leaf, m_step_number);
 /*
 			// Remove the bug while changing the seed by FM-Extend
 				if (i != 0)
 					(pChildNode -> resultindex).first = -1;
 //*/
 			newLeaves.emplace_back(pChildNode);
+
+			pathInfo_t  pathInfo( lastLeafInfo, extensions[i]);
+			currPathInfo.emplace( pChildNode, pathInfo);
 		}
 
 		m_accumLeaves--;
@@ -768,21 +802,26 @@ double LongReadSelfCorrectByOverlap::computeErrorRate(SAIOverlapNode3* currNode)
 
 	double unmatchedLen = totalLen - matchedLen;
 
-	double  currErrorRate =  unmatchedLen/totalLen;
-	currNode->GlobalErrorRateRecord.push_back(currErrorRate);
+	double  globalErrorRate = unmatchedLen/totalLen;
+	double  localErrorRate  = globalErrorRate;
 
-	if(currNode->GlobalErrorRateRecord.size() >= m_localSimilarlykmerSize)
+	if( totalPathInfo.size() >= m_localSimilarlykmerSize )
 	{
-		size_t totalsize = currNode->GlobalErrorRateRecord.size();
+		size_t       totalsize      = totalPathInfo.size();
+		size_t       startLoc       = totalsize - m_localSimilarlykmerSize;
+		size_t       startLength    = totalLen  - m_localSimilarlykmerSize;
+		const double startErrorRate =(currNode -> getParentInfo(totalPathInfo, startLoc)).globalErrorRate;
 
-		currErrorRate = ( currErrorRate*totalLen-currNode->GlobalErrorRateRecord.at( totalsize - m_localSimilarlykmerSize)*(totalLen - m_localSimilarlykmerSize) )/m_localSimilarlykmerSize;
+		localErrorRate = ( globalErrorRate * totalLen - startErrorRate * startLength )/m_localSimilarlykmerSize;
 	}
-	currNode->LocalErrorRateRecord.push_back(currErrorRate);
-	return currErrorRate;
+
+	(currNode -> getParentInfo(totalPathInfo)).setErrorRate( localErrorRate, globalErrorRate);
+
+	return localErrorRate;
 }
 
 // Attempt to the extension in the current leaf and get the extension information.
-extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const SAIOverlapNode3* leaf,const bool printDebugInfo)
+extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(SAIOverlapNode3* leaf,const bool printDebugInfo)
 {
 // Set the array data which is reserved.
 	extArray output;
@@ -799,11 +838,11 @@ extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const SAIOverlapNode
 	int maxfreqsofleaf = 0;
 	totalcount = 0;
 	m_currExtNum = 0;
-	dominantBase maxFreqOfLeaves(leaf -> tailLetter);
+	dominantBase maxFreqOfLeaves(leaf -> getSuffix(1));
 /*
 	if(m_Debug.isDebug)
 		std::cout   << leaf->getFullString() <<" || Local Error Rate: "
-					<< leaf->LocalErrorRateRecord.back()  <<"\n"
+					<< (leaf->getParentInfo(totalPathInfo)).localErrorRate  <<"\n"
 					<< leaf->getSuffix(m_currentKmerSize) << " || k-mer freqs: "
 					<< leaf->getLastKmerCount()           << std::endl;
 */
@@ -855,7 +894,7 @@ extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const SAIOverlapNode
 
 		char b = BWT_ALPHABET::getChar(i);
 
-		bool isHomopolymer = ((leaf -> tailLetterCount) >= 3);
+		bool isHomopolymer = ((leaf -> getParentInfo(totalPathInfo)).Homopolymer >= 3);
 
 		bool isDominant     = maxFreqOfLeaves.isDominant();
 		bool isFreqPass     = kmerFreq   >= IntervalSizeCutoff;
@@ -920,7 +959,7 @@ extArray LongReadSelfCorrectByOverlap::getFMIndexExtensions(const SAIOverlapNode
 
 	if(m_Debug.ref.isSpecifiedPath)
 	{
-		if (!(m_step_number == 1 || m_Debug.ref.isMatchBase(leaf -> tailLetter, m_step_number-2)))
+		if (!(m_step_number == 1 || m_Debug.ref.isMatchBase(leaf -> getSuffix(1), m_step_number-2)))
 		{
 			output.clear();
 		}
@@ -1033,7 +1072,7 @@ bool LongReadSelfCorrectByOverlap::isTerminated(SAIntervalNodeResultVector& resu
 				SAIntervalNodeResult STresult;
 				STresult.thread=STNodeStr;
 				STresult.SAICoverage = leaf->getKmerCount();
-				STresult.errorRate   = leaf->GlobalErrorRateRecord.back();
+				STresult.errorRate   = (leaf->getParentInfo(totalPathInfo)).globalErrorRate;
 				STresult.SAIntervalSize = (currfwd.upper-currfwd.lower+1);
 
 				if( leaf->resultindex.first == -1 )
@@ -1103,7 +1142,7 @@ void LongReadSelfCorrectByOverlap::printErrorRate(SONode3PtrList& currLeaves)
 
 	for(auto& leaf : currLeaves)
 	{
-		std::cout << 100*(leaf->LocalErrorRateRecord.back()) << "\t";
+		std::cout << 100*((leaf->getParentInfo(totalPathInfo)).localErrorRate) << "\t";
 	}
 
 	std::cout << std::endl;

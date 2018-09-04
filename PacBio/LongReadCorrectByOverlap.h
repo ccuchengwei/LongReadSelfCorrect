@@ -10,6 +10,7 @@
 #ifndef OverlapTree_H
 #define OverlapTree_H
 
+#include <unordered_map>
 #include <list>
 #include "BWT.h"
 #include "BWTAlgorithms.h"
@@ -23,9 +24,14 @@
 	typedef int64_t kmerFreq_t;
 
 // Define class
+	class pathInfo_t;
+	class leafElement_t;
 	class SAIOverlapNode3;
 
 // Define class group.
+	typedef std::unordered_map<SAIOverlapNode3*, pathInfo_t> leafTable_t;
+	typedef std::vector<leafTable_t>    pathPack_t;
+	typedef std::vector<leafElement_t>  leafAncestry_t;
 	typedef std::list<SAIOverlapNode3*> SONode3PtrList;
 
 struct FMWalkResult2
@@ -259,6 +265,90 @@ struct FMidx_t
 };
 typedef std::vector<FMidx_t> extArray;
 
+class pathInfo_t
+{
+	public:
+		// function
+			pathInfo_t  () = default;
+
+			pathInfo_t  (const std::string& beginStr):
+								localErrorRate (0),
+								globalErrorRate(0)
+						{
+
+							// Set GC Number
+								GCNumber = 0;
+								for(auto currBase : beginStr)
+								{
+									if (currBase == 'C' || currBase == 'G')
+										GCNumber++;
+								}
+							// Set tailLetter and its counter
+								Homopolymer = 0;
+								for(auto reverseIdx = beginStr.crbegin(); reverseIdx != beginStr.crend(); ++reverseIdx)
+								{
+									char suffixLetter = (*reverseIdx);
+									if (reverseIdx == beginStr.crbegin())
+										lastBase =  suffixLetter;
+									if( lastBase == suffixLetter )
+										Homopolymer++;
+									else
+										break;
+								}
+						};
+
+				pathInfo_t  (const pathInfo_t& lastNode, const FMidx_t& currExt):
+								localErrorRate (0),
+								globalErrorRate(0)
+						{
+							char currBase = currExt.SearchLetters.back();
+
+							// Set GC Number
+								GCNumber = lastNode.GCNumber;
+								if (currBase == 'C' || currBase == 'G')
+									GCNumber++;
+
+							// Set tailLetter and its counter
+								lastBase = currBase;
+								if (lastNode.lastBase == currBase)
+									Homopolymer = (lastNode.Homopolymer) + 1;
+								else
+									Homopolymer = 1;
+						};
+
+				void setErrorRate(const double localErrorRate, const double globalErrorRate)
+					{
+						this -> localErrorRate  = localErrorRate;
+						this -> globalErrorRate = globalErrorRate;
+					}
+		// data
+			// last Base
+				char lastBase;
+			// Error Rates
+				double localErrorRate;
+				double globalErrorRate;
+			// the parameters to detect the regions where tends to errors
+				size_t GCNumber;
+				size_t Homopolymer;
+
+};
+
+class leafElement_t
+{
+	public:
+		// function
+			leafElement_t   (
+								SAIOverlapNode3* node,
+								const size_t     start
+							):
+								leaf    (node),
+								birthday(start)
+								{};
+		// data
+			SAIOverlapNode3* leaf;
+			size_t           birthday;
+};
+
 class SAIOverlapNode3 : public SAINode
 {
 	public:
@@ -268,8 +358,7 @@ class SAIOverlapNode3 : public SAINode
 					lastLeafID     (0)  ,
 					lastOverlapLen (0)  , currOverlapLen   (0), queryOverlapLen(0),
 					lastSeedIdx    (0)  , lastSeedIdxOffset(0),
-					numRedeemSeed  (0)  , totalSeeds       (0), numOfErrors    (0),
-					tailLetter     ("N"), tailLetterCount  (0)
+					numRedeemSeed  (0)  , totalSeeds       (0), numOfErrors    (0)
 					{};
 
 				~SAIOverlapNode3()
@@ -296,8 +385,7 @@ class SAIOverlapNode3 : public SAINode
 						pAdded->numRedeemSeed         = numRedeemSeed;
 						pAdded->totalSeeds            = totalSeeds;
 						pAdded->numOfErrors           = numOfErrors;
-						pAdded->LocalErrorRateRecord  = LocalErrorRateRecord;
-						pAdded->GlobalErrorRateRecord = GlobalErrorRateRecord;
+						pAdded->Ancestor              = Ancestor;
 						pAdded->resultindex           = resultindex;
 
 						// pAdded->currkmersize = this->currkmersize;
@@ -310,10 +398,11 @@ class SAIOverlapNode3 : public SAINode
 				void setRoot(const std::string& beginStr, const size_t& beginLen, const size_t& matchSize, const BWT* m_pBWT, const BWT* m_pRBWT)
 				{
 					lastLeafID  = 1;
-					computeInitial(beginStr);
-					fwdInterval = BWTAlgorithms::findInterval(m_pRBWT, reverse(beginStr));
-					rvcInterval = BWTAlgorithms::findInterval(m_pBWT , reverseComplement(beginStr));
-					addKmerCount( fwdInterval.size() + rvcInterval.size() );
+					// Copy the intervals
+						computeInitial(beginStr);
+						fwdInterval = BWTAlgorithms::findInterval(m_pRBWT, reverse(beginStr));
+						rvcInterval = BWTAlgorithms::findInterval(m_pBWT , reverseComplement(beginStr));
+						addKmerCount( fwdInterval.size() + rvcInterval.size() );
 
 					queryOverlapLen =
 							currOverlapLen =
@@ -323,27 +412,14 @@ class SAIOverlapNode3 : public SAINode
 
 					numRedeemSeed = 0;
 					totalSeeds = beginLen - matchSize + 1;
-					LocalErrorRateRecord.push_back(0);
-					GlobalErrorRateRecord.push_back(0);
 
-					tailLetterCount = 0;
-					for(auto reverseIdx = beginStr.crbegin(); reverseIdx != beginStr.crend(); ++reverseIdx)
-					{
-						std::string suffixLetter(1,(*reverseIdx));
-						if (reverseIdx == beginStr.crbegin())
-							tailLetter =  suffixLetter;
-						if( tailLetter == suffixLetter)
-							tailLetterCount++;
-						else
-							break;
-					}
+					Ancestor.emplace_back(this, 0);
+
 				}
 
 			// Set children
-				void setNode(FMidx_t& extension, const size_t currLeavesNum, SAIOverlapNode3* refNode)
+				void setNode(FMidx_t& extension, const size_t currLeavesNum, SAIOverlapNode3* refNode, const size_t m_step_number = 0)
 				{
-					const std::string& extLabel = extension.SearchLetters;
-
 					// Set currNode
 						// Set lastLeafID
 							lastLeafID = currLeavesNum;
@@ -355,19 +431,39 @@ class SAIOverlapNode3 : public SAINode
 						// in order to know the approximate real-time matched length for terminal/containment processing
 							currOverlapLen++;
 							queryOverlapLen++;
-						// Set tailLetter and its counter
-							if ( refNode -> tailLetter == extLabel )
-							{
-								tailLetter      = refNode -> tailLetter;
-								tailLetterCount = refNode -> tailLetterCount + 1;
-							}
-							else
-							{
-								tailLetter      = extLabel;
-								tailLetterCount = 1;
-							}
+						// Set the Ancestors
+							if (this != refNode)
+								Ancestor.emplace_back(this, m_step_number);
 				}
 
+				pathInfo_t& getParentInfo(pathPack_t& pathPack, const size_t location = (size_t) -1)
+				{
+					if (location == (size_t) -1)
+						return pathPack.back().at(this);
+
+					// get the ancestorNode corresponding the leaf at a certain location.
+						SAIOverlapNode3* ancestorNode   = Ancestor.front().leaf;
+
+						// binary search to find ancestorNode.
+						size_t start  = 0;
+						size_t end    = Ancestor.size() -1;
+						size_t middle = (start + end)/2;
+						while(start <= end)
+						{
+							middle = (start + end)/2;
+
+							if (Ancestor.at(middle).birthday <= location)
+							{
+								ancestorNode = Ancestor.at(middle).leaf;
+								start = middle + 1;
+							}
+							else
+								end = middle - 1;
+						}
+
+					// get the goal-parent information
+						return pathPack.at(location).at(ancestorNode);
+				}
 		// Variables
 			// Leaf ID
 				size_t lastLeafID;
@@ -398,12 +494,9 @@ class SAIOverlapNode3 : public SAINode
 						size_t totalSeeds;
 					// number of SNPs or indels
 						size_t numOfErrors;
-				// Error Rates
-					std::vector<double> LocalErrorRateRecord;
-					std::vector<double> GlobalErrorRateRecord;
-			// Tail Letter
-				std::string tailLetter;
-				size_t tailLetterCount;
+				// the total path in the current leaf.
+					leafAncestry_t Ancestor;
+
 			// Result
 				// index of the result and index of the matchpoint
 				std::pair <int,int> resultindex = std::make_pair(-1,-1);
@@ -537,13 +630,13 @@ class LongReadSelfCorrectByOverlap
 
 			void extendLeaves(SONode3PtrList& newLeaves);
 			void attempToExtend(SONode3PtrList& newLeaves, const bool isSuccessToReduce);
-			void updateLeaves(SONode3PtrList& newLeaves,extArray& extensions,SAIOverlapNode3* leaf,size_t currLeavesNum);
+			void updateLeaves(SONode3PtrList& newLeaves,extArray& extensions,SAIOverlapNode3* leaf, const leafTable_t& lastPathInfo, leafTable_t& currPathInfo, size_t currLeavesNum);
 
 			void refineSAInterval(SONode3PtrList& leaves, const size_t newKmerSize);
 
 			int findTheBestPath(const SAIntervalNodeResultVector& results, FMWalkResult2& FMWResult);
 
-			extArray getFMIndexExtensions(const SAIOverlapNode3* leaf,const bool printDebugInfo);
+			extArray getFMIndexExtensions(SAIOverlapNode3* leaf,const bool printDebugInfo);
 
 			// prone the leaves without seeds in proximity
 				bool PrunedBySeedSupport(SONode3PtrList& newLeaves);
@@ -618,6 +711,7 @@ class LongReadSelfCorrectByOverlap
 		size_t m_currExtNum;
 		size_t m_accumLeaves;
 
+		pathPack_t totalPathInfo;
 };
 
 #endif
