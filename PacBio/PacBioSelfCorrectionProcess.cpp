@@ -133,7 +133,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 //*/
 	}
 
-	int case_number = 1;
+	size_t case_number = 1;
 	for(SeedFeature::SeedVector::const_iterator iterTarget = seedVec.begin() + 1;
 		iterTarget != seedVec.end();
 		iterTarget++, case_number++, srcSeedIter++)
@@ -150,17 +150,17 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 			forceExtInfo ref;
 			if (m_params.isSpecifiedPath)
 				ref.setSpecPath(m_params.isSpecifiedPath, specifiedPaths.at(case_number-1));
-			debugExtInfo debug( m_params.DebugExtend, pExtDebugFile, pExtFinalSeq, result.readid, case_number, ref);
+			debugExtInfo debug( m_params.DebugExtend, pExtDebugFile, pExtFinalSeq, result.readid, ref);
 
-			isFMExtensionSuccess = correctByFMExtension(source, target, readSeq, mergedSeq, result, debug);
+			isFMExtensionSuccess = correctByFMExtension(case_number, source, target, readSeq, mergedSeq, result, debug);
 
 			firstFMExtensionType = (next == 0 ? isFMExtensionSuccess : firstFMExtensionType);
 			if(isFMExtensionSuccess > 0)
 			{
 				if (m_params.DebugExtend)
 				{
-					const SeedFeature& oriSrcSeed = (*srcSeedIter)  ;
-					const SeedFeature& oriTgtSeed =   target        ;
+					const SeedFeature& oriSrcSeed = (*srcSeedIter) ;
+					const SeedFeature& oriTgtSeed =   target       ;
 
 					const std::string& extSrcSeq =   source.seedStr;
 					const std::string& extTgtSeq =   mergedSeq     ;
@@ -309,7 +309,7 @@ void PacBioSelfCorrectionProcess::initCorrect(std::string& readSeq, const SeedFe
 }
 
 int PacBioSelfCorrectionProcess::correctByFMExtension
-(const SeedFeature& source, const SeedFeature& target, const std::string& in, std::string& out, PacBioSelfCorrectionResult& result, debugExtInfo& debug)
+(const size_t case_number, const SeedFeature& source, const SeedFeature& target, const std::string& in, std::string& out, PacBioSelfCorrectionResult& result, debugExtInfo& debug)
 {
 	bool isFromRtoU = source.isRepeat && !target.isRepeat;
 	int isFMExtensionSuccess = 0;
@@ -350,8 +350,8 @@ int PacBioSelfCorrectionProcess::correctByFMExtension
 	// FM extension
 		Timer* FMTimer = new Timer("FM Time",true);
 			FMWalkResult2 fmwalkresult;
-			LongReadSelfCorrectByOverlap OverlapTree
-				(extSeeds, readPath, seedDistance, initExtSize, reducedSize, m_params.FM_params, min_SA_threshold, debug);
+			LongReadSelfCorrectByFMExtend OverlapTree
+				(case_number, extSeeds, readPath, seedDistance, initExtSize, reducedSize, m_params.FM_params, min_SA_threshold, debug);
 			isFMExtensionSuccess = OverlapTree.extendOverlap(fmwalkresult);
 			result.Timer_FM += FMTimer->getElapsedWallTime();
 		delete FMTimer;

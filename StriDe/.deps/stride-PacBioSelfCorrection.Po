@@ -215,11 +215,11 @@ stride-PacBioSelfCorrection.o: PacBioSelfCorrection.cpp \
  ../PacBio/PacBioSelfCorrectionProcess.h \
  ../Concurrency/SequenceWorkItem.h ../SuffixTools/BWTIndexSet.h \
  ../SuffixTools/SampledSuffixArray.h ../PacBio/SeedFeature.h \
- ../PacBio/LongReadCorrectByOverlap.h /usr/include/c++/5/unordered_map \
- /usr/include/c++/5/bits/hashtable.h \
+ ../PacBio/LongReadCorrectByFMExtend.h ../PacBio/IntervalTree.h \
+ ../FMIndexWalk/SAINode.h ../PacBio/LongReadCorrtoolsByFMExtend.h \
+ /usr/include/c++/5/unordered_map /usr/include/c++/5/bits/hashtable.h \
  /usr/include/c++/5/bits/hashtable_policy.h \
- /usr/include/c++/5/bits/unordered_map.h ../FMIndexWalk/SAINode.h \
- ../PacBio/IntervalTree.h ../PacBio/HashtableSearch.h \
+ /usr/include/c++/5/bits/unordered_map.h \
  ../SuffixTools/BWTIntervalCache.h ../PacBio/KmerThreshold.h \
  ../PacBio/LongReadProbe.h ../PacBio/KmerCheckProcess.h ../PacBio/BCode.h \
  ../PacBio/KmerFeature.h ../PacBio/BCode.h
@@ -868,7 +868,13 @@ SGACommon.h:
 
 ../PacBio/SeedFeature.h:
 
-../PacBio/LongReadCorrectByOverlap.h:
+../PacBio/LongReadCorrectByFMExtend.h:
+
+../PacBio/IntervalTree.h:
+
+../FMIndexWalk/SAINode.h:
+
+../PacBio/LongReadCorrtoolsByFMExtend.h:
 
 /usr/include/c++/5/unordered_map:
 
@@ -877,12 +883,6 @@ SGACommon.h:
 /usr/include/c++/5/bits/hashtable_policy.h:
 
 /usr/include/c++/5/bits/unordered_map.h:
-
-../FMIndexWalk/SAINode.h:
-
-../PacBio/IntervalTree.h:
-
-../PacBio/HashtableSearch.h:
 
 ../SuffixTools/BWTIntervalCache.h:
 

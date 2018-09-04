@@ -210,12 +210,12 @@ libpacbio_a-PacBioSelfCorrectionProcess.o: \
  /usr/include/c++/5/queue /usr/include/c++/5/deque \
  /usr/include/c++/5/bits/stl_deque.h /usr/include/c++/5/bits/deque.tcc \
  /usr/include/c++/5/bits/stl_queue.h SeedFeature.h \
- LongReadCorrectByOverlap.h /usr/include/c++/5/unordered_map \
- /usr/include/c++/5/bits/hashtable.h \
+ LongReadCorrectByFMExtend.h IntervalTree.h ../FMIndexWalk/SAINode.h \
+ ../SuffixTools/BWT.h LongReadCorrtoolsByFMExtend.h \
+ /usr/include/c++/5/unordered_map /usr/include/c++/5/bits/hashtable.h \
  /usr/include/c++/5/bits/hashtable_policy.h \
- /usr/include/c++/5/bits/unordered_map.h ../SuffixTools/BWT.h \
- ../FMIndexWalk/SAINode.h IntervalTree.h HashtableSearch.h \
- LongReadProbe.h LongReadOverlap.h ../Thirdparty/multiple_alignment.h \
+ /usr/include/c++/5/bits/unordered_map.h LongReadProbe.h \
+ LongReadOverlap.h ../Thirdparty/multiple_alignment.h \
  ../Thirdparty/overlapper.h ../FMIndexWalk/FMIndexWalkProcess.h \
  ../Concurrency/SequenceProcessFramework.h ../Concurrency/ThreadWorker.h \
  /usr/include/semaphore.h /usr/include/x86_64-linux-gnu/bits/semaphore.h \
@@ -849,7 +849,15 @@ PacBioSelfCorrectionProcess.h:
 
 SeedFeature.h:
 
-LongReadCorrectByOverlap.h:
+LongReadCorrectByFMExtend.h:
+
+IntervalTree.h:
+
+../FMIndexWalk/SAINode.h:
+
+../SuffixTools/BWT.h:
+
+LongReadCorrtoolsByFMExtend.h:
 
 /usr/include/c++/5/unordered_map:
 
@@ -858,14 +866,6 @@ LongReadCorrectByOverlap.h:
 /usr/include/c++/5/bits/hashtable_policy.h:
 
 /usr/include/c++/5/bits/unordered_map.h:
-
-../SuffixTools/BWT.h:
-
-../FMIndexWalk/SAINode.h:
-
-IntervalTree.h:
-
-HashtableSearch.h:
 
 LongReadProbe.h:
 

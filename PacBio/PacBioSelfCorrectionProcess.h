@@ -18,7 +18,7 @@
 #include "SampledSuffixArray.h"
 #include "BWTAlgorithms.h"
 #include "SeedFeature.h"
-#include "LongReadCorrectByOverlap.h"
+#include "LongReadCorrectByFMExtend.h"
 
 // Parameter object for the error corrector
 struct PacBioSelfCorrectionParameters
@@ -109,7 +109,7 @@ class PacBioSelfCorrectionProcess
 
 		//correct sequence
 		void initCorrect(std::string& readSeq, const SeedFeature::SeedVector& seedVec, SeedFeature::SeedVector& pieceVec, PacBioSelfCorrectionResult& result);
-		int correctByFMExtension(const SeedFeature& source, const SeedFeature& target, const std::string& in, std::string& out, PacBioSelfCorrectionResult& result, debugExtInfo& debug);
+		int correctByFMExtension(const size_t case_number, const SeedFeature& source, const SeedFeature& target, const std::string& in, std::string& out, PacBioSelfCorrectionResult& result, debugExtInfo& debug);
 		bool correctByMSAlignment(const SeedFeature& source, const SeedFeature& target, const std::string& in, std::string& out, PacBioSelfCorrectionResult& result);
 };
 
