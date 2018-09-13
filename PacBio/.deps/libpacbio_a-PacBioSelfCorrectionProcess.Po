@@ -214,8 +214,8 @@ libpacbio_a-PacBioSelfCorrectionProcess.o: \
  ../SuffixTools/BWT.h LongReadCorrtoolsByFMExtend.h \
  /usr/include/c++/5/unordered_map /usr/include/c++/5/bits/hashtable.h \
  /usr/include/c++/5/bits/hashtable_policy.h \
- /usr/include/c++/5/bits/unordered_map.h LongReadProbe.h \
- LongReadOverlap.h ../Thirdparty/multiple_alignment.h \
+ /usr/include/c++/5/bits/unordered_map.h /usr/include/c++/5/bitset \
+ LongReadProbe.h LongReadOverlap.h ../Thirdparty/multiple_alignment.h \
  ../Thirdparty/overlapper.h ../FMIndexWalk/FMIndexWalkProcess.h \
  ../Concurrency/SequenceProcessFramework.h ../Concurrency/ThreadWorker.h \
  /usr/include/semaphore.h /usr/include/x86_64-linux-gnu/bits/semaphore.h \
@@ -866,6 +866,8 @@ LongReadCorrtoolsByFMExtend.h:
 /usr/include/c++/5/bits/hashtable_policy.h:
 
 /usr/include/c++/5/bits/unordered_map.h:
+
+/usr/include/c++/5/bitset:
 
 LongReadProbe.h:
 

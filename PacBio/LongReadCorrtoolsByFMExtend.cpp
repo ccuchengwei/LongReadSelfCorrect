@@ -96,20 +96,26 @@
 	bool FMidx_t::isVaildIntervals()
 		{ return (fwdInterval.isValid() || rvcInterval.isValid()); }
 // pathInfo_t
-	pathInfo_t::pathInfo_t
-						(const std::string& beginStr):
+	pathInfo_t::pathInfo_t():
+							lastBase       (0),
 							localErrorRate (0),
-							globalErrorRate(0)
-						{ setFirstBaseInfo(beginStr); };
+							globalErrorRate(0),
+							GCNumber       (0),
+							Homopolymer    (0)
+						{
+						}
 
 	pathInfo_t::pathInfo_t
 						(
 							const pathInfo_t& lastNode,
-							const FMidx_t& currExt
+							const FMidx_t&    currExt
 						):
 							localErrorRate (0),
 							globalErrorRate(0)
-						{  setNextBaseInfo(lastNode, currExt); }
+						{
+							char currBase = currExt.SearchLetters.back();
+							setNextBaseInfo(lastNode, currBase);
+						}
 
 	void pathInfo_t::setFirstBaseInfo
 						(
@@ -126,7 +132,7 @@
 							// Set tailLetter and its counter
 								Homopolymer = 0;
 								for(auto    reverseIdx = beginStr.crbegin();
-									reverseIdx != beginStr.crend(); ++reverseIdx)
+											reverseIdx != beginStr.crend(); ++reverseIdx)
 								{
 									char suffixLetter = (*reverseIdx);
 									if (reverseIdx == beginStr.crbegin())
@@ -141,11 +147,9 @@
 	void pathInfo_t::setNextBaseInfo
 						(
 							const pathInfo_t& lastNode,
-							const FMidx_t& currExt
+							const char        currBase
 						)
 						{
-							char currBase = currExt.SearchLetters.back();
-
 							// Set GC Number
 								GCNumber = lastNode.GCNumber;
 								if (currBase == 'C' || currBase == 'G')
@@ -157,6 +161,44 @@
 									Homopolymer = (lastNode.Homopolymer) + 1;
 								else
 									Homopolymer = 1;
+						}
+
+	void setPathInfo
+						(
+							pathPack_t&        firstLeafTable,
+							SAIOverlapNode3*   firstNode,
+							const std::string& firstStr,
+							const bool         isSeparated
+						)
+						{
+							pathInfo_t  currPathInfo;
+							if (isSeparated)
+							{
+								pathInfo_t  lastPathInfo;
+								for (auto currBase : firstStr)
+								{
+									currPathInfo.setNextBaseInfo(lastPathInfo, currBase);
+									firstLeafTable.emplace_back
+										(
+											leafTable_t
+												({
+													{firstNode, currPathInfo}
+												})
+										);
+									lastPathInfo = currPathInfo;
+								}
+							}
+							else
+							{
+								currPathInfo.setFirstBaseInfo(firstStr);
+								firstLeafTable.emplace_back
+										(
+											leafTable_t
+												({
+													{firstNode, currPathInfo}
+												})
+										);
+							}
 						}
 
 	void pathInfo_t::setErrorRate
@@ -185,10 +227,10 @@
 							SAIOverlapNode3* parent
 						):
 							SAINode(pQuery,parent),
-							lastLeafID     (0)  ,
-							lastOverlapLen (0)  , currOverlapLen   (0), queryOverlapLen(0),
-							lastSeedIdx    (0)  , lastSeedIdxOffset(0),
-							numRedeemSeed  (0)  , totalSeeds       (0), numOfErrors    (0)
+							lastLeafID       (0), currLeafID          (0), removeType     (0),
+							lastOverlapLen   (0), currOverlapLen      (0), queryOverlapLen(0),
+							lastMatchedIdx   (0), lastMatchedIdxOffset(0),
+							numRedeemMatched (0), totalMatch          (0), numAscertainMismatched(0)
 						{};
 
 	SAIOverlapNode3::~SAIOverlapNode3()
@@ -207,12 +249,12 @@
 								pAdded->lastOverlapLen        = lastOverlapLen;
 								pAdded->currOverlapLen        = currOverlapLen;
 								pAdded->queryOverlapLen       = queryOverlapLen;
-								pAdded->initSeedIdx           = initSeedIdx;
-								pAdded->lastSeedIdx           = lastSeedIdx;
-								pAdded->lastSeedIdxOffset     = lastSeedIdxOffset;
-								pAdded->numRedeemSeed         = numRedeemSeed;
-								pAdded->totalSeeds            = totalSeeds;
-								pAdded->numOfErrors           = numOfErrors;
+								pAdded->initMatchedIdx        = initMatchedIdx;
+								pAdded->lastMatchedIdx        = lastMatchedIdx;
+								pAdded->lastMatchedIdxOffset  = lastMatchedIdxOffset;
+								pAdded->numRedeemMatched      = numRedeemMatched;
+								pAdded->totalMatch            = totalMatch;
+								pAdded->numAscertainMismatched= numAscertainMismatched;
 								pAdded->Ancestor              = Ancestor;
 								pAdded->resultindex           = resultindex;
 
@@ -246,6 +288,22 @@
 
 								return ancestorNode;
 						}
+	// Confirm whether the leaf is kept , instead of pruned.
+	bool SAIOverlapNode3::isKept()
+						{ return ( (this -> removeType) == 0 ); }
+
+	bool SAIOverlapNode3::isRemoved()
+						{ return ( (this -> removeType) != 0 ); }
+
+	size_t leavesSize(const LeavesArray_t& currLeaves)
+						{
+							size_t counter = 0;
+							for(auto leaf : currLeaves)
+							{
+								counter += (size_t) (leaf -> isKept());
+							}
+							return counter;
+						}
 	// Set root
 	void SAIOverlapNode3::setRoot
 						(
@@ -256,7 +314,7 @@
 							const BWT* m_pRBWT
 						)
 						{
-							lastLeafID  = 1;
+							currLeafID = lastLeafID  = 1;
 							// Copy the intervals
 								computeInitial(beginStr);
 								fwdInterval = BWTAlgorithms::findInterval(m_pRBWT, reverse(beginStr));
@@ -267,10 +325,10 @@
 									currOverlapLen =
 									lastOverlapLen = beginLen;
 
-							lastSeedIdx = initSeedIdx = beginLen - matchSize;
+							lastMatchedIdx = initMatchedIdx = beginLen - matchSize;
 
-							numRedeemSeed = 0;
-							totalSeeds = beginLen - matchSize + 1;
+							numRedeemMatched = 0;
+							totalMatch = beginLen - matchSize + 1;
 
 							Ancestor.emplace_back(this, 0);
 						}
@@ -280,23 +338,24 @@
 							FMidx_t& extension,
 							const size_t currLeavesNum,
 							SAIOverlapNode3* refNode,
-							const size_t m_step_number
+							const size_t value
 						)
 						{
 							// Set currNode
-								// Set lastLeafID
-									lastLeafID = currLeavesNum;
+								// Set the Leaf IDs
+									lastLeafID = refNode -> currLeafID;
+									currLeafID = currLeavesNum;
 								// Copy the intervals
 									fwdInterval = extension.getFwdInterval();
 									rvcInterval = extension.getRvcInterval();
 									addKmerCount( extension.getKmerFrequency() );
-								// currOverlapLen/queryOverlapLen always increase wrt each extension
+								// currOverlapLen/queryOverlapLen always increase regarding each extension
 								// in order to know the approximate real-time matched length for terminal/containment processing
 									currOverlapLen++;
 									queryOverlapLen++;
 								// Set the Ancestors
 									if (this != refNode)
-										Ancestor.emplace_back(this, m_step_number);
+										Ancestor.emplace_back(this, value);
 						}
 
 	pathInfo_t& SAIOverlapNode3::getParentInfo
@@ -392,6 +451,13 @@
 							readID(readID),
 							ref(ref) {};
 // debugPerExtInfo
+	debugPerExtInfo::debugPerExtInfo():
+							errorType("X---"),
+							kmerFreq (  0  ),
+							kmerRatio( 0.0 ),
+							isMatched(false)
+						{}
+
 	debugPerExtInfo::debugPerExtInfo
 						(
 							FMidx_t currExt,
@@ -399,9 +465,9 @@
 						):
 							isMatched(isMatched)
 						{
-							(this  -> kmerFreq ) = currExt.getKmerFrequency();
 							(this -> errorType ).reserve(4);
-							(this  -> kmerRatio) = 0;
+							(this  -> kmerFreq ) = currExt.getKmerFrequency();
+							(this  -> kmerRatio) = 0.0;
 						}
 
 		void debugPerExtInfo::setErrorData

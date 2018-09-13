@@ -3,6 +3,7 @@
 
 #include "SeedFeature.h"
 #include <unordered_map>
+#include <bitset>
 #include <list>
 
 // Define int type.
@@ -31,11 +32,13 @@
 	typedef std::vector<FMidx_t> extArray;
 
 	typedef std::unordered_map<SAIOverlapNode3*, pathInfo_t> leafTable_t;
-	typedef std::vector<leafTable_t>     pathPack_t;
-	typedef std::vector<leafElement_t>   leafAncestry_t;
-	typedef std::list<SAIOverlapNode3*>  SONode3PtrList;
+	typedef std::vector<leafTable_t>       pathPack_t;
+	typedef std::vector<leafElement_t>     leafAncestry_t;
+	typedef std::vector<SAIOverlapNode3*>  LeavesArray_t;
 
 	typedef std::vector<debugPerExtInfo> debugPerExtArray;
+
+	typedef std::bitset<3> debugBits_t;
 
 class FMWalkResult2
 {
@@ -146,12 +149,20 @@ class pathInfo_t
 {
 	public:
 		// Functions
-			pathInfo_t  () = default;
-			pathInfo_t  (const std::string& beginStr);
+			pathInfo_t  ();
 			pathInfo_t  (const pathInfo_t& lastNode, const FMidx_t& currExt);
+
 			void setFirstBaseInfo (const std::string& beginStr);
-			void setNextBaseInfo  (const pathInfo_t& lastNode, const FMidx_t& currExt);
+			void setNextBaseInfo  (const pathInfo_t& lastNode, const char currBase);
 			void setErrorRate(const double localErrorRate, const double globalErrorRate);
+
+			friend void ::setPathInfo
+						(
+							pathPack_t&        firstLeafTable,
+							SAIOverlapNode3*   firstNode,
+							const std::string& firstStr,
+							const bool         isSeparated = true
+						);
 
 		// Data
 			// last Base
@@ -186,6 +197,8 @@ class SAIOverlapNode3 : public SAINode
 				~SAIOverlapNode3();
 				SAIOverlapNode3* createChild (const std::string& label);
 				SAIOverlapNode3* findAncestor(const size_t location);
+				bool isKept();
+				bool isRemoved();
 
 				void setRoot(
 								const std::string& beginStr,
@@ -199,7 +212,7 @@ class SAIOverlapNode3 : public SAINode
 								FMidx_t& extension,
 								const size_t currLeavesNum,
 								SAIOverlapNode3* refNode,
-								const size_t m_step_number = 0
+								const size_t value = 0
 							);
 
 				pathInfo_t& getParentInfo
@@ -207,36 +220,45 @@ class SAIOverlapNode3 : public SAINode
 								pathPack_t& pathPack,
 								const size_t location = (size_t) -1
 							);
+
+				friend size_t ::leavesSize(const LeavesArray_t& currLeaves);
+
 		// Variables
 			// Leaf ID
-				size_t lastLeafID;
+				size_t    lastLeafID;
+				size_t    currLeafID;
+				// Show the remove type
+				//  0 : kept
+				//  1 : remove by absolute error rate.
+				// -1 : remove by relative error rate.
+					short int removeType;
 			// BWTIntervals
 				BWTInterval fwdInterval;
 				BWTInterval rvcInterval;
 			// Match Variables
 				// lengths
-					// last overlap length when matching last seed
+					// last overlap length when a last match found
 						size_t lastOverlapLen;
 					// current overlap length on the subject increases wrt each FM-index extension
 						size_t currOverlapLen;
 					// current overlap length on the query
 						size_t queryOverlapLen;
 				// locations
-					// index of the init seed
-						int initSeedIdx;
-					// last matched seed index
-						size_t lastSeedIdx;
-					// error seed begin idx
-						// size_t errorSeedBeginIdx;
+					// index of the init match
+						int initMatchedIdx;
+					// last match index
+						size_t lastMatchedIdx;
+					// error match begin idx
+						// size_t errorMatchedBeginIdx;
 					// index offset to the center
-						int lastSeedIdxOffset;
+						int lastMatchedIdxOffset;
 				// match
-					// number of redeem seeds
-						double numRedeemSeed;
+					// number of redeem matches
+						double numRedeemMatched;
 					// number of real matches
-						size_t totalSeeds;
+						size_t totalMatch;
 					// number of SNPs or indels
-						size_t numOfErrors;
+						size_t numAscertainMismatched;
 				// the total path in the current leaf.
 					leafAncestry_t Ancestor;
 
@@ -246,7 +268,7 @@ class SAIOverlapNode3 : public SAINode
 			// Others
 				// size_t currkmersize;
 			// Children
-				SONode3PtrList m_children3;
+				LeavesArray_t m_children3;
 };
 
 class dominantBase
@@ -295,11 +317,11 @@ class debugExtInfo
 {
 	public:
 		debugExtInfo(
-						bool isDebug = false,
+						bool isDebug                 = false,
 						std::ostream* debug_file     = nullptr,
 						std::ostream* debug_finalSeq = nullptr,
-						std::string readID = "",
-						forceExtInfo ref = forceExtInfo()
+						std::string readID           = "",
+						forceExtInfo ref             = forceExtInfo()
 					);
 
 		const bool isDebug;
@@ -314,9 +336,10 @@ class debugPerExtInfo
 {
 	public:
 		// Functions
+			debugPerExtInfo ();
 			debugPerExtInfo (
 								FMidx_t currExt,
-								bool    isMatched = 0
+								bool    isMatched = false
 							);
 
 			void setErrorData   (

@@ -219,7 +219,7 @@ stride-PacBioSelfCorrection.o: PacBioSelfCorrection.cpp \
  ../FMIndexWalk/SAINode.h ../PacBio/LongReadCorrtoolsByFMExtend.h \
  /usr/include/c++/5/unordered_map /usr/include/c++/5/bits/hashtable.h \
  /usr/include/c++/5/bits/hashtable_policy.h \
- /usr/include/c++/5/bits/unordered_map.h \
+ /usr/include/c++/5/bits/unordered_map.h /usr/include/c++/5/bitset \
  ../SuffixTools/BWTIntervalCache.h ../PacBio/KmerThreshold.h \
  ../PacBio/LongReadProbe.h ../PacBio/KmerCheckProcess.h ../PacBio/BCode.h \
  ../PacBio/KmerFeature.h ../PacBio/BCode.h
@@ -883,6 +883,8 @@ SGACommon.h:
 /usr/include/c++/5/bits/hashtable_policy.h:
 
 /usr/include/c++/5/bits/unordered_map.h:
+
+/usr/include/c++/5/bitset:
 
 ../SuffixTools/BWTIntervalCache.h:
 

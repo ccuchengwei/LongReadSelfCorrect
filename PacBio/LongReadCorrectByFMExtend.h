@@ -10,6 +10,7 @@
 #ifndef OverlapTree_H
 #define OverlapTree_H
 
+#include <sstream>
 #include "IntervalTree.h"
 #include "SAINode.h"
 #include "LongReadCorrtoolsByFMExtend.h"
@@ -24,7 +25,7 @@ class LongReadSelfCorrectByFMExtend
 										const std::string& strBetweenSrcTarget,
 										int m_disBetweenSrcTarget,
 										size_t initkmersize,
-										size_t maxOverlap,
+										size_t maxResetSize,
 										const FMextendParameters params,
 										size_t m_min_SA_threshold = 3,
 										const debugExtInfo debug = debugExtInfo(),
@@ -39,21 +40,21 @@ class LongReadSelfCorrectByFMExtend
 			int extendOverlap(FMWalkResult2& FMWResult);
 
 		// return emptiness of leaves
-			inline bool isEmpty(){return m_leaves.empty();};
+			inline bool isEmpty(){return m_currLeavesKeptSize == 0;};
 
 		// return size of leaves
-			inline size_t size(){return m_leaves.size();};
+			inline size_t size(){return m_currLeavesKeptSize;};
 
-		// return size of seed
-			inline size_t getSeedSize(){return m_seedSize;};
+		// return size of match
+			inline size_t getMatchedSize(){return m_matchedSize;};
 
-		// return size of seed
+		// return current length
 			inline size_t getCurrentLength(){return m_currentLength;};
 
 		size_t minTotalcount = 10000000;
 		size_t totalcount = 0;
 
-		size_t SelectFreqsOfrange(const size_t LowerBound, const size_t UpperBound, SONode3PtrList& newLeaves);
+		size_t SelectFreqsOfrange(const size_t LowerBound, const size_t UpperBound, LeavesArray_t& newLeaves);
 
 		std::pair<size_t,size_t> alnscore;
 	private:
@@ -64,36 +65,37 @@ class LongReadSelfCorrectByFMExtend
 			void initialRootNode(const std::string& beginningkmer);
 			void buildOverlapbyFMindex(IntervalTree<size_t>& fwdIntervalTree,IntervalTree<size_t>& rvcIntervalTree,const int& overlapSize);
 
-			void extendLeaves(SONode3PtrList& newLeaves);
-			void attempToExtend(SONode3PtrList& newLeaves, const bool isSuccessToReduce);
-			void updateLeaves(SONode3PtrList& newLeaves,extArray& extensions,SAIOverlapNode3* leaf, const leafTable_t& lastPathInfo, leafTable_t& currPathInfo, size_t currLeavesNum);
+			void extendLeaves();
+			void attempToExtend(const debugBits_t& debugBits, std::string& debugStr, const leafTable_t& lastPathInfo, leafTable_t& currPathInfo);
+			void updateLeaves(extArray& extensions,SAIOverlapNode3* leaf, const leafTable_t& lastPathInfo, leafTable_t& currPathInfo, size_t& currLeavesNum);
 
-			void refineSAInterval(SONode3PtrList& leaves, const size_t newKmerSize);
+			void refineSAInterval(LeavesArray_t& leaves, const size_t newKmerSize);
 
 			int findTheBestPath(const SAIntervalNodeResultVector& results, FMWalkResult2& FMWResult);
 
-			extArray getFMIndexExtensions(SAIOverlapNode3* leaf,const bool printDebugInfo);
+			extArray getFMIndexExtensions(SAIOverlapNode3* leaf, const debugBits_t& debugBits, std::stringstream& strBuffer);
 
-			// prone the leaves without seeds in proximity
-				bool PrunedBySeedSupport(SONode3PtrList& newLeaves);
+			// prone the leaves without matches in proximity
+				void PrunedByRelErrorRate(const leafTable_t& lastPathInfo);
+				bool PrunedByAbsErrorRate();
 			//Check if need reduce kmer size
-				bool isInsufficientFreqs(SONode3PtrList& newLeaves);
+				bool isInsufficientFreqs();
 
 			// Check if the leaves reach $
 				bool isTerminated(SAIntervalNodeResultVector& results);
 
 			bool isOverlapAcceptable(SAIOverlapNode3* currNode);
-			bool isSupportedByNewSeed(SAIOverlapNode3* currNode, size_t smallSeedIdx, size_t largeSeedIdx);
+			bool findNewMatch(SAIOverlapNode3* currNode, size_t smallMatchedIdx, size_t largeMatchedIdx);
 			bool ismatchedbykmer(BWTInterval currFwdInterval,BWTInterval currRvcInterval);
 			double computeErrorRate(SAIOverlapNode3* currNode);
 
-			void printDebugData(debugPerExtArray& currDebugData);
-			void printErrorRate(SONode3PtrList& currLeaves);
+			void printDebugData(debugPerExtArray& currDebugData, std::stringstream& strBuffer);
+			void printErrorRate(LeavesArray_t& currLeaves);
 
 		//
 		// Data
 		//
-			
+
 			const size_t m_case_number;
 			size_t m_step_number;
 
@@ -104,20 +106,22 @@ class LongReadSelfCorrectByFMExtend
 			const int m_disBetweenSrcTarget;
 			const size_t m_initkmersize;
 			const size_t m_minOverlap;
-			const size_t m_maxOverlap;
+			const size_t m_maxResetSize;
 			const BWT* m_pBWT;
 			const BWT* m_pRBWT;
 			const size_t m_PBcoverage;
 			size_t m_min_SA_threshold;
 			double m_errorRate;
 			const size_t m_maxLeaves;
-			const size_t m_seedSize;
+			const size_t m_matchedSize;
 			size_t m_repeatFreq;
 			size_t m_localSimilarlykmerSize;
 			const double m_PacBioErrorRate;
+			double m_minMatchedErrorRate;
 
 		// debug tools
 			debugExtInfo m_Debug;
+			short int    fieldNum;
 
 		size_t m_maxIndelSize;
 		static thread_local std::vector<double> freqsOfKmerSize;
@@ -131,9 +135,26 @@ class LongReadSelfCorrectByFMExtend
 		std::vector<BWTInterval> m_fwdTerminatedInterval;   //in rBWT
 		std::vector<BWTInterval> m_rvcTerminatedInterval;   //in BWT
 
-		SONode3PtrList m_leaves;
-		SAIOverlapNode3* m_pRootNode;
-		SONode3PtrList m_RootNodes;
+		// Node Info
+			// Leaves
+				LeavesArray_t m_currLeaves;
+				LeavesArray_t m_nextLeaves;
+			// Leaves Number
+				// Current leaves containing pruned leaves.
+					size_t m_currLeavesTotalSize;
+				// Current leaves not containing pruned leaves.
+					size_t m_currLeavesKeptSize;
+				// The next leaves containing pruned leaves.
+					size_t m_nextLeavesTotalSize;
+				// The next leaves not containing pruned leaves.
+					size_t m_nextLeavesKeptSize;
+			// Roots
+				SAIOverlapNode3* m_pRootNode;
+				LeavesArray_t m_RootNodes;
+			// path
+				pathPack_t totalPathInfo;
+				const bool isSeparatedInitKmer;
+				size_t m_pathOffset;
 
 		size_t m_currentLength;
 		size_t m_currentKmerSize;
@@ -150,7 +171,6 @@ class LongReadSelfCorrectByFMExtend
 		size_t m_currExtNum;
 		size_t m_accumLeaves;
 
-		pathPack_t totalPathInfo;
 };
 
 #endif
